@@ -5,7 +5,8 @@
 #   gh auth status              -> no gh here; GitHub goes through MCP + an
 #                                  authenticated git proxy (checked via ls-remote)
 #   ls ~/.cache/ms-playwright   -> browsers are pre-baked at $PLAYWRIGHT_BROWSERS_PATH
-#   test -f .dev.vars           -> created per the user's Step-5 decision, never by the agent
+#   test -f .dev.vars           -> not required: BYOK game, players bring their own key;
+#                                  .dev.vars is optional dev-only tooling config
 #   ls docs/canon | wc -l == 6  -> canon docs must be supplied by the user
 #
 # Exit codes: 0 = all pass · 2 = only PENDING_USER items remain · 1 = hard failure.
@@ -37,10 +38,13 @@ ls "$PW_DIR" 2>/dev/null | grep -qi chromium && ok "Chromium pre-baked at $PW_DI
 
 grep -q '^\.dev\.vars$' .gitignore && git check-ignore -q .dev.vars && ok ".dev.vars ignore rule effective" || bad ".dev.vars not covered by .gitignore"
 
+# BYOK: players supply their own Anthropic API key at runtime. No server-side
+# ANTHROPIC_API_KEY exists, so .dev.vars is NOT required for the game to run —
+# it is optional local-dev config only (and stays untracked+unreadable if created).
 if [ -f .dev.vars ]; then
-  ok ".dev.vars present (per Step-5 decision)"
+  ok ".dev.vars present (optional dev-only config — BYOK game needs no server key)"
 else
-  pend ".dev.vars absent — Council key strategy is the user's Step-5 decision (local-only key + remote mock, or environment secret)"
+  ok ".dev.vars absent — fine: BYOK game, no server-side key required"
 fi
 
 CANON_COUNT=$(ls docs/canon 2>/dev/null | wc -l)
