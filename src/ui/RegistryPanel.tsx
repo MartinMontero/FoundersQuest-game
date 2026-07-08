@@ -11,6 +11,7 @@ import type { Assumption, Importance } from '../core/schema'
 import { useQuestStore, useRiskiest } from '../state/store'
 import { useUiStore } from '../state/ui'
 import { IMPORTANCE_LABELS, IMPORTANCE_ORDER, STATUS_LABELS, UI, tierLabel } from '../strings'
+import { focusAfterCommit } from './focus'
 import { DialogShell } from './TrancePanel'
 
 // ASSUMPTION: guardians created from this panel originate from the Stage 1
@@ -38,6 +39,8 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
   const closePanel = useUiStore((s) => s.closePanel)
   const titleId = useId()
   const riskiestRef = useRef<HTMLLIElement | null>(null)
+  const statementRef = useRef<HTMLInputElement | null>(null)
+  const closeRef = useRef<HTMLButtonElement | null>(null)
 
   // create form
   const [statement, setStatement] = useState('')
@@ -60,6 +63,9 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
     setStatement('')
     setImportance('wobbles')
     setKillCriterion('')
+    // the create button disables itself once the statement clears — focus the
+    // statement field so the keyboard is never stranded (adversarial review 2)
+    focusAfterCommit(() => statementRef.current)
   }
 
   const linkEvidence = (guardian: Assumption): void => {
@@ -74,6 +80,8 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
     setEvidenceText('')
     setEvidenceSource('')
     setLinkOpenId(null)
+    // the whole link row (incl. the focused add button) unmounts on commit
+    focusAfterCommit(() => closeRef.current)
   }
 
   // riskiest first, the rest in creation order (game-design §3: G-menu order)
@@ -210,6 +218,7 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
           <label className="flex flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
             <span>{UI.registry.statementLabel}</span>
             <input
+              ref={statementRef}
               data-testid="registry-statement"
               value={statement}
               onChange={(event) => setStatement(event.target.value)}
@@ -256,6 +265,7 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
 
       <div className="mt-6">
         <button
+          ref={closeRef}
           type="button"
           data-testid="registry-close"
           onClick={closePanel}

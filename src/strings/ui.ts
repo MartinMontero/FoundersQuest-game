@@ -84,6 +84,9 @@ export const UI = {
     truthLabel: 'Truth',
     /** shown while truth() is null — no guardians registered yet (02) */
     truthUnlit: 'unlit',
+    /** shown while an unresolved guardian holds derived tier ≥ 2 — the meter
+     * is waiting on a verdict, not broken (only resolution moves Truth, 02) */
+    truthBanked: 'evidence banked — the verdict comes at the Mirror',
     actionLabel: 'Action',
     coinsLabel: 'Evidence coins',
   },
@@ -99,6 +102,8 @@ export const UI = {
     numberValueLabel: 'Number',
     numberUnitLabel: 'Unit',
     numberContextLabel: 'Context',
+    /** warn, never block (gates warn, canon 01): the ink is still the founder's */
+    numberCaution: "that doesn't read as a number — it can still be inscribed",
     listItemLabel: (n: number): string => `Line ${n}`,
     listAdd: 'Add a line',
     listRemoveLabel: (n: number): string => `Remove line ${n}`,

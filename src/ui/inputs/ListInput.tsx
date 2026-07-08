@@ -1,8 +1,9 @@
 // src/ui/inputs/ListInput.tsx — add/remove row builder (game-design §2.1 `list`).
 // The TrancePanel serializes non-empty rows to Answer.text as lines.
 
-import type { ReactElement } from 'react'
+import { useRef, type ReactElement } from 'react'
 import { UI } from '../../strings'
+import { focusAfterCommit } from '../focus'
 
 export interface ListInputProps {
   items: string[]
@@ -10,6 +11,8 @@ export interface ListInputProps {
 }
 
 export function ListInput({ items, onChange }: ListInputProps): ReactElement {
+  const container = useRef<HTMLDivElement | null>(null)
+
   const setAt = (index: number, value: string): void => {
     const next = [...items]
     next[index] = value
@@ -20,10 +23,18 @@ export function ListInput({ items, onChange }: ListInputProps): ReactElement {
     const next = items.filter((_, i) => i !== index)
     // always keep one row on screen so the control never disappears
     onChange(next.length === 0 ? [''] : next)
+    // the pressed remove button unmounts — focus the row that takes its place
+    const survivor = Math.min(index, Math.max(next.length - 1, 0))
+    focusAfterCommit(
+      () =>
+        container.current?.querySelector<HTMLInputElement>(
+          `[data-testid="input-list-${survivor + 1}"]`,
+        ) ?? null,
+    )
   }
 
   return (
-    <div className="flex flex-col gap-2" data-testid="input-list">
+    <div ref={container} className="flex flex-col gap-2" data-testid="input-list">
       {items.map((item, index) => (
         // rows are positional; index keys are stable for this control
         <div key={index} className="flex gap-2">

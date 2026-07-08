@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { truth } from '../src/core/metrics'
 import {
+  LEGACY_V2_KEY,
   STORAGE_KEY,
   withDefaults,
   type Assumption,
@@ -24,7 +25,7 @@ import {
   VAULT_POSITION,
 } from '../src/game/contracts'
 import { KEY_STORAGE_KEY } from '../src/key/keyManager'
-import { createQuestStore, tierCounts } from '../src/state/store'
+import { createQuestStore, evidenceBanked, tierCounts } from '../src/state/store'
 import {
   SHADOW_DIVERGENCE_PP,
   SHADOW_MIN_ASSUMPTIONS,
@@ -136,6 +137,92 @@ describe('quest store hydration', () => {
   it('surfaces the ladder degraded flag', () => {
     expect(createQuestStore(makeDeps(false).deps).getState().degraded).toBe(false)
     expect(createQuestStore(makeDeps(true).deps).getState().degraded).toBe(true)
+  })
+
+  it('a v2 record under founders-quest:v2 hydrates reflections into fieldNotes (ruled fix 3)', () => {
+    const { spy, deps } = makeDeps()
+    const rawV2 = JSON.stringify({
+      reflections: { 'stage-1': 'old reflection', 'stage-2': 'kept too' },
+      milestones: { 'm-1': true }, // checks NEVER migrate (02)
+      answers: { s1: { 's1-th': { text: 'carried answer' } } },
+    })
+    spy.map.set(LEGACY_V2_KEY, rawV2)
+
+    const store = createQuestStore(deps)
+
+    // reflections landed in fieldNotes, through the app store's own hydration
+    expect(store.getState().data.fieldNotes).toEqual({
+      'stage-1': 'old reflection',
+      'stage-2': 'kept too',
+    })
+    expect(store.getState().data.answers).toEqual({ s1: { 's1-th': { text: 'carried answer' } } })
+    expect(store.getState().data.milestones).toEqual({})
+    // the migrated record was persisted under STORAGE_KEY in the same init
+    expect(loadQuestData(spy)).toEqual(store.getState().data)
+    // the v2 record is untouched: byte-identical, never written to or removed
+    expect(spy.map.get(LEGACY_V2_KEY)).toBe(rawV2)
+    expect(spy.sets.map((s) => s.key)).toEqual([STORAGE_KEY])
+    expect(spy.removes).toEqual([])
+  })
+
+  it('migration never overwrites an existing v3 record', () => {
+    const { spy, deps } = makeDeps()
+    const v3 = JSON.stringify({ ...withDefaults(null), fieldNotes: { s1: 'v3 note' } })
+    spy.map.set(STORAGE_KEY, v3)
+    spy.map.set(LEGACY_V2_KEY, JSON.stringify({ reflections: { s1: 'v2 note' } }))
+    const store = createQuestStore(deps)
+    expect(store.getState().data.fieldNotes).toEqual({ s1: 'v3 note' })
+    expect(spy.sets).toEqual([]) // nothing written during hydration
+  })
+
+  it('the runtime degraded flag surfaces through commit (review 8e)', () => {
+    const { spy, deps } = makeDeps()
+    let degradedNow = false
+    const failable: QuestStore = {
+      get: (key) => spy.get(key),
+      set: (key, value) => {
+        if (degradedNow) return // swallowed post-probe write, ladder-style
+        spy.set(key, value)
+      },
+      remove: (key) => spy.remove(key),
+      get degraded() {
+        return degradedNow
+      },
+    }
+    const store = createQuestStore({ ...deps, store: failable })
+    store.getState().toggleMilestone('s1-m1')
+    expect(store.getState().degraded).toBe(false)
+    degradedNow = true // the ladder's first swallowed setItem flips its flag…
+    store.getState().toggleMilestone('s1-m2')
+    // …and the very next commit surfaces it to the banner's selector
+    expect(store.getState().degraded).toBe(true)
+  })
+})
+
+describe('evidenceBanked (ruled fix 5 — the Truth meter waits honestly)', () => {
+  it('true only while an UNRESOLVED guardian holds derived tier ≥ 2', () => {
+    const g = guardian('g1')
+    expect(evidenceBanked(dataWith({ assumptions: [g] }))).toBe(false) // tier 0
+    expect(
+      evidenceBanked(dataWith({ assumptions: [g], evidence: [e2Linked('e1', 'g1')] })),
+    ).toBe(true) // untested + E2 = banked, waiting on the Mirror
+    expect(
+      evidenceBanked(
+        dataWith({
+          assumptions: [{ ...g, status: 'testing' as const }],
+          evidence: [e2Linked('e1', 'g1')],
+        }),
+      ),
+    ).toBe(true)
+    expect(
+      evidenceBanked(
+        dataWith({
+          assumptions: [{ ...g, status: 'validated' as const }],
+          evidence: [e2Linked('e1', 'g1')],
+        }),
+      ),
+    ).toBe(false) // resolved — Truth itself moves now, nothing is banked
+    expect(evidenceBanked(dataWith({}))).toBe(false)
   })
 })
 

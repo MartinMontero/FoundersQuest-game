@@ -1,6 +1,8 @@
 // src/ui/inputs/NumberInput.tsx — numeric field + unit + context line
 // (game-design §2.1 `number`). The TrancePanel serializes all three to
 // Answer.text: "<number> <unit>" on the first line, context beneath.
+// An unparseable number WARNS, never blocks (canon 01: gates warn) — the
+// caution line appears inline while Inscribe stays enabled (review 8d).
 
 import type { ReactElement } from 'react'
 import { UI } from '../../strings'
@@ -10,6 +12,12 @@ export interface NumberInputProps {
   unit: string
   context: string
   onChange(next: { value: string; unit: string; context: string }): void
+}
+
+/** true when the field holds ink that does not parse as a finite number */
+function unparseable(value: string): boolean {
+  const trimmed = value.trim()
+  return trimmed !== '' && !Number.isFinite(Number(trimmed))
 }
 
 export function NumberInput({ value, unit, context, onChange }: NumberInputProps): ReactElement {
@@ -36,6 +44,15 @@ export function NumberInput({ value, unit, context, onChange }: NumberInputProps
           />
         </label>
       </div>
+      {unparseable(value) ? (
+        <p
+          role="status"
+          data-testid="input-number-caution"
+          className="text-2xs italic text-amber-300"
+        >
+          {UI.trance.numberCaution}
+        </p>
+      ) : null}
       <label className="flex flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
         <span>{UI.trance.numberContextLabel}</span>
         <input

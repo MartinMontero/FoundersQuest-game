@@ -114,6 +114,25 @@ describe('makeStore ladder', () => {
     expect(store.get('k')).toBeNull()
     expect(() => store.remove('k')).not.toThrow()
   })
+
+  it('the FIRST swallowed post-probe setItem flips the runtime degraded flag (review 8e)', () => {
+    const backend = fakeBackend()
+    let armed = false
+    const originalSet = backend.setItem
+    backend.setItem = (key, value) => {
+      if (armed) throw new Error('quota exceeded')
+      originalSet(key, value)
+    }
+    const store = makeStore(backend) // probe passes while disarmed
+    store.set('a', '1')
+    expect(store.degraded).toBe(false) // healthy writes leave the flag down
+    armed = true
+    expect(() => store.set('b', '2')).not.toThrow()
+    expect(store.degraded).toBe(true) // the swallowed write is no longer silent
+    armed = false
+    store.set('c', '3')
+    expect(store.degraded).toBe(true) // once degraded, stays degraded — honesty holds
+  })
 })
 
 describe('loadQuestData / saveQuestData', () => {
@@ -185,5 +204,141 @@ describe('loadQuestData / saveQuestData', () => {
     const raw = backend.map.get(STORAGE_KEY)
     expect(raw).toBeDefined()
     expect(JSON.parse(raw as string)).toEqual(EMPTY_DATA)
+  })
+})
+
+describe('withDefaults shape-hardening (ruled fix 6): corrupted records hydrate to safe values', () => {
+  /** a hand-mangled record: every guarded class of corruption at once */
+  const CORRUPTED = {
+    milestones: ['not', 'a', 'record'],
+    answers: 42,
+    fieldNotes: null,
+    assumptions: [
+      {
+        id: 'g-1',
+        statement: 'people will pay',
+        originStageId: 's1',
+        importance: 'CRITICAL', // unknown enum → shrugs
+        status: 'PENDING', // unknown enum → untested
+        killCriterion: '',
+        createdAt: '2026-07-01T00:00:00.000Z',
+      },
+      'not an object', // dropped
+    ],
+    evidence: [
+      {
+        id: 'e-1',
+        tier: 99, // unknown tier → 0 (a corrupt coin can never move Truth)
+        text: 'words',
+        source: 'call',
+        linkedAssumptionIds: 'g-1', // not an array → []
+        stageId: 's1',
+        date: '2026-07-02',
+      },
+    ],
+    vault: { not: 'an array' },
+    vaultUnlocked: 'yes', // not a boolean → false
+    trail: 7,
+    lastLoop: 7, // not string|null → null
+    council: 'nope',
+    weather: [{ id: 'w-1', date: '2026-07-01', value: 'stormy' }], // → 3, never fakes a trough
+    sideQuests: [],
+    dinnerCard: 'text',
+    dinnerSession: [1, 2],
+    dinnerLog: 'nope',
+    huntList: { profiles: 'nope', slots: [{ id: 's-1', state: 'BROKEN' }] },
+    fieldJournal: [],
+    momentum: 'yes', // not a record → EMPTY default
+    fieldDay: 42,
+  }
+
+  it('hydrates every corrupted field to a safe value', () => {
+    const store = makeStore(null)
+    store.set(STORAGE_KEY, JSON.stringify(CORRUPTED))
+    const loaded = loadQuestData(store)
+
+    expect(loaded.milestones).toEqual({})
+    expect(loaded.answers).toEqual({})
+    expect(loaded.fieldNotes).toEqual({})
+    expect(loaded.assumptions).toHaveLength(1) // the non-object element is dropped
+    expect(loaded.assumptions[0]).toMatchObject({
+      id: 'g-1',
+      importance: 'shrugs',
+      status: 'untested',
+    })
+    expect(loaded.evidence).toHaveLength(1)
+    expect(loaded.evidence[0]?.tier).toBe(0)
+    expect(loaded.evidence[0]?.linkedAssumptionIds).toEqual([])
+    expect(loaded.vault).toEqual([])
+    expect(loaded.vaultUnlocked).toBe(false)
+    expect(loaded.trail).toEqual([])
+    expect(loaded.lastLoop).toBeNull()
+    expect(loaded.council).toEqual([])
+    expect(loaded.weather).toEqual([{ id: 'w-1', date: '2026-07-01', value: 3 }])
+    expect(loaded.sideQuests).toEqual({})
+    expect(loaded.dinnerCard).toBeNull()
+    expect(loaded.dinnerSession).toBeNull()
+    expect(loaded.dinnerLog).toEqual([])
+    expect(loaded.huntList).toEqual({
+      profiles: [],
+      slots: [{ id: 's-1', state: 'open' }],
+    })
+    expect(loaded.fieldJournal).toEqual({ attempts: [], imports: [] })
+    expect(loaded.momentum).toEqual(EMPTY_DATA.momentum)
+    expect(loaded.fieldDay).toEqual({ current: null, log: [] })
+  })
+
+  it('non-finite momentum.value defaults; finite survives', () => {
+    expect(
+      withDefaults({ momentum: { value: Number.NaN, lastAttemptDate: null, lastTickDate: null } })
+        .momentum.value,
+    ).toBe(0)
+    expect(
+      withDefaults(
+        JSON.parse('{"momentum":{"value":"7","lastAttemptDate":null,"lastTickDate":null}}') as Partial<QuestData>,
+      ).momentum.value,
+    ).toBe(0)
+    expect(
+      withDefaults({ momentum: { value: 4, lastAttemptDate: null, lastTickDate: null } }).momentum,
+    ).toEqual({ value: 4, lastAttemptDate: null, lastTickDate: null })
+  })
+
+  it('momentum missing its sub-keys defaults them in', () => {
+    const loaded = withDefaults(JSON.parse('{"momentum":{}}') as Partial<QuestData>)
+    expect(loaded.momentum).toEqual({ value: 0, lastAttemptDate: null, lastTickDate: null })
+  })
+
+  it('a healthy record passes through unchanged', () => {
+    const store = makeStore(null)
+    const data: QuestData = {
+      ...withDefaults(null),
+      milestones: { 'm-1': true },
+      assumptions: [
+        {
+          id: 'g-1',
+          statement: 's',
+          originStageId: 's1',
+          importance: 'dies',
+          status: 'testing',
+          killCriterion: 'k',
+          createdAt: '2026-07-01T00:00:00.000Z',
+        },
+      ],
+      evidence: [
+        {
+          id: 'e-1',
+          tier: 2,
+          text: 't',
+          source: 's',
+          linkedAssumptionIds: ['g-1'],
+          stageId: 's1',
+          date: '2026-07-02',
+        },
+      ],
+      weather: [{ id: 'w-1', date: '2026-07-01', value: 5 }],
+      momentum: { value: 3, lastAttemptDate: '2026-07-01', lastTickDate: null },
+    }
+    saveQuestData(store, data)
+    expect(loadQuestData(store)).toEqual(data)
   })
 })

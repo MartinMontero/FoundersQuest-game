@@ -3,10 +3,11 @@
 // in this phase). Capture always works: a two-tap capture (button → confirm)
 // with zero justification (law 10) via captureVault.
 
-import { useId, useState, type ReactElement } from 'react'
+import { useId, useRef, useState, type ReactElement } from 'react'
 import { useQuestStore } from '../state/store'
 import { useUiStore } from '../state/ui'
 import { UI } from '../strings'
+import { focusAfterCommit } from './focus'
 import { DialogShell } from './TrancePanel'
 
 export function VaultPanel(): ReactElement {
@@ -14,6 +15,7 @@ export function VaultPanel(): ReactElement {
   const captureVault = useQuestStore((s) => s.captureVault)
   const closePanel = useUiStore((s) => s.closePanel)
   const titleId = useId()
+  const textRef = useRef<HTMLInputElement | null>(null)
 
   const [text, setText] = useState('')
   const [confirming, setConfirming] = useState(false)
@@ -24,6 +26,8 @@ export function VaultPanel(): ReactElement {
     setText('')
     setConfirming(false)
     setCaptured(true)
+    // the confirm button unmounts on commit — hand focus to the capture field
+    focusAfterCommit(() => textRef.current)
   }
 
   return (
@@ -41,6 +45,7 @@ export function VaultPanel(): ReactElement {
         <label className="flex flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
           <span>{UI.vault.captureLabel}</span>
           <input
+            ref={textRef}
             data-testid="vault-capture-text"
             value={text}
             onChange={(event) => {

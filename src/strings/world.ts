@@ -10,6 +10,12 @@ export const WORLD_COPY = {
   bootStatus: 'Stage 1 — grey-box slice',
   /** accessible name for the 3D canvas region */
   worldName: 'The Swirling Nebula',
+  /** shown from mount until the world's first rendered frame */
+  loading: 'the nebula gathers…',
+  /** honest failure copy for the top-level error boundary — no blame, no jargon */
+  crashed:
+    'The world failed to hold together. Nothing you inscribed is lost — your record stays on this device. Reload to return to the nebula.',
+  reload: 'Reload the world',
 
   /** monument name chips */
   vaultName: 'The Vault',

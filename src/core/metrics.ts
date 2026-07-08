@@ -17,6 +17,15 @@ export const IMPORTANCE_WEIGHT: Record<Importance, number> = {
   shrugs: 1,
 }
 
+/**
+ * Weight lookup that survives corrupted data: an unknown importance value
+ * (possible in a hand-edited record) falls back to the shrugs weight, so the
+ * Truth/riskiest math can never produce NaN (Phase 2 review, ruled fix 6).
+ */
+export function importanceWeight(importance: Importance): number {
+  return IMPORTANCE_WEIGHT[importance] ?? IMPORTANCE_WEIGHT.shrugs
+}
+
 /** XP awards (02). Invalidation pays 1.5x validation (01) — 15 vs 10. */
 export const XP_INVALIDATED = 15
 export const XP_VALIDATED = 10
@@ -45,7 +54,7 @@ export function truth(data: QuestData): number | null {
   let numerator = 0
   let denominator = 0
   for (const a of data.assumptions) {
-    const w = IMPORTANCE_WEIGHT[a.importance]
+    const w = importanceWeight(a.importance)
     denominator += w
     const resolved = a.status === 'validated' || a.status === 'invalidated'
     if (resolved && tierOf(a, data.evidence) >= 2) numerator += w
@@ -81,7 +90,7 @@ export function riskiest(data: QuestData): Assumption | null {
   let bestScore = 0
   for (const a of data.assumptions) {
     if (a.status !== 'untested' && a.status !== 'testing') continue
-    const score = IMPORTANCE_WEIGHT[a.importance] * (4 - tierOf(a, data.evidence))
+    const score = importanceWeight(a.importance) * (4 - tierOf(a, data.evidence))
     if (
       best === null ||
       score > bestScore ||

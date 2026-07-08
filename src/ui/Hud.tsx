@@ -7,7 +7,7 @@
 import type { ReactElement } from 'react'
 import type { EvidenceTier } from '../core/schema'
 import { STAGE1_MILESTONE_IDS } from '../game/contracts'
-import { useAction, useTierCounts, useTruth } from '../state/store'
+import { useAction, useEvidenceBanked, useTierCounts, useTruth } from '../state/store'
 import { STAGES, TIER_CODES, TIER_METALS, UI, coinCount, formatPercent, stageBanner } from '../strings'
 
 const TIERS: readonly EvidenceTier[] = [0, 1, 2, 3, 4]
@@ -15,6 +15,7 @@ const TIERS: readonly EvidenceTier[] = [0, 1, 2, 3, 4]
 export function Hud(): ReactElement | null {
   const truthValue = useTruth()
   const actionValue = useAction(STAGE1_MILESTONE_IDS)
+  const banked = useEvidenceBanked()
   const coins = useTierCounts()
   const stage = STAGES.find((s) => s.stage === 1)
   if (stage === undefined) return null
@@ -50,13 +51,27 @@ export function Hud(): ReactElement | null {
           aria-valuenow={truthValue === null ? 0 : Math.round(truthValue * 100)}
           aria-valuetext={truthText}
           data-testid="hud-truth"
-          className="mt-1 h-3 w-full overflow-hidden rounded bg-slate-800"
+          className={`mt-1 h-3 w-full overflow-hidden rounded bg-slate-800 ${
+            banked ? 'ring-1 ring-amber-300/70 shadow-[0_0_10px_rgba(251,191,36,0.45)]' : ''
+          }`}
         >
           <div
             className="h-full bg-amber-400"
             style={{ width: `${truthValue === null ? 0 : Math.round(truthValue * 100)}%` }}
           />
         </div>
+        {banked ? (
+          // evidence stands against an unresolved guardian: the meter is
+          // waiting on the Mirror's verdict, not broken (review 5). The pulse
+          // stands down under prefers-reduced-motion.
+          <p
+            role="status"
+            data-testid="hud-truth-banked"
+            className="mt-1 animate-pulse text-2xs italic text-amber-300 motion-reduce:animate-none"
+          >
+            {UI.hud.truthBanked}
+          </p>
+        ) : null}
       </div>
 
       {/* Action follows — smaller, second */}

@@ -18,8 +18,16 @@ const LOOK_HEIGHT = 1.4
 const YAW_SPEED = 1.6 // rad/s
 const FOLLOW_DAMP = 4 // 1/s — exponential smoothing rates
 const TRANCE_DAMP = 6 // ≈600 ms push-in (§2 F2)
-const TRANCE_BACKOFF = 3 // camera distance from the shrine, over-shoulder
-const TRANCE_HEIGHT = 1.7
+/** camera distance from the shrine, over-shoulder (exported for the e2e framing math) */
+export const TRANCE_BACKOFF = 3
+export const TRANCE_HEIGHT = 1.7
+
+declare global {
+  interface Window {
+    /** dev/e2e builds only — the camera's live position (reduced-motion cut assertions) */
+    __fq_cam?: { x: number; y: number; z: number }
+  }
+}
 
 /** shrine world positions by qid, for the trance framing */
 const SHRINE_POSITION: ReadonlyMap<string, readonly [number, number, number]> = new Map(
@@ -90,6 +98,16 @@ export function CameraRig({ reduced }: CameraRigProps): null {
     camera.position.lerp(targetPos.current, alpha)
     smoothedLook.current.lerp(targetLook.current, alpha)
     camera.lookAt(smoothedLook.current)
+
+    if (import.meta.env.DEV) {
+      // dev/e2e hook, __fq_fps pattern: expose the live camera position so the
+      // reduced-motion spec can assert the CUT (not just panel timing) — 8f
+      const record = window.__fq_cam ?? { x: 0, y: 0, z: 0 }
+      record.x = camera.position.x
+      record.y = camera.position.y
+      record.z = camera.position.z
+      window.__fq_cam = record
+    }
   })
 
   return null

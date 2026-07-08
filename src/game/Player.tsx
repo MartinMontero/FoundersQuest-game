@@ -17,8 +17,18 @@ import { useUiStore } from '../state/ui'
 const RUN_SPEED = 6
 const WALK_SPEED = 2.5
 
+/** Below this height the capsule has left the world — the safety net catches it. */
+const VOID_Y = -10
+
 /** Spawn near the plateau's south edge, by the flag row (contracts note). */
 export const PLAYER_SPAWN: [number, number, number] = [2, 1.2, 18]
+
+declare global {
+  interface Window {
+    /** dev/e2e builds only — the capsule's live position (plateau/void assertions) */
+    __fq_player?: { x: number; y: number; z: number }
+  }
+}
 
 function updateNearest(x: number, z: number): void {
   let best: string | null = null
@@ -40,8 +50,22 @@ export function Player(): JSX.Element {
     const rb = body.current
     if (rb === null) return
 
-    const t = rb.translation()
+    // safety net: if the capsule ever escapes the rim, return it to spawn —
+    // a fall into the void must never strand the player (adversarial review 1)
+    let t = rb.translation()
+    if (t.y < VOID_Y) {
+      rb.setTranslation({ x: PLAYER_SPAWN[0], y: PLAYER_SPAWN[1], z: PLAYER_SPAWN[2] }, true)
+      rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
+      t = rb.translation()
+    }
     playerWorldPos.set(t.x, t.y, t.z)
+    if (import.meta.env.DEV) {
+      const record = window.__fq_player ?? { x: 0, y: 0, z: 0 }
+      record.x = t.x
+      record.y = t.y
+      record.z = t.z
+      window.__fq_player = record
+    }
     updateNearest(t.x, t.z)
 
     let vx = 0

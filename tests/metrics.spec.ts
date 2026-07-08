@@ -9,6 +9,7 @@ import {
   XP_VALIDATED,
   actionFraction,
   fieldAttemptTally,
+  importanceWeight,
   riskiest,
   tierOf,
   trough,
@@ -20,6 +21,7 @@ import type {
   Assumption,
   EvidenceEntry,
   FieldAttempt,
+  Importance,
   QuestData,
   WeatherEntry,
 } from '../src/core/schema'
@@ -395,6 +397,67 @@ describe('fieldAttemptTally', () => {
     expect(actionFraction(after, ids)).toBe(actionFraction(before, ids))
     expect(actionFraction(after, ids)).toBe(1 / 2)
     expect(truth(after)).toBe(truth(before)) // both null — attempts move nothing
+  })
+})
+
+describe('corrupted-record safety (ruled fix 6): the HUD can never see NaN', () => {
+  it('importanceWeight falls back to the shrugs weight for unknown values', () => {
+    expect(importanceWeight('dies')).toBe(3)
+    expect(importanceWeight('wobbles')).toBe(2)
+    expect(importanceWeight('shrugs')).toBe(1)
+    expect(importanceWeight('CRITICAL' as Importance)).toBe(1)
+    expect(importanceWeight(undefined as unknown as Importance)).toBe(1)
+  })
+
+  // the ruled corrupted fixture: importance:'CRITICAL', tier:99, momentum:'yes',
+  // assumptions-as-object — hydrated through withDefaults exactly like loadQuestData
+  const corruptedHydrated = withDefaults(
+    JSON.parse(
+      JSON.stringify({
+        assumptions: {}, // not an array
+        momentum: 'yes',
+        evidence: [
+          {
+            id: 'e-1',
+            tier: 99,
+            text: 't',
+            source: 's',
+            linkedAssumptionIds: [],
+            stageId: 's1',
+            date: '2026-07-02',
+          },
+        ],
+        milestones: { m1: true },
+      }),
+    ) as Partial<QuestData>,
+  )
+
+  it('truth / xp / riskiest / actionFraction are finite-or-null over the hydrated fixture', () => {
+    const t = truth(corruptedHydrated)
+    expect(t === null || Number.isFinite(t)).toBe(true)
+    expect(t).toBeNull() // assumptions:{} hydrates to [] — the meter is honestly unlit
+    expect(Number.isFinite(xp(corruptedHydrated))).toBe(true)
+    expect(riskiest(corruptedHydrated)).toBeNull()
+    expect(Number.isFinite(actionFraction(corruptedHydrated, ['m1', 'm2']))).toBe(true)
+  })
+
+  it('even an UN-hydrated corrupt importance cannot make truth/riskiest NaN', () => {
+    // belt and braces: a record that somehow skipped withDefaults — assembled
+    // by direct assignment so no sanitizer touches the corrupt importance
+    const rogue: QuestData = {
+      ...data(),
+      assumptions: [
+        assumption({ id: 'r1', importance: 'CRITICAL' as Importance, status: 'validated' }),
+        assumption({ id: 'r2', importance: 'shrugs', status: 'untested' }),
+      ],
+      evidence: [evidence({ tier: 2, linkedAssumptionIds: ['r1'] })],
+    }
+    const t = truth(rogue)
+    expect(t).not.toBeNull()
+    expect(Number.isFinite(t as number)).toBe(true)
+    expect(t).toBe(1 / 2) // CRITICAL weighs as shrugs: 1 resolved of 2 weights
+    expect(riskiest(rogue)?.id).toBe('r2')
+    expect(Number.isFinite(importanceWeight('CRITICAL' as Importance))).toBe(true)
   })
 })
 

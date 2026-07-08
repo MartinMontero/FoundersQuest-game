@@ -54,6 +54,9 @@ function detectLocalStorage(): StorageLike | null {
  */
 export function makeStore(backend: StorageLike | null = detectLocalStorage()): QuestStore {
   if (backend !== null && probe(backend)) {
+    // flips on the first swallowed post-probe write: from then on the record
+    // is no longer reaching the device — the honest banner must say so
+    let degradedNow = false
     return {
       get(key: string): string | null {
         try {
@@ -67,6 +70,7 @@ export function makeStore(backend: StorageLike | null = detectLocalStorage()): Q
           backend.setItem(key, value)
         } catch {
           // best-effort: a post-probe write failure must not throw through gameplay
+          degradedNow = true
         }
       },
       remove(key: string): void {
@@ -76,7 +80,9 @@ export function makeStore(backend: StorageLike | null = detectLocalStorage()): Q
           // best-effort, as above
         }
       },
-      degraded: false,
+      get degraded(): boolean {
+        return degradedNow
+      },
     }
   }
 

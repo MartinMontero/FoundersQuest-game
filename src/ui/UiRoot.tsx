@@ -10,7 +10,7 @@
 // action: the deep-link that opens the riskiest guardian in the Registry.
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
-import { riskiest } from '../core/metrics'
+import { riskiest, trough } from '../core/metrics'
 import type { QuestData } from '../core/schema'
 import { useQuestData } from '../state/store'
 import { shouldSummonShadow } from '../state/tunables'
@@ -63,16 +63,24 @@ export function UiRoot(): ReactElement {
   const dismissLatch = useRef(false)
 
   const summonNow = shouldSummonShadow(data)
+  const inTrough = trough(data)
 
   useEffect(() => {
+    const ui = useUiStore.getState()
+    // the Shadow holds fire in the trough (02/03): if the weather sinks while
+    // it stands, it withdraws on its own — NOT a player dismiss, so no latch
+    if (inTrough && ui.shadow.visible) ui.dismissShadow()
     if (!summonNow) {
+      // trough or closed divergence: either way the summons condition is gone
       dismissLatch.current = false
       return
     }
-    const ui = useUiStore.getState()
+    // never interrupt a trance or panel — defer the summons until the player
+    // returns to roam (this effect re-runs on every mode change)
+    if (mode !== 'roam') return
     if (dismissLatch.current || ui.shadow.visible) return
     ui.summonShadow(chooseShadowQuote(data), UI.shadow.action)
-  }, [summonNow, data])
+  }, [summonNow, inTrough, mode, data])
 
   useEffect(() => {
     if (mode !== 'panel:registry' && focusRiskiest) setFocusRiskiest(false)

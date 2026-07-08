@@ -4,11 +4,13 @@
 // Each entry carries the inline "This only works if ___" affordance: blank +
 // dies/wobbles/shrugs picker + kill criterion → addGuardian via the TrancePanel
 // callback (originStageId comes from the shrine's stage). Entries themselves
-// serialize to Answer.text as lines.
+// serialize to Answer.text as lines. The pending, un-entered line is PART OF
+// THE DRAFT (owned by the TrancePanel), so Esc + re-kneel never loses it.
 
-import { useState, type ReactElement } from 'react'
+import { useRef, useState, type ReactElement } from 'react'
 import type { Importance } from '../../core/schema'
 import { IMPORTANCE_LABELS, IMPORTANCE_ORDER, UI } from '../../strings'
+import { focusAfterCommit } from '../focus'
 
 export interface QuickaddEntry {
   text: string
@@ -18,7 +20,9 @@ export interface QuickaddEntry {
 
 export interface QuickaddInputProps {
   entries: QuickaddEntry[]
-  onChange(entries: QuickaddEntry[]): void
+  /** the un-entered line in the entry field — session draft state, never lost on Esc */
+  pending: string
+  onChange(next: { entries: QuickaddEntry[]; pending: string }): void
   /** returns the new guardian's id (TrancePanel wires addGuardian) */
   onRegisterGuardian(statement: string, importance: Importance, killCriterion: string): string
 }
@@ -29,20 +33,20 @@ function isImportance(value: string): value is Importance {
 
 export function QuickaddInput({
   entries,
+  pending,
   onChange,
   onRegisterGuardian,
 }: QuickaddInputProps): ReactElement {
-  const [pending, setPending] = useState('')
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   const [blank, setBlank] = useState('')
   const [importance, setImportance] = useState<Importance>('wobbles')
   const [killCriterion, setKillCriterion] = useState('')
+  const entryRef = useRef<HTMLInputElement | null>(null)
 
   const addEntry = (): void => {
     const text = pending.trim()
     if (text === '') return
-    onChange([...entries, { text }])
-    setPending('')
+    onChange({ entries: [...entries, { text }], pending: '' })
   }
 
   const openAffordance = (index: number): void => {
@@ -53,8 +57,10 @@ export function QuickaddInput({
   }
 
   const removeEntry = (index: number): void => {
-    onChange(entries.filter((_, i) => i !== index))
+    onChange({ entries: entries.filter((_, i) => i !== index), pending })
     if (openIndex === index) setOpenIndex(null)
+    // the pressed remove button unmounts — keep the keyboard in the control
+    focusAfterCommit(() => entryRef.current)
   }
 
   const register = (index: number): void => {
@@ -65,18 +71,24 @@ export function QuickaddInput({
       importance,
       killCriterion.trim(),
     )
-    onChange(entries.map((entry, i) => (i === index ? { ...entry, guardianId: id } : entry)))
+    onChange({
+      entries: entries.map((entry, i) => (i === index ? { ...entry, guardianId: id } : entry)),
+      pending,
+    })
     setOpenIndex(null)
+    // the affordance form (incl. the focused register button) unmounts on commit
+    focusAfterCommit(() => entryRef.current)
   }
 
   return (
     <div className="flex flex-col gap-2" data-testid="input-quickadd">
       <div className="flex gap-2">
         <input
+          ref={entryRef}
           aria-label={UI.trance.quickaddEntryLabel}
           data-testid="quickadd-entry"
           value={pending}
-          onChange={(event) => setPending(event.target.value)}
+          onChange={(event) => onChange({ entries, pending: event.target.value })}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
               event.preventDefault()

@@ -253,26 +253,177 @@ export const EMPTY_DATA: QuestData = {
   fieldDay: { current: null, log: [] },
 }
 
-/**
- * New keys default in from EMPTY_DATA (02) — A-101 keys the same way.
- * Whitelist-copy: only keys of EMPTY_DATA are carried over (like migration.ts),
- * so foreign keys injected into founders-quest:v3 can never round-trip.
- */
-export function withDefaults(loaded: Partial<QuestData> | null | undefined): QuestData {
-  const source = loaded ?? {}
-  const out: QuestData = { ...EMPTY_DATA }
-  for (const key of Object.keys(EMPTY_DATA) as (keyof QuestData)[]) {
-    copyKey(out, source, key)
+// ---- hydration shape-hardening (Phase 2 adversarial review, ruled fix 6) ----
+// A hand-edited or corrupted founders-quest:v3 record must never crash the
+// game or push NaN into the HUD: every field the metrics read is guarded here.
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+/** enum guard: unknown importance falls back to the lightest weight (shrugs). */
+function asImportance(value: unknown): Importance {
+  return value === 'dies' || value === 'wobbles' || value === 'shrugs' ? value : 'shrugs'
+}
+
+/** enum guard: unknown status falls back to untested (never fabricates a verdict). */
+function asStatus(value: unknown): AssumptionStatus {
+  return value === 'untested' ||
+    value === 'testing' ||
+    value === 'validated' ||
+    value === 'invalidated'
+    ? value
+    : 'untested'
+}
+
+/** enum guard: unknown tier falls back to 0 — a corrupt coin can never move Truth. */
+function asTier(value: unknown): EvidenceTier {
+  return value === 0 || value === 1 || value === 2 || value === 3 || value === 4 ? value : 0
+}
+
+/** enum guard: unknown weather value falls back to 3 (neutral — never fakes a trough). */
+function asWeatherValue(value: unknown): WeatherEntry['value'] {
+  return value === 1 || value === 2 || value === 3 || value === 4 || value === 5 ? value : 3
+}
+
+/** enum guard: unknown slot state falls back to open. */
+function asSlotState(value: unknown): SlotState {
+  return value === 'open' || value === 'attempted' || value === 'hollow' || value === 'filled'
+    ? value
+    : 'open'
+}
+
+function finiteOr(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+function booleanOr(value: unknown, fallback: boolean): boolean {
+  return typeof value === 'boolean' ? value : fallback
+}
+
+function stringOrNull(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+/** array guard: non-arrays default to []; elements map through `sanitize` (null = drop). */
+function arrayOr<T>(value: unknown, sanitize: (element: unknown) => T | null): T[] {
+  if (!Array.isArray(value)) return []
+  const out: T[] = []
+  for (const element of value) {
+    const mapped = sanitize(element)
+    if (mapped !== null) out.push(mapped)
   }
   return out
 }
 
-/** Key-generic copy so the whitelist loop stays fully typed — no casts. */
-function copyKey<K extends keyof QuestData>(
-  out: QuestData,
-  source: Partial<QuestData>,
-  key: K,
-): void {
-  const value = source[key]
-  if (value !== undefined) out[key] = value
+/** record guard: non-objects default to a fresh copy of `fallback`. */
+function recordOr<T>(value: unknown, fallback: Record<string, T>): Record<string, T> {
+  return isPlainObject(value) ? (value as Record<string, T>) : { ...fallback }
+}
+
+/** keep plain-object elements as-is (shallow: element fields are not enum-coerced). */
+function plainObjectElement<T>(element: unknown): T | null {
+  return isPlainObject(element) ? (element as T) : null
+}
+
+function sanitizeAssumption(element: unknown): Assumption | null {
+  if (!isPlainObject(element)) return null
+  return {
+    ...(element as unknown as Assumption),
+    importance: asImportance(element['importance']),
+    status: asStatus(element['status']),
+  }
+}
+
+function sanitizeEvidence(element: unknown): EvidenceEntry | null {
+  if (!isPlainObject(element)) return null
+  return {
+    ...(element as unknown as EvidenceEntry),
+    tier: asTier(element['tier']),
+    linkedAssumptionIds: Array.isArray(element['linkedAssumptionIds'])
+      ? (element['linkedAssumptionIds'] as string[])
+      : [],
+  }
+}
+
+function sanitizeWeatherEntry(element: unknown): WeatherEntry | null {
+  if (!isPlainObject(element)) return null
+  return { ...(element as unknown as WeatherEntry), value: asWeatherValue(element['value']) }
+}
+
+function sanitizeHuntSlot(element: unknown): HuntSlot | null {
+  if (!isPlainObject(element)) return null
+  return { ...(element as unknown as HuntSlot), state: asSlotState(element['state']) }
+}
+
+/** shallow shape check: momentum must carry its sub-keys, value must be finite. */
+function sanitizeMomentum(value: unknown): Momentum {
+  if (!isPlainObject(value)) return { ...EMPTY_DATA.momentum }
+  return {
+    value: finiteOr(value['value'], 0),
+    lastAttemptDate: stringOrNull(value['lastAttemptDate']),
+    lastTickDate: stringOrNull(value['lastTickDate']),
+  }
+}
+
+function sanitizeHuntList(value: unknown): QuestData['huntList'] {
+  if (!isPlainObject(value)) return { profiles: [], slots: [] }
+  return {
+    profiles: arrayOr(value['profiles'], plainObjectElement<HuntProfile>),
+    slots: arrayOr(value['slots'], sanitizeHuntSlot),
+  }
+}
+
+function sanitizeFieldJournal(value: unknown): QuestData['fieldJournal'] {
+  if (!isPlainObject(value)) return { attempts: [], imports: [] }
+  return {
+    attempts: arrayOr(value['attempts'], plainObjectElement<FieldAttempt>),
+    imports: arrayOr(value['imports'], plainObjectElement<FieldImportRecord>),
+  }
+}
+
+function sanitizeFieldDay(value: unknown): QuestData['fieldDay'] {
+  if (!isPlainObject(value)) return { current: null, log: [] }
+  return {
+    current: isPlainObject(value['current']) ? (value['current'] as unknown as FieldDayCurrent) : null,
+    log: arrayOr(value['log'], plainObjectElement<FieldDayLogEntry>),
+  }
+}
+
+/**
+ * New keys default in from EMPTY_DATA (02) — A-101 keys the same way.
+ * Whitelist-copy: only keys of EMPTY_DATA are carried over (like migration.ts),
+ * so foreign keys injected into founders-quest:v3 can never round-trip.
+ * Every carried field passes a per-field guard (arrays, enums, finite numbers,
+ * shallow object shapes) so a corrupted record hydrates to safe values.
+ */
+export function withDefaults(loaded: Partial<QuestData> | null | undefined): QuestData {
+  const source: Record<string, unknown> = isPlainObject(loaded) ? loaded : {}
+  return {
+    milestones: recordOr<boolean>(source['milestones'], {}),
+    answers: recordOr<Record<string, Answer>>(source['answers'], {}),
+    fieldNotes: recordOr<string>(source['fieldNotes'], {}),
+    assumptions: arrayOr(source['assumptions'], sanitizeAssumption),
+    evidence: arrayOr(source['evidence'], sanitizeEvidence),
+    vault: arrayOr(source['vault'], plainObjectElement<QuestData['vault'][number]>),
+    vaultUnlocked: booleanOr(source['vaultUnlocked'], false),
+    trail: arrayOr(source['trail'], plainObjectElement<TrailEntry>),
+    gates: recordOr(source['gates'], {}) as QuestData['gates'],
+    lastLoop: stringOrNull(source['lastLoop']),
+    council: arrayOr(source['council'], plainObjectElement<CouncilReading>),
+    councilConsent: booleanOr(source['councilConsent'], false),
+    weather: arrayOr(source['weather'], sanitizeWeatherEntry),
+    sideQuests: recordOr<SideQuestRecord>(source['sideQuests'], {}),
+    dinnerCard: isPlainObject(source['dinnerCard'])
+      ? (source['dinnerCard'] as unknown as DinnerCard)
+      : null,
+    dinnerSession: isPlainObject(source['dinnerSession'])
+      ? (source['dinnerSession'] as unknown as DinnerSession)
+      : null,
+    dinnerLog: arrayOr(source['dinnerLog'], plainObjectElement<DinnerLogEntry>),
+    huntList: sanitizeHuntList(source['huntList']),
+    fieldJournal: sanitizeFieldJournal(source['fieldJournal']),
+    momentum: sanitizeMomentum(source['momentum']),
+    fieldDay: sanitizeFieldDay(source['fieldDay']),
+  }
 }

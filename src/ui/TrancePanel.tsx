@@ -20,7 +20,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react'
-import type { Answer, Importance } from '../core/schema'
+import type { Answer, Assumption, Importance } from '../core/schema'
 import { questStore, useQuestStore } from '../state/store'
 import { useUiStore } from '../state/ui'
 import { STAGES, UI, VAULT_SOLUTION_WORDS, type Question, type QuestionTag } from '../strings'
@@ -42,6 +42,11 @@ const FOCUSABLE =
  * Focus trap for modal surfaces: moves focus in on mount (initialFocus first,
  * else the first focusable control, else the container), keeps Tab/Shift+Tab
  * cycling inside, and restores the previously focused element on unmount.
+ *
+ * The Tab listener sits on `document`, not the container: a commit action can
+ * unmount/disable the focused control mid-dialog, dropping focus to <body> —
+ * keyboard handling must keep working from that dead spot (adversarial review
+ * 2), so any Tab while the trap is mounted is pulled back inside.
  */
 export function useFocusTrap(
   initialFocus?: RefObject<HTMLElement | null>,
@@ -56,7 +61,7 @@ export function useFocusTrap(
     target.focus()
 
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key !== 'Tab') return
+      if (event.key !== 'Tab' || event.defaultPrevented) return
       const focusables = Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE))
       const first = focusables[0]
       const last = focusables[focusables.length - 1]
@@ -66,6 +71,14 @@ export function useFocusTrap(
         return
       }
       const active = document.activeElement
+      // focus fell outside the trap (e.g. a commit unmounted the focused
+      // control) — pull it back to the first control instead of letting Tab
+      // wander the page behind the modal
+      if (!(active instanceof HTMLElement) || !node.contains(active)) {
+        event.preventDefault()
+        first.focus()
+        return
+      }
       if (event.shiftKey && (active === first || active === node)) {
         event.preventDefault()
         last.focus()
@@ -75,9 +88,9 @@ export function useFocusTrap(
       }
     }
 
-    node.addEventListener('keydown', onKeyDown)
+    document.addEventListener('keydown', onKeyDown)
     return (): void => {
-      node.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('keydown', onKeyDown)
       previous?.focus()
     }
   }, [initialFocus])
@@ -103,8 +116,11 @@ export interface DialogShellProps {
 
 /**
  * Modal shell: backdrop + semantic dialog (aria-modal, labelled), focus trap,
- * Esc-to-close (consistent across every surface). No animation — the DOM
- * panels are motion-free, so prefers-reduced-motion needs no variant here.
+ * Esc-to-close (consistent across every surface). Escape listens at document
+ * level while the dialog is mounted, so it works even when a commit action
+ * just unmounted the focused control and focus sits on <body> (adversarial
+ * review 2). No animation — the DOM panels are motion-free, so
+ * prefers-reduced-motion needs no variant here.
  */
 export function DialogShell({
   titleId,
@@ -118,6 +134,26 @@ export function DialogShell({
   children,
 }: DialogShellProps): ReactElement {
   const trapRef = useFocusTrap(initialFocus)
+
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      // defaultPrevented marks the press as consumed, so stacked dialogs
+      // (e.g. the Shadow over a panel) close one per Esc, not all at once
+      event.preventDefault()
+      onCloseRef.current()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return (): void => {
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [])
+
   return (
     <div className={`fixed inset-0 ${layerClassName} flex items-center justify-center p-4`}>
       <div className="absolute inset-0 bg-slate-950/70" aria-hidden="true" onClick={onClose} />
@@ -129,12 +165,6 @@ export function DialogShell({
         aria-describedby={describedById}
         tabIndex={-1}
         data-testid={testId}
-        onKeyDown={(event: ReactKeyboardEvent<HTMLDivElement>) => {
-          if (event.key === 'Escape') {
-            event.stopPropagation()
-            onClose()
-          }
-        }}
         className={`relative max-h-[85vh] w-full overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 p-6 shadow-xl ${panelClassName}`}
       >
         {children}
@@ -153,7 +183,9 @@ export type TranceDraft =
   | { kind: 'fivewhys'; whys: string[] }
   | { kind: 'number'; value: string; unit: string; context: string }
   | { kind: 'list'; items: string[] }
-  | { kind: 'quickadd'; entries: QuickaddEntry[] }
+  // `pending` is the un-entered quickadd line — part of the draft, so Esc +
+  // re-kneel never loses it (review 8c); it is NOT serialized on inscribe
+  | { kind: 'quickadd'; entries: QuickaddEntry[]; pending: string }
 
 /** Esc keeps the draft for the session — in memory only, never persisted. */
 const sessionDrafts = new Map<string, TranceDraft>()
@@ -167,8 +199,34 @@ function nonEmpty(line: string): boolean {
   return line.trim() !== ''
 }
 
+/**
+ * Rebuild quickadd entries from stored answer lines, re-attaching guardians
+ * registered in an earlier trance: an entry whose "This only works if <entry>"
+ * statement already stands with the same origin stage keeps its guardianId, so
+ * the affordance is not re-offered for already-registered entries (review 8c).
+ */
+export function reattachQuickaddEntries(
+  lines: readonly string[],
+  stageId: string,
+  assumptions: readonly Assumption[],
+): QuickaddEntry[] {
+  return lines.map((text) => {
+    const match = assumptions.find(
+      (a) =>
+        a.originStageId === stageId &&
+        a.statement === `${UI.trance.quickaddStatementPrefix}${text}`,
+    )
+    return match === undefined ? { text } : { text, guardianId: match.id }
+  })
+}
+
 /** Fresh draft for a tag, prefilled from the stored answer when one exists. */
-function initialDraft(tag: QuestionTag | null, stored: Answer | undefined): TranceDraft {
+function initialDraft(
+  tag: QuestionTag | null,
+  stored: Answer | undefined,
+  stageId: string,
+  assumptions: readonly Assumption[],
+): TranceDraft {
   switch (tag) {
     case 'names': {
       const names = splitLines(stored?.text)
@@ -197,7 +255,11 @@ function initialDraft(tag: QuestionTag | null, stored: Answer | undefined): Tran
       return { kind: 'list', items }
     }
     case 'quickadd':
-      return { kind: 'quickadd', entries: splitLines(stored?.text).map((text) => ({ text })) }
+      return {
+        kind: 'quickadd',
+        entries: reattachQuickaddEntries(splitLines(stored?.text), stageId, assumptions),
+        pending: '',
+      }
     // story / falsify / untagged — and any not-yet-built tag — get plain prose
     default:
       return { kind: 'text', text: stored?.text ?? '' }
@@ -362,7 +424,8 @@ function renderControl(
       return (
         <QuickaddInput
           entries={draft.entries}
-          onChange={(entries) => update({ kind: 'quickadd', entries })}
+          pending={draft.pending}
+          onChange={({ entries, pending }) => update({ kind: 'quickadd', entries, pending })}
           onRegisterGuardian={registerGuardian}
         />
       )
@@ -391,7 +454,12 @@ export function TrancePanel({ qid }: TrancePanelProps): ReactElement | null {
     if (kept !== undefined) return kept
     const stored =
       located === null ? undefined : questStore.getState().data.answers[located.stageId]?.[qid]
-    return initialDraft(located?.question.tag ?? null, stored)
+    return initialDraft(
+      located?.question.tag ?? null,
+      stored,
+      located?.stageId ?? '',
+      questStore.getState().data.assumptions,
+    )
   })
   const [nudge, setNudge] = useState<NudgeState>('offer')
 
@@ -418,7 +486,9 @@ export function TrancePanel({ qid }: TrancePanelProps): ReactElement | null {
     killCriterion: string,
   ): string => addGuardian({ statement, importance, killCriterion, originStageId: stageId }).id
 
-  const nudgeVisible = nudge !== 'dismissed' && SOLUTION_REGEX.test(draftToText(draft))
+  // the solution-word nudge is the 03 STAGE 1 rule — it fires only in s1 (review 8a)
+  const nudgeVisible =
+    stageId === 's1' && nudge !== 'dismissed' && SOLUTION_REGEX.test(draftToText(draft))
 
   return (
     <DialogShell

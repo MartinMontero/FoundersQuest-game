@@ -8,7 +8,7 @@
 // requests to api.anthropic.com.
 
 import { expect, test } from '@playwright/test'
-import { STORAGE_KEY } from '../src/core/schema'
+import { EMPTY_DATA, STORAGE_KEY } from '../src/core/schema'
 import { STAGE1_MILESTONES } from '../src/game/contracts'
 import { UI, WORLD_COPY } from '../src/strings'
 import {
@@ -50,6 +50,8 @@ const QUICKADD_ENTRIES: readonly [string, string] = [
 ]
 const GUARDIAN_BLANK = 'managers will trust a shared order record'
 const GUARDIAN_KILL = 'Three managers decline to try a shared record after seeing it'
+const PENDING_LINE = 'The rep re-keys the fixed total a second time'
+const SECOND_GUARDIAN = 'Suppliers will read a shared sheet instead of email'
 const EVIDENCE_TEXT = 'Maya said she retypes every order and dreads Mondays'
 const EVIDENCE_SOURCE = 'Maya Chen, call 2026-07-07'
 // contains solution words ('build', 'app') → must trigger the Vault nudge,
@@ -119,7 +121,16 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   // ---- s1-l3 [number]: value + unit + context ----
   await tabToChip(page, questionText('s1-l3'))
   await kneel(page)
+  // warn-not-block (review 8d): unparseable ink shows a caution while the
+  // Inscribe stays enabled — gates warn, never block (canon 01)
+  await page.getByTestId('input-number-value').pressSequentially('about forty-five')
+  const numberCaution = page.getByTestId('input-number-caution')
+  await expect(numberCaution).toBeVisible()
+  await expect(numberCaution).toHaveText(UI.trance.numberCaution)
+  await expect(page.getByTestId('trance-inscribe')).toBeEnabled()
+  await page.getByTestId('input-number-value').press('ControlOrMeta+a')
   await page.getByTestId('input-number-value').pressSequentially(NUMBER_VALUE)
+  await expect(numberCaution).toBeHidden()
   await page.getByTestId('input-number-unit').pressSequentially(NUMBER_UNIT)
   await page.getByTestId('input-number-context').pressSequentially(NUMBER_CONTEXT)
   await inscribe(page, 'input-number-value')
@@ -163,6 +174,30 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
     UI.trance.guardianRegistered,
   )
   await shot(page, 'quickadd-guardian')
+
+  // Esc works IMMEDIATELY after guardian creation: the register button
+  // unmounted under focus, but Escape listens at document level (ruled fix 2)
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('trance-panel')).toBeHidden()
+  // kneel again — the draft (entries + registered marker) was kept
+  await page.keyboard.press('KeyE')
+  await expect(page.getByTestId('trance-panel')).toBeVisible()
+  await expect(page.getByTestId('quickadd-item-1')).toContainText(QUICKADD_ENTRIES[0])
+  await expect(page.getByTestId('quickadd-registered-1')).toHaveText(
+    UI.trance.guardianRegistered,
+  )
+
+  // the pending, un-entered line joins the draft (review 8c): type it, stand
+  // up, kneel again — it is still in the entry field, and it will NOT be
+  // serialized on inscribe (only added entries become Answer.text lines)
+  await page.getByTestId('quickadd-entry').pressSequentially(PENDING_LINE)
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('trance-panel')).toBeHidden()
+  await page.keyboard.press('KeyE')
+  await expect(page.getByTestId('trance-panel')).toBeVisible()
+  await expect(page.getByTestId('quickadd-entry')).toHaveValue(PENDING_LINE)
+  await expect(page.getByTestId('quickadd-item-2')).toContainText(QUICKADD_ENTRIES[1])
+
   await inscribe(page, 'quickadd-entry')
   data = await readQuestData(page)
   expect(data?.answers['s1']?.['s1-fp']).toEqual({ text: QUICKADD_ENTRIES.join('\n') })
@@ -179,6 +214,8 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
 
   // the first guardian lights the Truth meter (null → 0%): Truth moved
   await expect(page.getByTestId('hud-truth-value')).toHaveText('0%')
+  // no evidence stands against it yet — nothing is banked (ruled fix 5)
+  await expect(page.getByTestId('hud-truth-banked')).toBeHidden()
 
   // ---- Registry panel: the guardian stands (derived tier 0, untested) ----
   await tabToChip(page, WORLD_COPY.registryName)
@@ -200,12 +237,38 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   await page.getByTestId('registry-evidence-add').press('Enter')
   await expect(row).toContainText('E2 Word') // derived tier from the linked coin
   await shot(page, 'registry')
-  // the add-button unmounted under focus, so Esc has no dialog target — close
-  // via the panel's Close button (focus + Enter, still keyboard-only)
-  await page.getByTestId('registry-close').press('Enter')
+  // Esc works IMMEDIATELY after 'Log as E2': the add button unmounted under
+  // focus, but Escape listens at document level now (ruled fix 2 — the old
+  // close-button workaround is gone)
+  await page.keyboard.press('Escape')
+  await expect(registry).toBeHidden()
+
+  // banked truth (ruled fix 5): E2 stands against an unresolved guardian —
+  // the meter shows it is waiting on the Mirror's verdict, not broken
+  const bankedLine = page.getByTestId('hud-truth-banked')
+  await expect(bankedLine).toBeVisible()
+  await expect(bankedLine).toHaveText(UI.hud.truthBanked)
+
+  // re-open the registry and create a guardian via the form; the create
+  // button disables itself once the statement clears — Esc must still work
+  // immediately after creation (ruled fix 2)
+  await tabToChip(page, WORLD_COPY.registryName)
+  await page.keyboard.press('KeyE')
+  await expect(registry).toBeVisible()
+  await page.getByTestId('registry-statement').pressSequentially(SECOND_GUARDIAN)
+  await page.getByTestId('registry-create').press('Enter')
+  await expect(page.getByTestId('registry-guardian')).toHaveCount(2)
+  await page.keyboard.press('Escape')
   await expect(registry).toBeHidden()
 
   data = await readQuestData(page)
+  expect(data?.assumptions).toHaveLength(2)
+  expect(data?.assumptions[1]).toMatchObject({
+    statement: SECOND_GUARDIAN,
+    originStageId: 's1',
+    importance: 'wobbles',
+    status: 'untested',
+  })
   expect(data?.evidence).toHaveLength(1)
   expect(data?.evidence[0]).toMatchObject({
     tier: 2,
@@ -278,6 +341,8 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   await expect(page.getByTestId('hud-truth-value')).toHaveText('0%')
   await expect(page.getByTestId('hud-action-value')).toHaveText('33%')
   await expect(page.getByTestId('hud-coin-e2-count')).toHaveText('×1')
+  // the banked state derives from the persisted record — it survives reload
+  await expect(page.getByTestId('hud-truth-banked')).toHaveText(UI.hud.truthBanked)
   await shot(page, 'reload-persist')
 
   // ---- frame rate: 3 s of roaming, then sample the dev FPS window ----
@@ -302,7 +367,10 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   expect(log.consoleErrors).toEqual([])
   expect(log.pageErrors).toEqual([])
   expect(log.anthropicRequests).toEqual([]) // the slice makes ZERO Anthropic calls
-  // the record never grew a foreign key: exact 02 top-level shape
+  // the record never grew a foreign key: the persisted top-level shape is
+  // EXACTLY the 02 keys, order-insensitive (review 8b — a real assertion)
   const finalRaw = await page.evaluate((key) => window.localStorage.getItem(key), STORAGE_KEY)
   expect(finalRaw).not.toBeNull()
+  const finalKeys = Object.keys(JSON.parse(finalRaw as string) as Record<string, unknown>)
+  expect([...finalKeys].sort()).toEqual(Object.keys(EMPTY_DATA).sort())
 })

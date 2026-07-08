@@ -9,7 +9,8 @@
 import { useStore } from 'zustand'
 import { useShallow } from 'zustand/react/shallow'
 import { createStore, type StoreApi } from 'zustand/vanilla'
-import { actionFraction, riskiest, trough, truth } from '../core/metrics'
+import { actionFraction, riskiest, tierOf, trough, truth } from '../core/metrics'
+import { migrateV2IfNeeded } from '../core/migration'
 import type {
   Answer,
   Assumption,
@@ -95,19 +96,26 @@ function assignAnswerField<K extends keyof Answer>(
 }
 
 /**
- * Build a quest store over the injected deps. Hydration = makeStore() + loadQuestData
- * at init; every action persists via saveQuestData in the same call.
+ * Build a quest store over the injected deps. Hydration = makeStore() +
+ * migrateV2IfNeeded (v2 reflections → v3 fieldNotes, read-only source, canon 02)
+ * + loadQuestData at init; every action persists via saveQuestData in the same call.
  */
 export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState> {
   const persistence = deps.store ?? makeStore()
   const now = deps.now ?? ((): string => new Date().toISOString())
   const makeId = deps.makeId ?? defaultMakeId
 
+  // v2 → v3 migration runs BEFORE the first load so a legacy record hydrates
+  // on the very first boot; no-op when v3 exists or no v2 record is readable.
+  migrateV2IfNeeded(persistence)
+
   return createStore<QuestState>()((set, get) => {
     /** Persist FIRST (founders-quest:v3 is the state of record), then mirror in memory. */
     const commit = (data: QuestData): void => {
       saveQuestData(persistence, data)
-      set({ data })
+      // a post-probe write failure flips the ladder's runtime degraded flag —
+      // surface it so the honest banner appears mid-session (review 8e)
+      set(persistence.degraded && !get().degraded ? { data, degraded: true } : { data })
     }
 
     return {
@@ -206,6 +214,22 @@ export function useAction(milestoneIds: readonly string[]): number {
 /** The crowned guardian: max weight × (4 − derived tier) among untested/testing. */
 export function useRiskiest(): Assumption | null {
   return useQuestStore((s) => riskiest(s.data))
+}
+
+/**
+ * Evidence banked: any UNRESOLVED guardian holds derived tier ≥ 2. The Truth
+ * meter cannot move yet (only resolution moves Truth, 02) — the HUD says so
+ * honestly instead of reading as broken (review 5). Pure derive, no mechanic.
+ */
+export function evidenceBanked(data: QuestData): boolean {
+  return data.assumptions.some(
+    (a) =>
+      (a.status === 'untested' || a.status === 'testing') && tierOf(a, data.evidence) >= 2,
+  )
+}
+
+export function useEvidenceBanked(): boolean {
+  return useQuestStore((s) => evidenceBanked(s.data))
 }
 
 export type TierCounts = Readonly<Record<EvidenceTier, number>>
