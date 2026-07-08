@@ -14,7 +14,8 @@ re-read it and this file before acting.
   Never store, log, or commit a player's key; it lives device-side under its own
   storage key, never serialized or exported. (Decision log, 2026-07-08.)
 - Scanning: osv-scanner and gitleaks. Never Trivy. No telemetry of any kind.
-- Consent before any journal text leaves the device. Function logs no bodies.
+- Consent before any journal text leaves the device. No server sits in the Council
+  path; nothing exists that could log a body or a key.
 - Stop for: canon/floor changes, Rule 9 actions, missing sources, D-scope items
   (D2, D5, Earned Hunch, i18n, Dinner UI, sync endpoint), three-strike blockers.
 - Verify claims against actual tool results before reporting. Mark UNTESTED plainly.

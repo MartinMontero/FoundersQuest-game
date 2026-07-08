@@ -31,7 +31,8 @@
 - **Consent (once, stored):** "Convening the Council sends your journal text to the model for this reading, using your own key — nothing else is sent, and the app keeps nothing beyond the readings you save. Your journal may contain names and quotes from real people; that is worth knowing before it travels."
 - **Commitment gate (one-way feedback, PIE):** before follow-ups unlock — "Before you answer the Council — name one thing you'll change because of this reading. Change first; rebuttal after."
 - **Standing caption:** "The Council reads your evidence. It cannot see your market."
-- **Error:** "The Council is not in session. Your journal is untouched; try again soon."
+- **Error (network/5xx):** "The Council is not in session. Your journal is untouched; try again soon."
+- **Key failure (401/credit):** "Anthropic didn't accept your key. Check it or add credit, then try again — you can remove or replace it here."
 - Readings persist with their journal snapshot (durable follow-up replay); export under `## Council Readings` with commitments and follow-ups. `max_tokens: 1000` — the one-page discipline is enforced twice, by spec and by budget.
 - **Routing:** artifact → direct API, `claude-sonnet-4-6` (runtime constraint). Production → direct `api.anthropic.com` from the browser with the player's own key (BYOK; CORS opt-in header), `claude-fable-5` pinned in client code. The key lives device-side under its own storage key — never inside the journal data, never serialized, never exported — with a visible remove control. No server sits in the path; nothing exists that could log a body or a key. Mode A (paste-ready companion prompt for direct Claude use) lives in the Council build doc.
 
