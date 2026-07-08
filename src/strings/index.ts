@@ -18,6 +18,22 @@ export {
   WEATHER_TROUGH_RULE,
   HINTS,
 } from './questions'
+export { WORLD_COPY } from './world'
+// ui.ts is DOM-UI chrome only (Phase 2): tier metal skin, canon vocabulary labels,
+// and authored panel/HUD copy — never question or Council text.
+export {
+  UI,
+  TIER_CODES,
+  TIER_METALS,
+  tierLabel,
+  IMPORTANCE_ORDER,
+  IMPORTANCE_LABELS,
+  STATUS_LABELS,
+  VAULT_SOLUTION_WORDS,
+  stageBanner,
+  formatPercent,
+  coinCount,
+} from './ui'
 export {
   COUNCIL_SYSTEM_PROMPT,
   KEY_COPY,

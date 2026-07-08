@@ -1,0 +1,57 @@
+/* src/index.css — Tailwind core + the injected QuestStyles layer (canon 02 stack).
+   No player-facing copy lives in CSS; ALL copy imports from src/strings. */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------- QuestStyles ---------------- */
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased;
+  }
+
+  /* Visible focus everywhere (game-design §3): a 2px high-contrast ring on every
+     focusable DOM control. Never remove an outline without a replacement. */
+  :focus-visible {
+    outline: 2px solid theme('colors.amber.400');
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* The sealed Vault (canon 01: "captured, visible, and sealed until Stage 3"):
+     captured text renders present-but-unreadable until vaultUnlocked. */
+  .quest-vault-blur {
+    filter: blur(6px);
+    user-select: none;
+    pointer-events: none;
+  }
+}
+
+@layer utilities {
+  /* Reduced-motion trance fallback (game-design §2 F2): the camera dolly is
+     replaced by a 150 ms crossfade — apply this to the fading surfaces. */
+  .quest-crossfade {
+    transition: opacity 150ms ease-in-out;
+  }
+}
+
+/* Reduced-motion helpers (game-design §3): decorative animation marked
+   .quest-anim stops entirely — no shake, static particles. Components use
+   Tailwind's built-in motion-safe:/motion-reduce: variants for everything else. */
+@media (prefers-reduced-motion: reduce) {
+  .quest-anim,
+  .quest-anim::before,
+  .quest-anim::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
