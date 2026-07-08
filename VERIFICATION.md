@@ -2,6 +2,24 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
+## Round 2 — Phase 2 grey-box Stage 1 slice (2026-07-08)
+
+**Tree:** `4542ccf`.
+
+| Check | Result | Evidence |
+|---|---|---|
+| `tsc` / eslint | PASS | zero errors |
+| `vitest run` | PASS | **273/273**, 11 files (+16 from review fixes) |
+| `vite build` | PASS | 3,170 kB / **1,074.5 kB gzip** (three.js dominates; chunk advisory noted — split consideration for Phase 6 perf pass) |
+| e2e (pre-baked chromium-1194) | PASS | **6/6**: boot+loading-triad · plateau rim (strafes the old gap's diagonal 5s, never falls) · reduced-motion camera-at-framing discriminator · normal-motion dolly contrast · storage-degraded honest banner · **stage-1 self-play 4.3 min keyboard-only** (8 shrines, all input types, quickadd→guardian, E2 link, banked-Truth state, flagpole Action-only, vault nudge+capture, reload persistence, exact 02 key-set assertion, zero console errors, zero Anthropic calls) |
+| FPS | recorded honestly | ~16 fps mean in HEADLESS CONTAINER on software GL — not player hardware; real-hardware number queued for the operator at Gate 2 |
+| gitleaks | PASS | no leaks (tree) |
+| Review chain | 1 BLOCKER + 7 MAJOR + 12 MINOR found by two adversarial reviews (canon-fidelity + live play-feel); all fixed and re-verified except items below |
+| Cloudflare preview deploy | **BLOCKED (operator)** | token lacks Pages:Edit at execution time (authorization error 10000 on /pages/projects, twice); container may hold the pre-update env value — retry next opportunity/container |
+
+**UNTESTED (plainly):** kill-plane respawn path (the fixed rim now prevents inducing a fall in e2e; code-reviewed only) · error-boundary UI (renders only on a real crash; no fault-injection hook was ruled) · live preview CSP (blocked on the deploy) · anything requiring a real key (Phase 4 queue). **Known accepted noise:** THREE.Clock deprecation warning (three 0.185 + fiber 8 line) — console *warning*, not error; revisit at Phase 6.
+**Deferred by rule:** law-3 answer-type hints ship with Phase 3's hint-string canon diff (explicitly surfaced at Gate 2, not drifted). Session-draft retention (F3) vs game-design §2.1 wording — needs a one-line ruling at Gate 2.
+
 ## Round 1 — Phase 1 core (2026-07-08)
 
 **Tree:** `7259211` on `claude/dev-environment-setup-tsp3tv`.
