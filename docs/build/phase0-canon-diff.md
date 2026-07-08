@@ -97,4 +97,7 @@ Exact diff and companion sentences per `docs/build/a101-field-mode-spec.md` §13
 ## Queued for the NEXT canon commit (not yet posted for approval)
 
 1. **i18n-queue coherence rider (05):** queue item 2's consequence line ("ends single-file `App.jsx`; artifact becomes en-only sandbox — requires explicit approval at Phase 0") is stale now that the 2026-07-08 parity-ending entry already did both; the rider re-words it to reference that entry.
-2. **Settings-storage wording (02):** one sentence naming the pattern — settings (audio, future toggles) persist under their own storage key via the `makeStore` ladder, following the BYOK key precedent (game-design OQ 6).
+2. **Settings-storage wording (02):** one sentence naming the pattern — settings (fallback acceptance, audio, future toggles) persist under their own storage key via the `makeStore` ladder, following the BYOK key precedent (game-design OQ 6; `founders-quest:settings` exists in code since Phase 1).
+3. **Trail override reason (02):** the trail model line gains `reason?` — 01 already requires override reasons "logged to the trail" and the code/serializer render them; 02's data-model line should name the field (Phase 1 review finding).
+4. **dinnerCard nullability (02):** `dinnerCard: { text, updatedAt } | null` — one-token amendment; null = no card yet (Phase 1 review finding).
+5. **Scanner-endpoint ratification (05, decision-log note):** osv-scanner's own endpoints (api.osv.dev in CI; storage.googleapis.com offline DB locally) recorded as covered by the standing "osv-scanner and gitleaks" scanning sanction (Phase 1 review, operator ratification item).
