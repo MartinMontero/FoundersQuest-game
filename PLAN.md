@@ -1,31 +1,31 @@
-# PLAN — Phase 1: Core (2026-07-08)
+# PLAN — Phase 2: Grey-box Stage 1 slice (2026-07-08)
 
-Canon commit `530cfb0` applied; all Phase 1 blockers cleared. No server components exist to build.
+Phase 1 core is green (VERIFICATION round 1; CI run 4). This phase builds the playable Swirling Nebula slice and ends at **Gate 2 — the operator's fun-check** (human touchpoint 2). The bar: the work feels heavier than a form, not lighter. Spec source: `docs/build/game-design.md` (§1 World 1, §2 trance + inputs, §3 controls/camera, §4 mechanic→write map).
 
 ## Ordered work
 
-1. **Scaffold** — package.json (Vite 5, React 18, TS strict — the ruled 02 stack, Phase-1 subset), vite/tsconfig/eslint/vitest configs, minimal boot shell, `public/_headers` (CSP verbatim from 02), `.gitignore` additions. ESLint carries the structural rules: core purity (`no-restricted-imports` in `src/core/**`), no `<form>` JSX anywhere.
-2. **src/core/schema.ts + store.ts + migration.ts** — `founders-quest:v3` types + `EMPTY_DATA` exactly per amended 02 (incl. `council[].model`, A-101 keys); `makeStore` ladder (localStorage probed → memory + degraded flag); v2 legacy read-only migration (reflections → fieldNotes; milestone checks never migrate; `{ ...EMPTY_DATA, ...loaded }` defaulting).
-3. **src/core/metrics.ts** — `tierOf`, Truth (3/2/1 weights, null when empty), XP (+15/+10/+5), riskiest (max weight × (4 − tier)), trough (last-≤3 mean ≤ 2), field-attempt tally (7-day trailing; Action formula untouched). Exact 02 formulas.
-4. **src/core/serializer.ts** — `buildJournalMd(data, mode)`: single serializer; compact = last 3 readings @ 600 chars; `## Field journal` section (compact = totals + momentum only); Dinner exclusion (all three keys absent from output; Brief-lead is a separate Phase 6 export); fence-neutralization for quoted text; readings carry their model label.
-5. **src/transport/council.ts** — THE one file: `https://api.anthropic.com/v1/messages`, `anthropic-dangerous-direct-browser-access: true`, `max_tokens: 1000`, timeout via AbortController, error classification into the three canonical classes + model-access detection, model logic (fable-5 pinned; offer → accepted fallback `claude-sonnet-4-6` persisted via injected setting store; result carries producing model).
-6. **src/key/keyManager.ts** — own storage key; consent-gated persist; session-only in-memory mode; remove/replace; no import path from serializer to key store.
-7. **src/strings/** — question bank verbatim from 03 (57 ids + tags + milestones + gates + loops + side quests + weather); 04 copy byte-for-byte (key, consent+cost, commitment, caption, error, key-failure, model-access offer, thin-ink); `COUNCIL_SYSTEM_PROMPT` byte-exact to 04's blockquote; never-translate constants. Hints: placeholder empty (authored Phase 3 per kickoff).
-8. **tests/** (vitest, node env) — metrics exactness incl. the 15/10 ratio; serializer modes/exclusions/fence/truncation; migration; key manager (consent order, session-only, remove); transport (classification table, pin, offer trigger, fallback persistence, labeling, header/endpoint/max_tokens); string parity byte-match vs docs/canon (03 questions, 04 copy, system prompt); key-scan proof (`sk-ant-` planted → absent from every serializer output); repo-guards (no `functions/`, `api.anthropic.com` in exactly one module).
-9. **e2e/ scaffold** — Playwright config pinned `@playwright/test@1.56.x` (pre-baked chromium-1194), stub-fixtures module for both models + three error classes, boot smoke spec. Full game flows land Phase 2+.
-10. **CI** — `.github/workflows/ci.yml`: npm ci · eslint · tsc · vitest · build · osv-scanner (online, CI network) · gitleaks (fetch-depth 0) · e2e job (R-D). Never Trivy; no telemetry.
-11. **VERIFICATION.md** — first round with real command outputs; fix loop until green.
+1. **Deps (deps-review at report):** three + @react-three/fiber@^8 (React-18 line) + drei@^9 + @react-three/rapier@^1 + zustand + tailwindcss@3.4 (+postcss, autoprefixer) + lucide-react. Lockfile rescanned (osv offline local, online CI).
+2. **State binding (`src/state/`):** zustand wrapping `loadQuestData`/`saveQuestData` — actions are thin writers over core; `founders-quest:v3` stays the ONLY state of record (no parallel state; every action round-trips through core save).
+3. **World (`src/game/`):** canvas + Swirling Nebula grey-box terrain, third-person keyboard controller (WASD/arrows + E, no mouse required), camera rig, interactable system (ground-ring on walk-up AND on Tab focus — a11y parity), `prefers-reduced-motion` variants (crossfade not dolly, no shake, static particles).
+4. **HUD (`src/ui/`):** Truth leads / Action follows, tier coin tallies, stage banner — reads metrics only.
+5. **Shrine trance:** world freeze → camera push-in → focused writing panel (canon copy from `src/strings`; Enter=newline, Ctrl+Enter=inscribe, Esc=stand up draft-kept; no `<form>`). Target all 8 Stage-1 shrines; **floor: ≥3 incl. `s1-l2` (fivewhys ×5 chained to visible root) and `s1-fp` (quickadd + inline "This only works if ___" → guardian)**. Every answer writes exact `answers['s1'][qid]` fields per 02; milestones flagpoles for Stage 1's three (Action only).
+6. **Vault:** sealed monument, visible count; solution-language nudge (03's trigger words), two-tap capture, zero justification (law 10) — answer saves unchanged regardless.
+7. **Registry in-world:** guardian figures scaled by importance weight, tinted by derived tier, riskiest highlighted (metrics.riskiest); panel: create (incl. via s1-fp inline), link evidence, view; resolve lands Phase 3 (funerals are Phase 3).
+8. **Stubbed Shadow:** derived divergence check with R-F tunable constants (`SHADOW_DIVERGENCE_PP = 40`, `SHADOW_MIN_ASSUMPTIONS = 3`, never in trough — constants file, no canon numbers); quotes only the founder's own local text; pairs exactly one low-friction action; dismissable; zero network (guard-tested already).
+9. **e2e self-play (`e2e/stage1.spec.ts`):** full slice keyboard-only — boot → onboard → walk to shrine → answer story/names/fivewhys/number/list/falsify → s1-fp quickadd→guardian appears in registry → vault nudge + capture → flagpole raise → HUD moves (Action yes, Truth only via linked E2+) → reload persistence. Screenshots at each beat. Reduced-motion spec. Storage-degraded banner spec.
+10. **Preview pipeline (Option B, ruled):** once — `npx wrangler pages project create founders-quest-game --production-branch=main`; then build + `npx wrangler pages deploy dist --branch=claude/dev-environment-setup-tsp3tv`; `curl -I` the preview → CSP + security headers verified live (06 §5). Post the URL.
+11. **VERIFICATION round 2** + Gate 2 report (screenshots, preview URL, Operator Verification Queue, deps table). **STOP for the fun-check verdict; while awaiting: framework-free core work only.**
 
 ## Acceptance criteria
 
-- `npm ci && npm run build` green; `tsc --noEmit` zero errors; eslint zero errors; `vitest run` all green locally.
-- Parity fixtures byte-match in-repo canon (03/04) — any drift fails the suite.
-- Key-scan proof green: planted `sk-ant-` key present in key store → absent from `buildJournalMd` both modes and all outputs.
-- Transport unit-proves: exactly one endpoint constant; three error classes classified; fallback only on model-access; acceptance persists; every result labeled with its model.
-- osv-scanner (offline flags locally) + gitleaks clean on the tree.
-- CI workflow pushed; first GitHub Actions run checked via MCP and reported honestly (green or diagnosed).
-- Deps-review table in the phase report.
+- All e2e specs green locally AND in CI (stubs only; zero Anthropic calls in the slice).
+- Every inscribed answer asserted to land in exact 02 keys; toggling milestones moves Action never Truth (already unit-locked; now asserted end-to-end).
+- Keyboard-only full slice; visible focus everywhere; reduced-motion honored.
+- Grey-box frame rate measured and recorded honestly with hardware context (headless container ≠ player hardware; noted as such).
+- Preview URL live; CSP `connect-src 'self' https://api.anthropic.com` verified on the deployed response headers.
+- Zero console errors in any e2e run; async triad (loading/error/empty) on every async surface in scope (storage probe, deploy-time asset load).
+- gitleaks + osv clean (per osv-scanner.toml documented ignores).
 
-## Non-goals (Phase 1)
+## Non-goals (Phase 2)
 
-No 3D/R3F, no Tailwind, no shrine inputs, no Council UI, no PWA/service worker, no QR vendoring, no assets, no game e2e flows — Phases 2–6 own those. No canon edits (queue holds two riders for the next canon commit). Transport is unit/stub-tested only; no real key exists anywhere (QA boundary).
+Stages 2–8, gates, loops, side quests, weather totem, funerals (Phase 3) · Council temple/UI (Phase 4; transport stays unit-tested only) · Field Mode, PWA, QR (Phase 5) · exports UI, audio, onboarding polish (Phase 6) · non-grey-box assets (allowed: Kenney prototype textures if trivially embeddable; nothing on the critical path).
