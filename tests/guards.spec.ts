@@ -32,7 +32,10 @@ describe('repo guards (canon 02 / CLAUDE.md)', () => {
     const offenders = walk(SRC).filter((f) => {
       if (f === TRANSPORT_FILE) return false
       const text = readFileSync(f, 'utf8')
-      return /\bfetch\s*\(/.test(text) || /XMLHttpRequest|WebSocket|sendBeacon/.test(text)
+      return (
+        /\bfetch\s*\(/.test(text) ||
+        /XMLHttpRequest|WebSocket|sendBeacon|EventSource|WebTransport/.test(text)
+      )
     })
     expect(offenders).toEqual([])
   })
@@ -53,10 +56,18 @@ describe('repo guards (canon 02 / CLAUDE.md)', () => {
     expect(serializer).not.toMatch(/from\s+['"].*keyManager/)
   })
 
-  it('no eval / Function constructor / dangerouslySetInnerHTML in src', () => {
+  it('no eval / Function constructor / dangerouslySetInnerHTML / innerHTML= / dynamic non-literal import in src', () => {
     const offenders = walk(SRC).filter((f) => {
       const text = readFileSync(f, 'utf8')
-      return /\beval\s*\(/.test(text) || /new Function\s*\(/.test(text) || /dangerouslySetInnerHTML/.test(text)
+      return (
+        /\beval\s*\(/.test(text) ||
+        /new Function\s*\(/.test(text) ||
+        /dangerouslySetInnerHTML/.test(text) ||
+        /\.innerHTML\s*=/.test(text) ||
+        // dynamic import of a NON-literal — a literal-path import('...') for
+        // code-splitting stays allowed
+        /import\s*\(\s*[^'"`\s)]/.test(text)
+      )
     })
     expect(offenders).toEqual([])
   })

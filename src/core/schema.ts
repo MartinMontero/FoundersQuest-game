@@ -43,7 +43,8 @@ export interface EvidenceEntry {
   linkedAssumptionIds: string[]
   stageId: string
   date: string
-  origin?: 'field' | 'import'
+  // NO origin field — canon 02's evidence shape has none; import provenance is
+  // DERIVED from fieldJournal.imports[].evidenceIds, never stored (A-101 §1).
 }
 
 export interface TrailEntry {
@@ -252,7 +253,26 @@ export const EMPTY_DATA: QuestData = {
   fieldDay: { current: null, log: [] },
 }
 
-/** New keys default in via { ...EMPTY_DATA, ...loaded } (02) — A-101 keys the same way. */
+/**
+ * New keys default in from EMPTY_DATA (02) — A-101 keys the same way.
+ * Whitelist-copy: only keys of EMPTY_DATA are carried over (like migration.ts),
+ * so foreign keys injected into founders-quest:v3 can never round-trip.
+ */
 export function withDefaults(loaded: Partial<QuestData> | null | undefined): QuestData {
-  return { ...EMPTY_DATA, ...(loaded ?? {}) }
+  const source = loaded ?? {}
+  const out: QuestData = { ...EMPTY_DATA }
+  for (const key of Object.keys(EMPTY_DATA) as (keyof QuestData)[]) {
+    copyKey(out, source, key)
+  }
+  return out
+}
+
+/** Key-generic copy so the whitelist loop stays fully typed — no casts. */
+function copyKey<K extends keyof QuestData>(
+  out: QuestData,
+  source: Partial<QuestData>,
+  key: K,
+): void {
+  const value = source[key]
+  if (value !== undefined) out[key] = value
 }
