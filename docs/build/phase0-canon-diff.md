@@ -91,3 +91,10 @@ Exact diff and companion sentences per `docs/build/a101-field-mode-spec.md` §13
 ---
 
 *Approval of this document authorizes one canon commit applying items 1–8 verbatim, with this file updated in the same commit to mark them APPLIED.*
+
+---
+
+## Queued for the NEXT canon commit (not yet posted for approval)
+
+1. **i18n-queue coherence rider (05):** queue item 2's consequence line ("ends single-file `App.jsx`; artifact becomes en-only sandbox — requires explicit approval at Phase 0") is stale now that the 2026-07-08 parity-ending entry already did both; the rider re-words it to reference that entry.
+2. **Settings-storage wording (02):** one sentence naming the pattern — settings (audio, future toggles) persist under their own storage key via the `makeStore` ladder, following the BYOK key precedent (game-design OQ 6).

@@ -263,7 +263,7 @@ Three transports, one pipeline, one rule-set. Direction of the QR beam: **phone 
 ### QR beam flow
 
 - **Phone:** Field journal → "Beam home" → selects every terminal record not yet marked `beamedAt` (founder can widen to all; re-beaming is safe per rule 4). Envelope → JSON → base64url → chunks. Frame text: `FQB1:<beamId>:<part>:<of>:<chunk>`, chunk ≤ ~1 KB. Phone cycles frames automatically, looping.
-- **Desktop:** import panel → webcam via the native **`BarcodeDetector`** API (Chromium). Shows collected `k/n`, assembles, decodes, then enters the pipeline at rule 1. Browsers without `BarcodeDetector` fall back to file or paste — the beam is a convenience, not the only road.
+- **Desktop:** import panel → webcam via the native **`BarcodeDetector`** API where available (Chromium), else the **vendored MIT decoder** (§14.1 ruling, R-H modified). Shows collected `k/n`, assembles, decodes, then enters the pipeline at rule 1. File and paste remain the universal path — the beam is a convenience, not the only road.
 - **After desktop confirms**, the founder taps "beamed" on the phone, setting `beamedAt` — bookkeeping only, with no correctness weight.
 - **File:** phone exports `field-beam-<date>.json` (a plain browser download; the founder moves it however they like — the file contains their quotes, and the app says so before export). Desktop: file picker → same pipeline. **Fragment:** copy JSON on the phone → paste into the desktop import box → same pipeline.
 
@@ -364,10 +364,10 @@ Companion edits landing in the same approval (sentences, not diffed here because
 
 ---
 
-## 14 · OPEN QUESTIONS (embedded rulings requested at Phase 0)
+## 14 · OPEN QUESTIONS — labeled §14.1–§14.5; rulings recorded 2026-07-08
 
-1. **QR encoding vs "zero other runtime deps."** Scanning uses the native `BarcodeDetector` (no dep), but *generating* QR frames on the phone requires either a vendored single-file MIT encoder committed to the repo or a new runtime dependency — both collide with 02's "zero other runtime deps." Ruling needed: vendor, add dep, or ship file/paste-only first and beam later.
-2. **Attempts in the Action formula.** This spec rules that hollow/filled attempts render as a tally beside the Action bar and never enter the milestone-fraction formula (§3, A2). If the operator instead wants attempts *inside* the Action percentage, that changes a computed metric in 02 and needs its own decision-log entry.
-3. **Tunable defaults, sign-off as a batch:** hollow aging 14 days; warm-intro reminder 7 days; unresolved-attempt nudge 3 days; 2 open slots per new profile; momentum cap 7 / one grace day / −1 per day; Field Day goal suggestion 5; import caps 256 KB file / 64 KB QR; QR chunk ~1 KB.
-4. **Service-worker build tooling:** hand-rolled `sw.js` is specified to keep runtime deps at zero; if the operator prefers `vite-plugin-pwa` (devDependency only), say so — it touches the build, not the bundle.
-5. **Momentum display chrome:** numeric value + held state is specified; any mythic naming for momentum bands is content-canon work (03) and is deliberately not invented here.
+- **§14.1 — QR encoding vs the ruled stack.** *(Was: vendor an encoder, add a dep, or ship file/paste-only.)* **RULED (R-H, modified):** vendor a single-file MIT QR *encoder*, AND vendor a small MIT *decoder* as scan fallback — `BarcodeDetector` is Chromium-only; file-import remains the universal path. Both vendored libraries appear in the deps-review table with name/version/license.
+- **§14.2 — Attempts in the Action formula.** **RULED (R-I, accepted):** hollow/filled attempts render as a tally beside the Action bar; the milestone-fraction Action formula is unchanged (now also a canon sentence in 02's computed metrics, applied 2026-07-08).
+- **§14.3 — Tunable defaults, as a batch:** hollow aging 14 days; warm-intro reminder 7 days; unresolved-attempt nudge 3 days; 2 open slots per new profile; momentum cap 7 / one grace day / −1 per day; Field Day goal suggestion 5; import caps 256 KB file / 64 KB QR; QR chunk ~1 KB. **RULED (R-G, accepted):** these land as code tunable constants only — no numbers enter canon.
+- **§14.4 — Service-worker tooling.** **RULED (R-J, accepted):** hand-rolled `sw.js`; no plugin.
+- **§14.5 — Momentum display chrome.** OPEN — mythic naming for momentum bands is content-canon work (03), deliberately not invented here; lands with Phase 3's hint-string canon diff if at all.

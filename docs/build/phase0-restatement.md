@@ -188,9 +188,9 @@ Touching any of these mid-build is a stop-and-ask, per CLAUDE.md.
 
 ## 7 · OPEN QUESTIONS (this document's own; game-design.md's six remain open in parallel)
 
-1. **Playwright in CI.** The brief's every-push CI list is lint · typecheck · vitest · build · osv-scanner · gitleaks — it omits the e2e suite that §4 depends on. Proposal: add an e2e job (Chromium, stubs only) on every push. Needs an operator yes/no (cost: minutes per push).
-2. **DoD verbatim source.** The kickoff prompt's Definition of Done text is not in this repo; §5 is restated from the Phase 0 brief plus canon (02 contract, 06 smoke, CLAUDE.md rules). Operator confirms at canon-diff review that §5 matches the kickoff's wording — if it diverges, the kickoff wins.
+1. **Playwright in CI.** **RULED (R-D, 2026-07-08): yes** — an e2e job (Chromium, stubs only) runs on every push alongside the brief's six steps.
+2. **DoD verbatim source.** Not disputed at canon-diff review (2026-07-08); §5 stands. If any future divergence from the kickoff's wording surfaces, the kickoff wins.
 3. **A-101 not in repo — CLOSED.** A-101 landed in the same batch (`docs/build/a101-field-mode-spec.md`); the Field rows in §4 now point at A-101 §12's tests. The QR row runs phone displays → desktop webcam scans; the OPERATOR-ONLY item is the real webcam scan on physical hardware.
-4. **TypeScript beyond the core.** The brief rules TS for src/core ("framework-free TS data core"); canon 02's stack section (pre-game port) says JSX and is already flagged for amendment by game-design. Proposal: TS throughout (`.tsx` in src/game and src/ui) under one strict tsconfig. Needs a nod in the same canon-diff that amends 02's stack section.
+4. **TypeScript beyond the core.** **RULED (via canon item 7b, applied `530cfb0`):** TypeScript strict throughout; 02's amended Stack section carries it.
 
 Dependencies (not new questions, tracked elsewhere): the fallback offer string, 05 decision entry, `council[].model` field, and third-error-class routing in 02 all ride the Phase 0 canon diff — §1 and §4 reference them but nothing here can byte-match those strings until the diff is approved.

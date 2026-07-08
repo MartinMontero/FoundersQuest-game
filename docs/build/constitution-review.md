@@ -30,8 +30,8 @@
 
 ## Standing notes
 
-- **Byte-match dependencies.** The string byte-match checks above (rows 7, 8, 12, 14, 18) run against 03/04/01, which are in-repo canon — those checks are writable now. Only the id-constant checks (`milestones` ids, `sideQuests` ids, exact `stageId` values) wait on the v3 artifact source — a missing-source stop item already flagged as game-design OPEN QUESTION 4 — or an operator ruling that this build defines the ids.
-- **Row 6 cannot be wired** until the Shadow divergence threshold is ruled (game-design OPEN QUESTION 1). The suppression and local-only safeguards can be built and tested independently of the spawn number.
+- **Byte-match dependencies.** The string byte-match checks above (rows 7, 8, 12, 14, 18) run against 03/04/01, which are in-repo canon — those checks are writable now. Id constants: **RULED (R-K, 2026-07-08)** — this build defines them; cross-checked against `founders-quest-v3.jsx` when the operator's upload lands in `docs/reference/`.
+- **Row 6 spawn condition: RULED (R-F, 2026-07-08)** — starting values Action − Truth ≥ 40pp with ≥3 registered assumptions, never in the trough; code tunable constants only, no numbers in canon; revisited after Gate 2. The suppression and local-only safeguards test independently of the numbers.
 - **Canon-copies rule applies to this table.** Any build change that alters a safeguard here updates this file in the same commit.
 
 ## OPEN QUESTIONS embedded above
