@@ -1,5 +1,5 @@
 # 03 · Content Canon — Question Bank v3
-*The product's content, verbatim. Edits to any question happen here and in code in the same change. Format: `id [answer-type] text` — hints omitted for budget; hints live in code and follow law 3.*
+*The product's content, verbatim. Edits to any question happen here and in code in the same change. Format: `id [answer-type] text` — hints omitted for budget; hints live in code and follow law 3. No answer-type tag = plain prose input.*
 
 ## Stage 1 · The Problem — *The Call to Adventure* · Swirling Nebula
 Rule: the Vault is active — solution words (app, platform, feature, AI, build, tool, SaaS…) trigger a gentle nudge → capture to Vault, return to the problem.

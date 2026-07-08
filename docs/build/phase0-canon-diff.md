@@ -1,6 +1,6 @@
-# Phase 0 canon diff — POSTED FOR APPROVAL, NOT APPLIED
+# Phase 0 canon diff — APPLIED (operator approval, 2026-07-08)
 
-*No file under `docs/canon/` changes until the operator replies "approve." This document is the exact proposed text. Items 1–6 are the kickoff-specified diff; items 7–8 were surfaced by the Phase 0 review and ride the same approval. Each shows current text → proposed text.*
+*Approved verbatim: items 1–8 plus the R-C clarifying line (snapshot = the compact journal as sent, in 02's Council mechanics). Applied in the same commit that marks this doc APPLIED. The i18n-queue coherence rider was NOT applied — queued for the next canon commit per the operator's approve-the-posted-text rule. Original proposed text below, preserved as the approval record.*
 
 ---
 
