@@ -1,0 +1,7 @@
+.dev.vars
+node_modules/
+dist/
+.wrangler/
+.claude/settings.local.json
+test-results/
+playwright-report/

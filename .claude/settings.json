@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Read", "Edit", "Write",
+      "Bash(npm *)", "Bash(npx *)", "Bash(node *)",
+      "Bash(git status)", "Bash(git diff *)", "Bash(git log *)",
+      "Bash(git add *)", "Bash(git commit *)", "Bash(git push)",
+      "Bash(git push origin *)", "Bash(git checkout *)", "Bash(git branch *)",
+      "Bash(gh *)",
+      "Bash(osv-scanner *)", "Bash(gitleaks *)",
+      "Bash(mkdir *)", "Bash(cp *)", "Bash(mv *)",
+      "Bash(rm -rf node_modules)", "Bash(rm -rf dist)", "Bash(rm -rf .wrangler)",
+      "Bash(curl http://localhost*)", "Bash(curl -s http://localhost*)"
+    ],
+    "ask": [
+      "Bash(rm *)",
+      "Bash(curl *)", "Bash(wget *)",
+      "Bash(git rebase *)", "Bash(git reset *)"
+    ],
+    "deny": [
+      "Read(./.dev.vars)", "Read(.dev.vars)", "Read(./.env)", "Read(./.env.*)",
+      "Bash(git push --force*)", "Bash(git push -f*)",
+      "Bash(git filter-branch *)", "Bash(git branch -D *)",
+      "Bash(rm -rf /*)", "Bash(rm -rf ~*)",
+      "Bash(trivy *)", "Bash(npx trivy*)",
+      "Bash(sudo *)", "Bash(ssh *)"
+    ],
+    "defaultMode": "default"
+  }
+}
