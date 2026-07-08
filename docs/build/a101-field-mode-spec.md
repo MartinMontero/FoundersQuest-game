@@ -325,6 +325,7 @@ The 04 consent copy already covers what travels ("Your journal may contain names
 8. Legendary pays once: the funeral path yields exactly the registry's +15 and no other XP delta.
 9. Fence-neutralization: an imported quote containing ``` sequences cannot alter journal structure in either serializer mode.
 10. Beam terminality: a built payload contains only terminal records — resolved attempts, hollow/filled slots, their evidence, Field Day closure records — and no `beamedAt` or other local-only field; a record differing from its local copy only in `beamedAt` imports as a skip, not a conflict.
+11. **Derived-provenance invariant (F-103, operator-injected 2026-07-08):** no evidence entry can be created by ANY import path — QR, file, or paste — without a corresponding `fieldJournal.imports` registration carrying that entry's id in `evidenceIds`. The import pipeline writes the evidence entries and their import record in one atomic operation (no code path writes one without the other). The test drives all three transports, including adversarial/partial payloads and mid-import rejections, and asserts: every evidence id not present before the import appears in some `imports[].evidenceIds` afterwards, and the ledger badge derivation resolves each as imported. Silent badge loss is the F-103 threat — mechanically impossible, not policy.
 
 ---
 

@@ -87,7 +87,7 @@ Never Trivy. No telemetry of any kind — no coverage uploaders, no third-party 
 
 | name | version | license | steward |
 |---|---|---|---|
-| *(example)* react | 18.x | MIT | Meta (OSS library — permitted: the exclusion covers services and models, not licenses; judged on MIT) |
+| *(example)* react | 18.x | MIT | React Foundation (Linux Foundation, since Feb 2026 — operator correction; judged on MIT) |
 | *(example)* @react-three/fiber | 8.x | MIT | Poimandres |
 
 Rules: every runtime and build dependency appears; licenses must be AGPL-3.0-compatible (MIT/BSD/Apache-2.0/ISC pass; anything proprietary, SSPL, or non-commercial fails); **no Meta/OpenAI/xAI services or models** anywhere in the chain — dependencies, CI actions, or asset pipelines. Sanctioned services only: Anthropic API, Cloudflare Pages, GitHub(+Actions).
