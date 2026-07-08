@@ -27,12 +27,13 @@
 
 ## Mechanics
 - **Input:** live record via `buildJournalMd(data,'compact')` (single serializer; last 3 prior readings, truncated) or a pasted journal (mentor use case). Thin-ink guard: <3 answers and empty ledger → "The Council needs more ink. Answer the Stage 1 threshold, at least."
-- **Consent (once, stored):** "Convening the Council sends your journal text to the model for this reading — nothing else is sent, and the app keeps nothing beyond the readings you save. Your journal may contain names and quotes from real people; that is worth knowing before it travels."
+- **Key (BYOK, once, removable):** "The Council speaks through your own Anthropic key. It stays on this device, is sent only to Anthropic, and you can remove it here anytime."
+- **Consent (once, stored):** "Convening the Council sends your journal text to the model for this reading, using your own key — nothing else is sent, and the app keeps nothing beyond the readings you save. Your journal may contain names and quotes from real people; that is worth knowing before it travels."
 - **Commitment gate (one-way feedback, PIE):** before follow-ups unlock — "Before you answer the Council — name one thing you'll change because of this reading. Change first; rebuttal after."
 - **Standing caption:** "The Council reads your evidence. It cannot see your market."
 - **Error:** "The Council is not in session. Your journal is untouched; try again soon."
 - Readings persist with their journal snapshot (durable follow-up replay); export under `## Council Readings` with commitments and follow-ups. `max_tokens: 1000` — the one-page discipline is enforced twice, by spec and by budget.
-- **Routing:** artifact → direct API, `claude-sonnet-4-6` (runtime constraint). Production → `/api/council`, key server-side, `claude-fable-5` enforced by the Function, zero body logging. Mode A (paste-ready companion prompt for direct Claude use) lives in the Council build doc.
+- **Routing:** artifact → direct API, `claude-sonnet-4-6` (runtime constraint). Production → direct `api.anthropic.com` from the browser with the player's own key (BYOK; CORS opt-in header), `claude-fable-5` pinned in client code. The key lives device-side under its own storage key — never inside the journal data, never serialized, never exported — with a visible remove control. No server sits in the path; nothing exists that could log a body or a key. Mode A (paste-ready companion prompt for direct Claude use) lives in the Council build doc.
 
 ## Queued addenda (do not apply until their task ships)
 **Earned Hunch** (with `cc-prompt-earned-hunch.md`): appends the provenance-reading block (Earned hunches = compressed pattern recognition awaiting a test — Simon; wicked-domain illusion-of-validity flag; calibration-record weighting) and **replaces** "An argument built on hunches is a hunch with better posture." with "An argument built on ungraded or borrowed hunches is a hunch with better posture; an earned hunch is a hypothesis wearing work clothes — send it to the test bench first."

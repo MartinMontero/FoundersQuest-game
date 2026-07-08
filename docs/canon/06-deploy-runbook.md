@@ -1,29 +1,24 @@
 # Founder's Quest — Cloudflare Deployment Runbook
 
-Twenty minutes end to end. Exact steps, commands, and the gotchas that cost time or money.
+Fifteen minutes end to end. Exact steps, commands, and the gotchas that cost time or money.
+
+**Why there is no secret step:** the game is BYOK (decision log, 2026-07-08). Every player brings their own Anthropic API key, entered in-app, stored on their device, sent only browser→`api.anthropic.com`. No server-side key exists — owner, dev, or prod — so production is a pure static site: no Pages Function, no secret binding, no WAF rule guarding a shared wallet.
 
 ## 0 · Prereqs (2 min)
 
-Node 20+ (22 preferred), git, a Cloudflare account, this repo. One fix first:
+Node 20+ (22 preferred), git, a Cloudflare account, this repo. No `.dev.vars`, no secrets: there is nothing server-side to configure.
 
-```bash
-echo ".dev.vars" >> .gitignore
-```
-
-`.dev.vars` holds your API key locally; it must never reach git.
-
-## 1 · Verify locally before anything touches the cloud (5 min)
+## 1 · Verify locally before anything touches the cloud (4 min)
 
 ```bash
 npm install
 npm run build                      # must end: ✓ built
-echo 'ANTHROPIC_API_KEY=sk-ant-your-key' > .dev.vars
-npx wrangler pages dev dist        # serves the built app + /api/council locally
+npm run preview                    # serves the built app locally
 ```
 
-Open the printed localhost URL. Test: answer a question → refresh (persists via localStorage) → convene the Council (a real reading = the function works). For UI-only iteration, plain `npm run dev` is faster — the Council shows "not in session," which the app handles gracefully.
+Open the printed localhost URL and play as player zero: answer a question → refresh (persists via localStorage) → enter **your own** Anthropic key in-app, exactly as any player would → convene the Council (a real reading = the BYOK path works). Your key goes in the UI, never in a file — and BYOK means the Council works identically in plain `npm run dev`, so day-to-day dev needs no special setup.
 
-Nuance: `wrangler pages dev dist` serves the **built** output — rebuild to see changes. Day-to-day dev stays on `npm run dev`.
+Nuance: `npm run preview` serves the **built** output — rebuild to see changes. Day-to-day dev stays on `npm run dev`.
 
 ## 2 · Push to GitHub (2 min)
 
@@ -33,7 +28,7 @@ git remote add origin git@github.com:YOUR-ORG/founders-quest.git
 git push -u origin main
 ```
 
-Pages git integration supports GitHub and GitLab only. No git host? See the direct-upload alternative in §9.
+Pages git integration supports GitHub and GitLab only. No git host? See the direct-upload alternative in §6.
 
 ## 3 · Create the Pages project (3 min)
 
@@ -47,29 +42,9 @@ Build settings:
 
 Add one build environment variable before saving: `NODE_VERSION` = `22` (Pages' default Node can lag; pin it).
 
-Save → first deploy runs. `functions/` is auto-detected: `functions/api/council.js` becomes `POST /api/council` on the same origin. Nothing else to configure.
+Save → first deploy runs. Pure static — there is no `functions/` directory and nothing else to configure.
 
-## 4 · Set the secret (1 min)
-
-Project → **Settings → Variables and Secrets**:
-- `ANTHROPIC_API_KEY` → type **Secret** → environment **Production only**
-- `COUNCIL_MODEL` → optional plain variable; the function defaults to `claude-fable-5`
-
-Money nuance: scoping the key to Production means preview deployments can't spend it. Want the Council on previews? Use a second key with a low spend limit, scoped to Preview.
-
-Redeploy once after adding the secret (Deployments → Retry latest) — secrets bind at deploy time.
-
-## 5 · Verify the function on the live URL (1 min)
-
-```bash
-curl -s https://YOUR-PROJECT.pages.dev/api/council \
-  -H 'content-type: application/json' \
-  -d '{"system":"You are a test. Reply with one word.","messages":[{"role":"user","content":"Say ok."}]}'
-```
-
-Expect `{"text":"..."}`. `{"error":"council-unconfigured"}` = secret not bound — redeploy. `502` = key wrong or out of credit.
-
-## 6 · Custom domain (2 min)
+## 4 · Custom domain (2 min)
 
 Project → **Custom domains → Set up a domain** → enter it.
 - DNS already on Cloudflare: records created automatically, live in ~1 min.
@@ -77,29 +52,21 @@ Project → **Custom domains → Set up a domain** → enter it.
 
 Apex domains work (Cloudflare flattens the CNAME). The `*.pages.dev` URL stays live alongside the custom domain — harmless, but know it exists.
 
-## 7 · Rate-limit the Council before the URL is public (2 min)
-
-Zone (your domain) → **Security → WAF → Rate limiting rules → Create**:
-- If: URI Path equals `/api/council`
-- Rate: 10 requests / 10 minutes per IP → Block for 10 minutes
-
-The free plan includes exactly one rate-limiting rule — this is what it's for. Every Council call bills your Anthropic key (~a journal in, ~1k tokens out); this rule caps the blast radius of a scripted abuser.
-
-## 8 · Smoke test on the real domain (2 min)
+## 5 · Smoke test on the real domain (2 min)
 
 1. Answer a Stage 1 question → reload → it persists.
-2. Convene the Council → reading returns → a follow-up works.
+2. Enter a key → convene the Council → reading returns → a follow-up works → remove the key via its visible control.
 3. Export the Brief → plain browser download, no interstitial.
-4. `curl -I https://yourdomain.tld` → confirm `X-Frame-Options: DENY` and friends (`public/_headers` is live).
+4. `curl -I https://yourdomain.tld` → confirm `X-Frame-Options: DENY` and friends (`public/_headers` is live), and that the CSP `connect-src` allows exactly `'self'` and `https://api.anthropic.com` — nothing else.
 
-## 9 · Operating it
+## 6 · Operating it
 
-- **Deploys:** every push to `main` → production; every other branch/PR → automatic preview URL.
+- **Deploys:** every push to `main` → production; every other branch/PR → automatic preview URL. Previews work fully — BYOK means there is no production-scoped secret for previews to miss.
 - **Rollback:** Deployments → any prior build → Rollback. Instant, no rebuild.
-- **Logs:** `npx wrangler pages deployment tail --project-name YOUR-PROJECT` — invocations and errors only; the function logs no journal content by design. Keep it that way.
-- **Costs:** static hosting free and unmetered; Functions free to 100k requests/day; the only real bill is Anthropic, per reading.
-- **No-git alternative:** `npm run build && npx wrangler pages deploy dist --project-name founders-quest` — direct upload; `functions/` is picked up from the working directory. (`npx wrangler login` first.)
+- **Logs:** there is no server component in the Council path, so there is nothing that *could* log a journal or a key. Keep it that way.
+- **Costs:** static hosting free and unmetered. Council calls bill each player's own Anthropic key — your bill is zero, and a scripted abuser can spend nobody's money but their own.
+- **No-git alternative:** `npm run build && npx wrangler pages deploy dist --project-name founders-quest` — direct upload of the static output. (`npx wrangler login` first.)
 
-## 10 · The 30-day exit plan (already true — written down on purpose)
+## 7 · The 30-day exit plan (already true — written down on purpose)
 
-`dist/` is pure static, deployable to any host in minutes. `functions/api/council.js` is a plain fetch handler, portable to self-hosted `workerd`, Deno, or a $5 VPS in under an hour; only the env-var name travels. Founder data never touches the host at all. The plank can snap; the bridge survives.
+`dist/` is pure static, deployable to any host in minutes — there is no function to port, no env var to carry, nothing server-side at all. Founder data and player keys never touch the host. The plank can snap; the bridge survives.

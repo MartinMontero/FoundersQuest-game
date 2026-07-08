@@ -7,7 +7,7 @@
 | Role | English-only dev sandbox | The product, on Cloudflare Pages + custom domain |
 | Source | `founders-quest-v3.jsx` (single file) | Repo: `src/App.jsx` (byte-identical to the artifact **until the i18n fork**, which ends single-file parity) |
 | Storage | `window.storage` | `localStorage` (probed in try/catch) → in-memory fallback + honest banner |
-| Council | Direct `api.anthropic.com`, runtime-pinned `claude-sonnet-4-6`, no key | `POST /api/council` → Pages Function holds the key as a secret, **enforces `claude-fable-5` server-side**, logs no bodies |
+| Council | Direct `api.anthropic.com`, runtime-pinned `claude-sonnet-4-6`, no key | Direct `api.anthropic.com` from the browser with the **player's own key** (BYOK; CORS opt-in header), `claude-fable-5` pinned in client code; key device-side (localStorage w/ consent, removable), never serialized |
 | Downloads | Platform interstitial (accepted; sandbox only) | Plain browser downloads |
 
 ## Stack
@@ -50,7 +50,7 @@ Migration rule: v2 reflections → fieldNotes; v2 milestone *checks* do **not** 
 `buildJournalMd(data, mode)` is the **single serializer** for the Journal download and the Council's input. One documented divergence: `mode:'compact'` (Council input) includes only the last 3 prior readings, truncated to 600 chars, so readings never recursively bloat successors; `'full'` carries everything including follow-ups and commitments. **Family Dinner data is excluded from all serialization** — export exists only as the facilitator's explicit act inside the panel. Brief leads with `dinnerCard.text` ("Going wrong right now") when present.
 
 ## Council mechanics
-Consent (once, stored) → live-record or pasted-journal tab → thin-ink guard (<3 answers + empty ledger) → reading saved with its journal snapshot (durable follow-ups replay full history) → **commitment gate**: one required "thing I'll change" line before the follow-up box opens. Copy strings (consent, error, caption, thin) are canon — see `04-council.md`.
+BYOK key entry (once, device-side, visible remove control) → consent (once, stored) → live-record or pasted-journal tab → thin-ink guard (<3 answers + empty ledger) → reading saved with its journal snapshot (durable follow-ups replay full history) → **commitment gate**: one required "thing I'll change" line before the follow-up box opens. Copy strings (key, consent, error, caption, thin) are canon — see `04-council.md`.
 
-## Pages Function contract (`functions/api/council.js`)
-`POST { system, messages[] }` → `{ text }` | `{ error }`. Guards: JSON shape, 400KB message-size cap, 502 passthrough. Env: `ANTHROPIC_API_KEY` (secret, production-scoped), `COUNCIL_MODEL` (default `claude-fable-5`). **No request-body logging — design choice, not oversight.** GH-Pages variant: static build + external Worker + `window.COUNCIL_URL` + CORS.
+## Council call contract (BYOK direct — supersedes the Pages Function per the 2026-07-08 decision)
+Browser `POST https://api.anthropic.com/v1/messages` with the player's key and the `anthropic-dangerous-direct-browser-access: true` CORS opt-in header. `model: claude-fable-5` (pinned in client code; no model choice ships in the UI), `max_tokens: 1000`. Guards client-side: JSON shape, 400KB input cap, thin-ink guard; 401/credit failures surface as the canonical error string. **Key storage:** its own storage key via the same storage ladder — never inside `founders-quest:v3`, never in `buildJournalMd`, never in any export; visible remove control. CSP `connect-src` allows exactly `'self'` + `https://api.anthropic.com`. **No server in the Council path — zero logging is structural, not policy.**
