@@ -59,7 +59,13 @@ const EVIDENCE_SOURCE = 'Maya Chen, call 2026-07-07'
 const NUDGE_DRAFT = 'Honestly, my instinct is to build an app for the order sheet.'
 const VAULT_IDEA = 'A barcode scanner that reorders automatically'
 
-test.describe.configure({ timeout: 300_000 })
+// This is the one genuinely long journey — the full keyboard-only Stage-1
+// playthrough. It is not hanging; it does real work across ~15 inputs, 13
+// screenshots, and a reload. `fill()` (not char-by-char typing) keeps the
+// wall-time down; the timeout carries 2x+ headroom over the observed CI run
+// so a slower runner cannot trip the ceiling (the 300s default failed CI at
+// 5.2m — PR #1 run 28972348636).
+test.describe.configure({ timeout: 600_000 })
 
 test('stage 1 self-play, keyboard only: boot → shrines → guardian → evidence → flagpole → vault → reload', async ({ page }, testInfo) => {
   const log = recordRun(page)
@@ -87,7 +93,7 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   await shot(page, 'trance-open')
 
   // ---- s1-th [story]: type, Ctrl+Enter, exact 02 key ----
-  await page.getByTestId('input-text').pressSequentially(STORY)
+  await page.getByTestId('input-text').fill(STORY)
   await inscribe(page, 'input-text')
   let data = await readQuestData(page)
   expect(data?.answers['s1']?.['s1-th']).toEqual({ text: STORY })
@@ -96,7 +102,7 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   await tabToChip(page, questionText('s1-l1'))
   await kneel(page)
   for (const [i, name] of NAMES.entries()) {
-    await page.getByTestId(`input-name-${i + 1}`).pressSequentially(name)
+    await page.getByTestId(`input-name-${i + 1}`).fill(name)
   }
   await inscribe(page, 'input-name-3')
   data = await readQuestData(page)
@@ -108,7 +114,7 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   for (const [i, why] of WHYS.entries()) {
     const rung = page.getByTestId(`input-why-${i + 1}`)
     await expect(rung).toBeEnabled() // each rung unlocks only after the previous
-    await rung.pressSequentially(why)
+    await rung.fill(why)
   }
   const root = page.getByTestId('fivewhys-root')
   await expect(root).toBeVisible()
@@ -123,16 +129,16 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   await kneel(page)
   // warn-not-block (review 8d): unparseable ink shows a caution while the
   // Inscribe stays enabled — gates warn, never block (canon 01)
-  await page.getByTestId('input-number-value').pressSequentially('about forty-five')
+  await page.getByTestId('input-number-value').fill('about forty-five')
   const numberCaution = page.getByTestId('input-number-caution')
   await expect(numberCaution).toBeVisible()
   await expect(numberCaution).toHaveText(UI.trance.numberCaution)
   await expect(page.getByTestId('trance-inscribe')).toBeEnabled()
   await page.getByTestId('input-number-value').press('ControlOrMeta+a')
-  await page.getByTestId('input-number-value').pressSequentially(NUMBER_VALUE)
+  await page.getByTestId('input-number-value').fill(NUMBER_VALUE)
   await expect(numberCaution).toBeHidden()
-  await page.getByTestId('input-number-unit').pressSequentially(NUMBER_UNIT)
-  await page.getByTestId('input-number-context').pressSequentially(NUMBER_CONTEXT)
+  await page.getByTestId('input-number-unit').fill(NUMBER_UNIT)
+  await page.getByTestId('input-number-context').fill(NUMBER_CONTEXT)
   await inscribe(page, 'input-number-value')
   data = await readQuestData(page)
   expect(data?.answers['s1']?.['s1-l3']).toEqual({
@@ -142,9 +148,9 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   // ---- s1-l4 [list]: two workaround rows ----
   await tabToChip(page, questionText('s1-l4'))
   await kneel(page)
-  await page.getByTestId('input-list-1').pressSequentially(LIST_ITEMS[0])
+  await page.getByTestId('input-list-1').fill(LIST_ITEMS[0])
   await page.getByTestId('input-list-add').press('Enter')
-  await page.getByTestId('input-list-2').pressSequentially(LIST_ITEMS[1])
+  await page.getByTestId('input-list-2').fill(LIST_ITEMS[1])
   await inscribe(page, 'input-list-2')
   data = await readQuestData(page)
   expect(data?.answers['s1']?.['s1-l4']).toEqual({ text: LIST_ITEMS.join('\n') })
@@ -152,7 +158,7 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   // ---- s1-fx [falsify] ----
   await tabToChip(page, questionText('s1-fx'))
   await kneel(page)
-  await page.getByTestId('input-text').pressSequentially(FALSIFY)
+  await page.getByTestId('input-text').fill(FALSIFY)
   await inscribe(page, 'input-text')
   data = await readQuestData(page)
   expect(data?.answers['s1']?.['s1-fx']).toEqual({ text: FALSIFY })
@@ -161,14 +167,14 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   await tabToChip(page, questionText('s1-fp'))
   await kneel(page)
   for (const entry of QUICKADD_ENTRIES) {
-    await page.getByTestId('quickadd-entry').pressSequentially(entry)
+    await page.getByTestId('quickadd-entry').fill(entry)
     await page.getByTestId('quickadd-entry').press('Enter')
   }
   await expect(page.getByTestId('quickadd-item-1')).toContainText(QUICKADD_ENTRIES[0])
   await expect(page.getByTestId('quickadd-item-2')).toContainText(QUICKADD_ENTRIES[1])
   await page.getByTestId('quickadd-affordance-1').press('Enter')
-  await page.getByTestId('quickadd-blank').pressSequentially(GUARDIAN_BLANK)
-  await page.getByTestId('quickadd-kill').pressSequentially(GUARDIAN_KILL)
+  await page.getByTestId('quickadd-blank').fill(GUARDIAN_BLANK)
+  await page.getByTestId('quickadd-kill').fill(GUARDIAN_KILL)
   await page.getByTestId('quickadd-register').press('Enter')
   await expect(page.getByTestId('quickadd-registered-1')).toHaveText(
     UI.trance.guardianRegistered,
@@ -190,7 +196,7 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   // the pending, un-entered line joins the draft (review 8c): type it, stand
   // up, kneel again — it is still in the entry field, and it will NOT be
   // serialized on inscribe (only added entries become Answer.text lines)
-  await page.getByTestId('quickadd-entry').pressSequentially(PENDING_LINE)
+  await page.getByTestId('quickadd-entry').fill(PENDING_LINE)
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('trance-panel')).toBeHidden()
   await page.keyboard.press('KeyE')
@@ -232,8 +238,8 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
 
   // ---- link one E2 evidence to the guardian via the registry ----
   await page.getByTestId('registry-link-toggle').press('Enter')
-  await page.getByTestId('registry-evidence-text').pressSequentially(EVIDENCE_TEXT)
-  await page.getByTestId('registry-evidence-source').pressSequentially(EVIDENCE_SOURCE)
+  await page.getByTestId('registry-evidence-text').fill(EVIDENCE_TEXT)
+  await page.getByTestId('registry-evidence-source').fill(EVIDENCE_SOURCE)
   await page.getByTestId('registry-evidence-add').press('Enter')
   await expect(row).toContainText('E2 Word') // derived tier from the linked coin
   await shot(page, 'registry')
@@ -255,7 +261,7 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   await tabToChip(page, WORLD_COPY.registryName)
   await page.keyboard.press('KeyE')
   await expect(registry).toBeVisible()
-  await page.getByTestId('registry-statement').pressSequentially(SECOND_GUARDIAN)
+  await page.getByTestId('registry-statement').fill(SECOND_GUARDIAN)
   await page.getByTestId('registry-create').press('Enter')
   await expect(page.getByTestId('registry-guardian')).toHaveCount(2)
   await page.keyboard.press('Escape')
@@ -299,7 +305,7 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   // ---- the answer still saves byte-identical (law 10) ----
   await tabToChip(page, questionText('s1-l5'))
   await kneel(page)
-  await page.getByTestId('input-text').pressSequentially(NUDGE_DRAFT)
+  await page.getByTestId('input-text').fill(NUDGE_DRAFT)
   const nudge = page.getByTestId('vault-nudge')
   await expect(nudge).toBeVisible()
   await expect(nudge).toContainText(UI.vault.nudgeText)
@@ -317,7 +323,7 @@ test('stage 1 self-play, keyboard only: boot → shrines → guardian → eviden
   const vaultPanel = page.getByTestId('vault-panel')
   await expect(vaultPanel).toBeVisible()
   await expect(page.getByTestId('vault-count')).toHaveText(UI.vault.countLabel(0))
-  await page.getByTestId('vault-capture-text').pressSequentially(VAULT_IDEA)
+  await page.getByTestId('vault-capture-text').fill(VAULT_IDEA)
   await page.getByTestId('vault-capture').press('Enter') // tap 1
   await page.getByTestId('vault-capture-confirm').press('Enter') // tap 2
   await expect(page.getByTestId('vault-count')).toHaveText(UI.vault.countLabel(1))
