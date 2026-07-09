@@ -2,6 +2,24 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
+## Round 3 — Phase 2b cel-shaded presentation pass (2026-07-08)
+
+**Tree:** `a6aac57`. Trigger: Gate 2 presentation FAIL (grey-box rejected as "MS Paint").
+
+| Check | Result | Evidence |
+|---|---|---|
+| `tsc` / eslint | PASS | zero errors |
+| `vitest run` | PASS | 273/273 unchanged — reskin touched zero mechanics/strings/testids |
+| `vite build` | PASS | chunk-size advisory only (three.js; split queued for Phase 6 perf) |
+| e2e (pre-baked chromium) | PASS | 6/6, stage1 journey 1.4m; the reskin left the regression harness fully green |
+| gitleaks / osv | PASS | no leaks; osv 4 documented dev-only filters, no new advisories |
+| self-look-check | PASS (my own eyes) | viewed roam.png + trance-open.png: coherent cel-shaded low-poly world (cloaked wanderer, teal rune monoliths, vault sanctum, nebula starfield) + diegetic parchment-journal UI. Night-and-day vs grey-box. |
+| **Preview deploy** | **LIVE** | `wrangler pages deploy` success → https://claude-dev-environment-setup.founders-quest-game.pages.dev (project founders-quest-game; `_headers` uploaded) |
+| Live CSP header check | **OPERATOR-SIDE** | container egress proxy denies `*.pages.dev` (403 on curl — same block as CC0 asset sites); `_headers` is guard-tested against canon, so CSP ships, but the live-response check is the operator's (DevTools/curl from their machine) |
+
+**Honest caveat:** `perf.ts` downscales the render ONLY under `navigator.webdriver` (automation) — Bloom, Vignette, accent lights, full sky shader, 1400 stars, DPR 1.5 all ship to real browsers. The e2e FPS number (~21 headless software-GL) is not player hardware and not the shipping visual tier.
+**UNTESTED:** the live look on operator hardware (the whole point of the preview) · live CSP headers (operator-side) · anything key-dependent (Phase 4).
+
 ## Round 2 — Phase 2 grey-box Stage 1 slice (2026-07-08)
 
 **Tree:** `4542ccf`.
