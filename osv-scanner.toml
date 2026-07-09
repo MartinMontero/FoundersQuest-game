@@ -1,0 +1,22 @@
+# Documented-risk ignores — the DoD's "clean or risks documented", machine-readable.
+# All four are DEV-TOOLCHAIN-ONLY (dev server / test runner); none ship in dist/
+# (static output; runtime deps are react/react-dom only). Every fix version
+# requires Vite >=6.4.2, which breaks the canon-ruled Vite 5 pin (02 Stack,
+# applied 530cfb0). Revisit at any Vite major-bump canon decision.
+# VERIFICATION.md round 1 carries the full evidence trail.
+
+[[IgnoredVulns]]
+id = "GHSA-67mh-4wv8-2f99"
+reason = "esbuild dev-server request exposure; dev-only, bundled with Vite 5; fix (esbuild >=0.25) not reachable within the canon Vite 5 pin"
+
+[[IgnoredVulns]]
+id = "GHSA-4w7w-66w2-5vf9"
+reason = "vite dev-server path traversal in optimized-deps .map handling; dev-only; fix is vite >=6.4.2, breaks the canon Vite 5 pin"
+
+[[IgnoredVulns]]
+id = "GHSA-fx2h-pf6j-xcff"
+reason = "vite server.fs.deny bypass, WINDOWS dev server only; dev-only; fix is vite >=6.4.3, breaks the canon Vite 5 pin"
+
+[[IgnoredVulns]]
+id = "GHSA-v6wh-96g9-6wx3"
+reason = "vite launch-editor NTLMv2 hash disclosure via UNC path, WINDOWS dev server only; dev-only; fix is vite >=6.4.3, breaks the canon Vite 5 pin"

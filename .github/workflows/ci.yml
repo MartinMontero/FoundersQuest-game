@@ -1,0 +1,59 @@
+# CI per PLAN.md §10 and the Phase 0 restatement §3.
+# Sanctioned services only. Never Trivy. No telemetry, no coverage uploaders,
+# no third-party reporting actions — scanners install from pinned official releases.
+name: ci
+on: push
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # gitleaks scans full history
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: osv-scanner (online mode — CI network reaches api.osv.dev)
+        run: |
+          curl -sSL -o /usr/local/bin/osv-scanner \
+            https://github.com/google/osv-scanner/releases/download/v2.4.0/osv-scanner_linux_amd64
+          chmod +x /usr/local/bin/osv-scanner
+          osv-scanner scan source .
+      - name: gitleaks (tree + full history)
+        run: |
+          curl -sSL -o /tmp/gitleaks.tar.gz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /usr/local/bin gitleaks
+          gitleaks git . && gitleaks dir .
+
+  e2e:
+    # R-D ruling (2026-07-08): stub-only Playwright on every push.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: ''
+      - run: npm run e2e
+        env:
+          CI: 'true'
+          PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: test-results/
+          retention-days: 7

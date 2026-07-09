@@ -19,10 +19,11 @@
     ],
     "deny": [
       "Read(./.dev.vars)", "Read(.dev.vars)", "Read(./.env)", "Read(./.env.*)",
-      "Bash(git push --force*)", "Bash(git push -f*)",
+      "Bash(*dev.vars*)",
+      "Bash(*trivy*)",
+      "Bash(git push*--force*)", "Bash(git push* -f *)", "Bash(git push* -f)",
       "Bash(git filter-branch *)", "Bash(git branch -D *)",
       "Bash(rm -rf /*)", "Bash(rm -rf ~*)",
-      "Bash(trivy *)", "Bash(npx trivy*)",
       "Bash(sudo *)", "Bash(ssh *)"
     ],
     "defaultMode": "default"
