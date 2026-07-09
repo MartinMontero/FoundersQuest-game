@@ -102,12 +102,12 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
       testId="registry-panel"
       initialFocus={focusRiskiest && riskiestGuardian !== null ? riskiestRef : undefined}
     >
-      <h2 id={titleId} className="text-lg font-semibold text-slate-100">
+      <h2 id={titleId} className="quest-heading text-xl font-semibold">
         {UI.registry.panelTitle}
       </h2>
 
       {sorted.length === 0 ? (
-        <p data-testid="registry-empty" className="mt-3 text-sm text-slate-400">
+        <p data-testid="registry-empty" className="mt-3 text-sm italic text-ink-faint">
           {UI.registry.empty}
         </p>
       ) : (
@@ -127,47 +127,47 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
                 data-testid="registry-guardian"
                 data-guardian-id={guardian.id}
                 data-riskiest={isRiskiest ? 'true' : undefined}
-                className={`rounded border p-3 ${
-                  isRiskiest ? 'border-amber-400 bg-amber-400/5' : 'border-slate-700 bg-slate-950/60'
+                className={`quest-aside p-3 ${
+                  isRiskiest ? 'border-amber-accent-500 bg-amber-accent-400/18 shadow-amber-glow' : ''
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium text-slate-100">{guardian.statement}</p>
+                  <p className="text-sm font-semibold text-ink">{guardian.statement}</p>
                   {isRiskiest ? (
                     <span
                       data-testid="registry-riskiest"
-                      className="rounded bg-amber-400 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wide text-slate-950"
+                      className="rounded-full bg-amber-accent-400 px-2 py-0.5 text-2xs font-bold uppercase tracking-wide text-ink shadow-amber-glow"
                     >
                       {UI.registry.riskiestBadge}
                     </span>
                   ) : null}
                 </div>
-                <p className="mt-1 text-2xs text-slate-400">{meta}</p>
-                <p className="mt-1 text-xs text-slate-300">
-                  <span className="text-slate-500">{UI.registry.killCriterionCaption} </span>
+                <p className="mt-1.5 text-2xs tracking-wide text-ink-faint">{meta}</p>
+                <p className="mt-1.5 text-xs text-ink-soft">
+                  <span className="text-ink-faint">{UI.registry.killCriterionCaption} </span>
                   {guardian.killCriterion.trim() === ''
                     ? UI.registry.killCriterionEmpty
                     : guardian.killCriterion}
                 </p>
 
                 {linkOpenId === guardian.id ? (
-                  <div className="mt-2 flex flex-col gap-2 rounded border border-slate-700 p-2">
-                    <label className="flex flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
+                  <div className="quest-aside mt-2 flex flex-col gap-2 p-2.5 motion-safe:animate-quest-fade">
+                    <label className="quest-label flex flex-col gap-1 text-2xs">
                       <span>{UI.registry.evidenceTextLabel}</span>
                       <input
                         data-testid="registry-evidence-text"
                         value={evidenceText}
                         onChange={(event) => setEvidenceText(event.target.value)}
-                        className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm normal-case tracking-normal text-slate-100"
+                        className="quest-input px-2 py-1.5 text-sm normal-case tracking-normal"
                       />
                     </label>
-                    <label className="flex flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
+                    <label className="quest-label flex flex-col gap-1 text-2xs">
                       <span>{UI.registry.evidenceSourceLabel}</span>
                       <input
                         data-testid="registry-evidence-source"
                         value={evidenceSource}
                         onChange={(event) => setEvidenceSource(event.target.value)}
-                        className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm normal-case tracking-normal text-slate-100"
+                        className="quest-input px-2 py-1.5 text-sm normal-case tracking-normal"
                       />
                     </label>
                     <div className="flex gap-2">
@@ -176,14 +176,14 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
                         data-testid="registry-evidence-add"
                         disabled={evidenceText.trim() === '' || evidenceSource.trim() === ''}
                         onClick={() => linkEvidence(guardian)}
-                        className="rounded bg-amber-400 px-3 py-1.5 text-sm font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="quest-btn quest-btn-gold px-3 py-1.5 text-sm"
                       >
                         {UI.registry.evidenceAdd}
                       </button>
                       <button
                         type="button"
                         onClick={() => setLinkOpenId(null)}
-                        className="rounded border border-slate-600 px-3 py-1.5 text-sm text-slate-200"
+                        className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
                       >
                         {UI.common.cancel}
                       </button>
@@ -198,7 +198,7 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
                       setEvidenceText('')
                       setEvidenceSource('')
                     }}
-                    className="mt-2 rounded border border-slate-600 px-2 py-1 text-2xs text-slate-300"
+                    className="quest-btn quest-btn-quiet mt-2 px-2 py-1 text-2xs"
                   >
                     {UI.registry.linkEvidenceToggle}
                   </button>
@@ -210,12 +210,10 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
       )}
 
       {/* create form — no <form> tag; explicit button commit */}
-      <fieldset className="mt-4 rounded border border-slate-700 p-3">
-        <legend className="px-1 text-2xs uppercase tracking-wide text-slate-400">
-          {UI.registry.createLegend}
-        </legend>
+      <fieldset className="quest-aside mt-5 p-4">
+        <legend className="quest-label px-1.5 text-2xs">{UI.registry.createLegend}</legend>
         <div className="flex flex-col gap-2">
-          <label className="flex flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
+          <label className="quest-label flex flex-col gap-1 text-2xs">
             <span>{UI.registry.statementLabel}</span>
             <input
               ref={statementRef}
@@ -225,7 +223,7 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
               className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm normal-case tracking-normal text-slate-100"
             />
           </label>
-          <label className="flex flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
+          <label className="quest-label flex flex-col gap-1 text-2xs">
             <span>{UI.registry.importanceLabel}</span>
             <select
               data-testid="registry-importance"
@@ -242,7 +240,7 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
+          <label className="quest-label flex flex-col gap-1 text-2xs">
             <span>{UI.registry.killCriterionLabel}</span>
             <input
               data-testid="registry-kill"
@@ -256,7 +254,7 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
             data-testid="registry-create"
             disabled={statement.trim() === ''}
             onClick={create}
-            className="self-start rounded bg-amber-400 px-3 py-1.5 text-sm font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
+            className="quest-btn quest-btn-gold self-start px-3 py-1.5 text-sm"
           >
             {UI.registry.createButton}
           </button>
@@ -269,7 +267,7 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
           type="button"
           data-testid="registry-close"
           onClick={closePanel}
-          className="rounded border border-slate-600 px-3 py-1.5 text-sm text-slate-200"
+          className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
         >
           {UI.common.close}
         </button>

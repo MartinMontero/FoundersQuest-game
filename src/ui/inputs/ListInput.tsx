@@ -43,14 +43,14 @@ export function ListInput({ items, onChange }: ListInputProps): ReactElement {
             data-testid={`input-list-${index + 1}`}
             value={item}
             onChange={(event) => setAt(index, event.target.value)}
-            className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100"
+            className="quest-input px-2 py-1.5 text-sm"
           />
           <button
             type="button"
             aria-label={UI.trance.listRemoveLabel(index + 1)}
             data-testid={`input-list-remove-${index + 1}`}
             onClick={() => removeAt(index)}
-            className="rounded border border-slate-600 px-2 py-1 text-2xs text-slate-300"
+            className="quest-btn quest-btn-quiet px-2 py-1 text-2xs"
           >
             {UI.trance.listRemoveLabel(index + 1)}
           </button>
@@ -60,7 +60,7 @@ export function ListInput({ items, onChange }: ListInputProps): ReactElement {
         type="button"
         data-testid="input-list-add"
         onClick={() => onChange([...items, ''])}
-        className="self-start rounded border border-slate-600 px-3 py-1.5 text-sm text-slate-200"
+        className="quest-btn quest-btn-quiet self-start px-3 py-1.5 text-sm"
       >
         {UI.trance.listAdd}
       </button>

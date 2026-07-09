@@ -156,7 +156,11 @@ export function DialogShell({
 
   return (
     <div className={`fixed inset-0 ${layerClassName} flex items-center justify-center p-4`}>
-      <div className="absolute inset-0 bg-slate-950/70" aria-hidden="true" onClick={onClose} />
+      <div
+        className="quest-backdrop absolute inset-0 motion-safe:animate-quest-fade"
+        aria-hidden="true"
+        onClick={onClose}
+      />
       <div
         ref={trapRef}
         role={role}
@@ -165,7 +169,7 @@ export function DialogShell({
         aria-describedby={describedById}
         tabIndex={-1}
         data-testid={testId}
-        className={`relative max-h-[85vh] w-full overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 p-6 shadow-xl ${panelClassName}`}
+        className={`quest-panel relative max-h-[85vh] w-full overflow-y-auto p-7 motion-safe:animate-quest-rise ${panelClassName}`}
       >
         {children}
       </div>
@@ -351,20 +355,20 @@ function VaultNudge({ state, onFirstTap, onConfirm, onDismiss }: VaultNudgeProps
     <div
       role="status"
       data-testid="vault-nudge"
-      className="mt-3 rounded border border-violet-500/50 bg-violet-500/10 p-3"
+      className="quest-aside-violet mt-4 p-3 motion-safe:animate-quest-fade"
     >
       {state === 'captured' ? (
-        <p className="text-sm text-violet-200">{UI.vault.nudgeCaptured}</p>
+        <p className="text-sm font-medium">{UI.vault.nudgeCaptured}</p>
       ) : (
         <>
-          <p className="text-sm text-violet-200">{UI.vault.nudgeText}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <p className="text-sm">{UI.vault.nudgeText}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
             {state === 'confirm' ? (
               <button
                 type="button"
                 data-testid="vault-nudge-confirm"
                 onClick={onConfirm}
-                className="rounded bg-violet-400 px-3 py-1.5 text-sm font-semibold text-slate-950"
+                className="quest-btn quest-btn-violet px-3 py-1.5 text-sm"
               >
                 {UI.vault.nudgeConfirm}
               </button>
@@ -373,7 +377,7 @@ function VaultNudge({ state, onFirstTap, onConfirm, onDismiss }: VaultNudgeProps
                 type="button"
                 data-testid="vault-nudge-capture"
                 onClick={onFirstTap}
-                className="rounded border border-violet-400 px-3 py-1.5 text-sm text-violet-200"
+                className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
               >
                 {UI.vault.nudgeCapture}
               </button>
@@ -382,7 +386,7 @@ function VaultNudge({ state, onFirstTap, onConfirm, onDismiss }: VaultNudgeProps
               type="button"
               data-testid="vault-nudge-dismiss"
               onClick={onDismiss}
-              className="rounded border border-slate-600 px-3 py-1.5 text-sm text-slate-300"
+              className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
             >
               {UI.vault.nudgeDismiss}
             </button>
@@ -507,12 +511,17 @@ export function TrancePanel({ qid }: TrancePanelProps): ReactElement | null {
           }
         }}
       >
+        {/* a quiet decorative rule above the inked heading (no text) */}
+        <div
+          aria-hidden="true"
+          className="mb-3 h-px w-16 rounded-full bg-gradient-to-r from-ink-line/70 to-transparent"
+        />
         {/* the 03 question, verbatim, names the dialog */}
-        <h2 id={titleId} className="text-lg font-semibold leading-snug text-slate-100">
+        <h2 id={titleId} className="quest-heading text-xl font-semibold leading-snug">
           {question.text}
         </h2>
         {question.mechanic !== undefined ? (
-          <p className="mt-1 text-2xs text-slate-400">{question.mechanic}</p>
+          <p className="quest-note mt-3 text-xs">{question.mechanic}</p>
         ) : null}
 
         {nudgeVisible ? (
@@ -527,16 +536,16 @@ export function TrancePanel({ qid }: TrancePanelProps): ReactElement | null {
           />
         ) : null}
 
-        <div className="mt-4">{renderControl(draft, updateDraft, registerGuardian)}</div>
+        <div className="mt-5">{renderControl(draft, updateDraft, registerGuardian)}</div>
 
-        <div className="mt-4 flex items-center justify-between gap-4">
-          <p className="text-2xs text-slate-400">{UI.trance.keysHint}</p>
+        <div className="mt-6 flex items-center justify-between gap-4 border-t border-ink-line/25 pt-4">
+          <p className="text-2xs italic text-ink-faint">{UI.trance.keysHint}</p>
           <button
             type="button"
             data-testid="trance-inscribe"
             disabled={!complete}
             onClick={inscribe}
-            className="rounded bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
+            className="quest-btn quest-btn-seal text-sm"
           >
             {UI.trance.inscribe}
           </button>

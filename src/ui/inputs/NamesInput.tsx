@@ -27,14 +27,14 @@ export function NamesInput({ names, onChange }: NamesInputProps): ReactElement {
           data-testid={`input-name-${index + 1}`}
           value={name}
           onChange={(event) => setAt(index, event.target.value)}
-          className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100"
+          className="quest-input px-2 py-1.5 text-sm"
         />
       ))}
       <button
         type="button"
         data-testid="input-names-add"
         onClick={() => onChange([...names, ''])}
-        className="self-start rounded border border-slate-600 px-3 py-1.5 text-sm text-slate-200"
+        className="quest-btn quest-btn-quiet self-start px-3 py-1.5 text-sm"
       >
         {UI.trance.namesAdd}
       </button>

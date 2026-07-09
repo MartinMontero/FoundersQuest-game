@@ -8,12 +8,20 @@
 //                      riskiest crowned (metrics.riskiest via useRiskiest)
 // One highlight ring + name chip serves walk-up proximity AND Tab focus —
 // the same affordance, keyboard a11y parity (game-design §3).
+//
+// LOOK: cel-shaded toon everywhere (shared ramp in materials.ts). Shrines are
+// rune monuments with a floating glyph; the Vault an ornate sealed sanctum; the
+// Registry a standing-stone circle of cloaked menhirs. Interactables glow via
+// emissive (Bloom catches it); a single proximity point light pools on the
+// active target and pulses — static under reduced motion. Light COUNT is held
+// constant (lights dim to zero, never unmount) so no shader recompiles as the
+// player roams.
 
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Float, Html } from '@react-three/drei'
 import { DoubleSide } from 'three'
-import type { Group, Mesh } from 'three'
+import type { Group, Mesh, PointLight } from 'three'
 import { IMPORTANCE_WEIGHT, tierOf } from '../core/metrics'
 import type { Answer, Assumption, EvidenceEntry, EvidenceTier } from '../core/schema'
 import { useQuestStore, useRiskiest } from '../state/store'
@@ -26,6 +34,8 @@ import {
   type InteractableSpec,
 } from './contracts'
 import { SPEC_BY_ID, activeTargetId, useInteractionStore } from './interaction'
+import { PALETTE, TOON_RAMP } from './materials'
+import { LOW_POWER } from './perf'
 
 // ---- derived lookups (strings/contracts, built once) ----
 
@@ -52,114 +62,281 @@ function hasInk(answer: Answer | undefined): boolean {
   )
 }
 
-// ---- shrine stones ----
+/** Deterministic 0..1 hash of a string — per-shrine silhouette variation. */
+function hashUnit(s: string): number {
+  let h = 2166136261
+  for (let i = 0; i < s.length; i += 1) h = Math.imul(h ^ s.charCodeAt(i), 16777619)
+  return (h >>> 0) / 0xffffffff
+}
+
+// ---- shrine rune monuments ----
+
+type GlyphKind = 'ring' | 'halo' | 'diamond' | 'prism' | 'tetra' | 'shard' | 'cube' | 'star'
+
+/** A distinct floating glyph per shrine so no two monuments read alike. */
+const GLYPH_BY_QID: Readonly<Record<string, GlyphKind>> = {
+  's1-th': 'ring',
+  's1-l1': 'diamond',
+  's1-l2': 'halo', // the Five Whys well at the spiral's centre
+  's1-l3': 'prism',
+  's1-l4': 'tetra',
+  's1-l5': 'shard',
+  's1-fp': 'cube',
+  's1-fx': 'star',
+}
+
+function GlyphGeometry({ kind }: { kind: GlyphKind }): JSX.Element {
+  switch (kind) {
+    case 'ring':
+      return <torusGeometry args={[0.24, 0.07, 10, 20]} />
+    case 'halo':
+      return <torusGeometry args={[0.34, 0.06, 10, 24]} />
+    case 'diamond':
+      return <octahedronGeometry args={[0.3, 0]} />
+    case 'prism':
+      return <cylinderGeometry args={[0.22, 0.22, 0.34, 6]} />
+    case 'tetra':
+      return <tetrahedronGeometry args={[0.32, 0]} />
+    case 'shard':
+      return <coneGeometry args={[0.18, 0.62, 3, 1]} />
+    case 'cube':
+      return <boxGeometry args={[0.34, 0.34, 0.34]} />
+    case 'star':
+      return <icosahedronGeometry args={[0.3, 0]} />
+  }
+}
 
 interface ShrineProps {
   spec: InteractableSpec
+  reduced: boolean
 }
 
-function ShrineStone({ spec }: ShrineProps): JSX.Element {
+function ShrineStone({ spec, reduced }: ShrineProps): JSX.Element {
   const qid = spec.qid ?? spec.id
   const answered = useQuestStore((s) => hasInk(s.data.answers['s1']?.[qid]))
+  const glyph = useRef<Group>(null)
+  const yaw = hashUnit(qid) * Math.PI * 2
+  const kind = GLYPH_BY_QID[qid] ?? 'diamond'
+  const glow = answered ? PALETTE.amber : PALETTE.teal
   const [x, y, z] = spec.position
+
+  // the glyph hovers and turns slowly; dead still under reduced motion (§2 F0)
+  useFrame(({ clock }) => {
+    const g = glyph.current
+    if (g === null) return
+    if (reduced) {
+      g.position.y = 2.6
+      g.rotation.y = 0
+      return
+    }
+    g.position.y = 2.6 + Math.sin(clock.elapsedTime * 1.6 + yaw) * 0.09
+    g.rotation.y += 0.006
+  })
+
   return (
-    <group position={[x, y, z]}>
+    <group position={[x, y, z]} rotation={[0, yaw, 0]}>
       {/* base slab */}
       <mesh position={[0, 0.15, 0]}>
-        <cylinderGeometry args={[1.1, 1.3, 0.3, 8]} />
-        <meshStandardMaterial color="#2a2447" />
+        <cylinderGeometry args={[1.0, 1.25, 0.3, 8]} />
+        <meshToonMaterial color={PALETTE.stone} gradientMap={TOON_RAMP} />
       </mesh>
-      {/* standing stone: faint glow unanswered, inked/lit answered (§2 F0) */}
-      <mesh position={[0, 1.05, 0]}>
-        <boxGeometry args={[0.9, 1.5, 0.35]} />
-        <meshStandardMaterial
-          color={answered ? '#4d4370' : '#38305c'}
-          emissive={answered ? '#e8b34b' : '#6f5cf0'}
-          emissiveIntensity={answered ? 0.65 : 0.18}
+      {/* a rune ring cut into the slab, lit by the shrine's state */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.32, 0]}>
+        <torusGeometry args={[0.52, 0.05, 8, 24]} />
+        <meshToonMaterial
+          color={glow}
+          emissive={glow}
+          emissiveIntensity={answered ? 1.0 : 0.5}
+          gradientMap={TOON_RAMP}
         />
       </mesh>
+      {/* the standing stone: a faceted six-sided pillar */}
+      <mesh position={[0, 1.15, 0]}>
+        <cylinderGeometry args={[0.24, 0.4, 1.7, 6]} />
+        <meshToonMaterial
+          color={answered ? '#4d4370' : PALETTE.violetDeep}
+          emissive={glow}
+          emissiveIntensity={answered ? 0.5 : 0.16}
+          gradientMap={TOON_RAMP}
+        />
+      </mesh>
+      {/* the capstone */}
+      <mesh position={[0, 2.2, 0]}>
+        <coneGeometry args={[0.42, 0.5, 6, 1]} />
+        <meshToonMaterial color={PALETTE.stoneWarm} gradientMap={TOON_RAMP} />
+      </mesh>
+      {/* the floating glyph */}
+      <group ref={glyph} position={[0, 2.6, 0]}>
+        <mesh>
+          <GlyphGeometry kind={kind} />
+          <meshToonMaterial
+            color={glow}
+            emissive={glow}
+            emissiveIntensity={answered ? 1.3 : 0.9}
+            gradientMap={TOON_RAMP}
+          />
+        </mesh>
+      </group>
     </group>
   )
 }
 
 // ---- milestone flagpoles ----
 
-function Flagpole({ spec }: ShrineProps): JSX.Element {
+function Flagpole({ spec, reduced }: ShrineProps): JSX.Element {
   const milestoneId = spec.milestoneId ?? spec.id
   const raised = useQuestStore((s) => s.data.milestones[milestoneId] === true)
+  const banner = useRef<Group>(null)
   const [x, y, z] = spec.position
   const flagY = raised ? 2.7 : 1.0
+
+  // the banner sways like cloth catching a slow wind; still under reduced motion
+  useFrame(({ clock }) => {
+    const b = banner.current
+    if (b === null) return
+    b.rotation.y = reduced ? 0 : Math.sin(clock.elapsedTime * 1.3 + x) * 0.22
+  })
+
   return (
     <group position={[x, y, z]}>
+      {/* the pole */}
       <mesh position={[0, 1.6, 0]}>
         <cylinderGeometry args={[0.06, 0.08, 3.2, 8]} />
-        <meshStandardMaterial color="#8f89b8" />
+        <meshToonMaterial color="#8f89b8" gradientMap={TOON_RAMP} />
       </mesh>
+      {/* the finial */}
       <mesh position={[0, 3.25, 0]}>
-        <sphereGeometry args={[0.12, 8, 8]} />
-        <meshStandardMaterial color="#e8b34b" emissive="#e8b34b" emissiveIntensity={0.4} />
-      </mesh>
-      <mesh position={[0.5, flagY, 0]}>
-        <planeGeometry args={[0.9, 0.55]} />
-        <meshStandardMaterial
-          color={raised ? '#e8b34b' : '#4b4670'}
-          emissive={raised ? '#c78f1f' : '#000000'}
-          emissiveIntensity={raised ? 0.5 : 0}
-          side={DoubleSide}
+        <sphereGeometry args={[0.13, 10, 10]} />
+        <meshToonMaterial
+          color={PALETTE.amber}
+          emissive={PALETTE.amber}
+          emissiveIntensity={0.7}
+          gradientMap={TOON_RAMP}
         />
       </mesh>
+      {/* the banner — a bent cloth plane, hoisted or furled by the milestone */}
+      <group ref={banner} position={[0.04, flagY, 0]}>
+        <mesh position={[0.46, 0, 0]} rotation={[0, 0, -0.06]}>
+          <planeGeometry args={[0.9, 0.55, 4, 1]} />
+          <meshToonMaterial
+            color={raised ? PALETTE.amber : '#4b4670'}
+            emissive={raised ? PALETTE.amber : '#000000'}
+            emissiveIntensity={raised ? 0.45 : 0}
+            gradientMap={TOON_RAMP}
+            side={DoubleSide}
+          />
+        </mesh>
+      </group>
     </group>
   )
 }
 
-// ---- the Vault ----
+// ---- the Vault: an ornate sealed sanctum ----
 
 interface VaultProps {
   spec: InteractableSpec
   reduced: boolean
 }
 
+/** four corner posts of an ornate reliquary */
+const VAULT_POSTS: readonly [number, number][] = [
+  [0.62, 0.42],
+  [-0.62, 0.42],
+  [0.62, -0.42],
+  [-0.62, -0.42],
+]
+
 function VaultMonument({ spec, reduced }: VaultProps): JSX.Element {
   const locked = useQuestStore((s) => !s.data.vaultUnlocked)
   const [x, y, z] = spec.position
 
-  const chest = (
-    <group position={[x, y, z]}>
+  const sanctum = (
+    <group>
+      {/* the reliquary core */}
       <mesh>
-        <boxGeometry args={[1.4, 0.9, 0.9]} />
-        <meshStandardMaterial color="#1d1834" emissive="#31285e" emissiveIntensity={0.3} />
+        <boxGeometry args={[1.3, 0.9, 0.85]} />
+        <meshToonMaterial
+          color={PALETTE.violetDeep}
+          emissive={PALETTE.violet}
+          emissiveIntensity={0.28}
+          gradientMap={TOON_RAMP}
+        />
+      </mesh>
+      {/* ornate corner posts */}
+      {VAULT_POSTS.map(([px, pz], i) => (
+        <mesh key={i} position={[px, 0, pz]}>
+          <cylinderGeometry args={[0.08, 0.1, 1.02, 6]} />
+          <meshToonMaterial color={PALETTE.stoneWarm} gradientMap={TOON_RAMP} />
+        </mesh>
+      ))}
+      {/* a crowning finial */}
+      <mesh position={[0, 0.62, 0]}>
+        <octahedronGeometry args={[0.17, 0]} />
+        <meshToonMaterial
+          color={PALETTE.amber}
+          emissive={PALETTE.amber}
+          emissiveIntensity={locked ? 0.9 : 0.4}
+          gradientMap={TOON_RAMP}
+        />
       </mesh>
       {locked ? (
         <>
           {/* chains: crossed bands over the lid (01: captured, visible, sealed) */}
           <mesh rotation={[0, 0, Math.PI / 2]}>
-            <torusGeometry args={[0.75, 0.05, 8, 24]} />
-            <meshStandardMaterial color="#767394" metalness={0.6} roughness={0.4} />
+            <torusGeometry args={[0.72, 0.05, 8, 24]} />
+            <meshToonMaterial color="#8b88a8" gradientMap={TOON_RAMP} />
           </mesh>
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0.35, 0, 0]}>
-            <torusGeometry args={[0.62, 0.05, 8, 24]} />
-            <meshStandardMaterial color="#767394" metalness={0.6} roughness={0.4} />
+          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0.3, 0, 0]}>
+            <torusGeometry args={[0.6, 0.05, 8, 24]} />
+            <meshToonMaterial color="#8b88a8" gradientMap={TOON_RAMP} />
           </mesh>
-          {/* the lock, facing the spiral */}
-          <mesh position={[0, -0.1, 0.5]}>
-            <boxGeometry args={[0.28, 0.34, 0.12]} />
-            <meshStandardMaterial color="#3b3557" emissive="#d9484f" emissiveIntensity={0.8} />
+          {/* the amber wax seal on the face */}
+          <mesh position={[0, -0.05, 0.46]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.2, 0.2, 0.06, 16]} />
+            <meshToonMaterial
+              color={PALETTE.amberBright}
+              emissive={PALETTE.amber}
+              emissiveIntensity={1.1}
+              gradientMap={TOON_RAMP}
+            />
+          </mesh>
+          <mesh position={[0, -0.05, 0.5]}>
+            <octahedronGeometry args={[0.1, 0]} />
+            <meshToonMaterial
+              color={PALETTE.amberBright}
+              emissive={PALETTE.amberBright}
+              emissiveIntensity={1.2}
+              gradientMap={TOON_RAMP}
+            />
           </mesh>
         </>
       ) : null}
     </group>
   )
 
-  // drei Float ok — but no idle motion at all under reduced motion
-  if (reduced) return chest
   return (
-    <Float speed={1.4} rotationIntensity={0.15} floatIntensity={0.7} floatingRange={[-0.15, 0.15]}>
-      {chest}
-    </Float>
+    <group position={[x, y, z]}>
+      {/* a steady amber pool of light on the sealed sanctum (constant light) */}
+      {!LOW_POWER ? (
+        <pointLight color={PALETTE.amber} intensity={locked ? 1.1 : 0.5} distance={6} decay={2} />
+      ) : null}
+      {reduced ? (
+        sanctum
+      ) : (
+        <Float
+          speed={1.4}
+          rotationIntensity={0.15}
+          floatIntensity={0.7}
+          floatingRange={[-0.15, 0.15]}
+        >
+          {sanctum}
+        </Float>
+      )}
+    </group>
   )
 }
 
-// ---- the Registry circle + guardian figures ----
+// ---- the Registry: a standing-stone circle of cloaked menhirs ----
 
 /** metal tint by DERIVED tier: E0 mist · E1 tin · E2 silver · E3 steel · E4 gold */
 const TIER_TINT: Readonly<Record<EvidenceTier, string>> = {
@@ -176,6 +353,7 @@ interface GuardianProps {
   crowned: boolean
   reduced: boolean
   position: [number, number, number]
+  facing: number
 }
 
 function GuardianFigure({
@@ -184,6 +362,7 @@ function GuardianFigure({
   crowned,
   reduced,
   position,
+  facing,
 }: GuardianProps): JSX.Element {
   const group = useRef<Group>(null)
   const weight = IMPORTANCE_WEIGHT[assumption.importance]
@@ -199,37 +378,68 @@ function GuardianFigure({
 
   return (
     <group position={position}>
-      <group ref={group} scale={scale}>
-        <mesh position={[0, 0.55, 0]}>
-          <cylinderGeometry args={[0.22, 0.3, 1.1, 10]} />
-          <meshStandardMaterial
+      <group ref={group} scale={scale} rotation={[0.05, facing, 0.03]}>
+        {/* the menhir body — a tapered, hooded standing stone */}
+        <mesh position={[0, 0.75, 0]}>
+          <cylinderGeometry args={[0.16, 0.34, 1.5, 5]} />
+          <meshToonMaterial
             color={tint}
-            emissive={crowned ? '#e8b34b' : tint}
-            emissiveIntensity={crowned ? 0.45 : 0.12}
-            metalness={0.5}
-            roughness={0.5}
+            emissive={crowned ? PALETTE.ember : tint}
+            emissiveIntensity={crowned ? 0.6 : 0.1}
+            gradientMap={TOON_RAMP}
           />
         </mesh>
-        <mesh position={[0, 1.3, 0]}>
+        {/* the hood */}
+        <mesh position={[0, 1.55, 0]}>
           <sphereGeometry args={[0.24, 12, 12]} />
-          <meshStandardMaterial color={tint} metalness={0.5} roughness={0.5} />
+          <meshToonMaterial
+            color={tint}
+            emissive={crowned ? PALETTE.emberDeep : '#000000'}
+            emissiveIntensity={crowned ? 0.4 : 0}
+            gradientMap={TOON_RAMP}
+          />
         </mesh>
         {crowned ? (
-          <mesh position={[0, 1.72, 0]}>
-            <coneGeometry args={[0.2, 0.3, 6]} />
-            <meshStandardMaterial color="#e8b34b" emissive="#e8b34b" emissiveIntensity={0.8} />
-          </mesh>
+          <>
+            {/* the warning crown */}
+            <mesh position={[0, 1.98, 0]}>
+              <coneGeometry args={[0.2, 0.32, 6, 1]} />
+              <meshToonMaterial
+                color={PALETTE.ember}
+                emissive={PALETTE.ember}
+                emissiveIntensity={1.1}
+                gradientMap={TOON_RAMP}
+              />
+            </mesh>
+            {/* a floating warning ember */}
+            <mesh position={[0, 2.45, 0]}>
+              <octahedronGeometry args={[0.12, 0]} />
+              <meshToonMaterial
+                color={PALETTE.ember}
+                emissive={PALETTE.ember}
+                emissiveIntensity={1.3}
+                gradientMap={TOON_RAMP}
+              />
+            </mesh>
+          </>
         ) : null}
       </group>
       {crowned ? (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
           <ringGeometry args={[0.5 * scale, 0.62 * scale, 24]} />
-          <meshBasicMaterial color="#e8b34b" transparent opacity={0.7} />
+          <meshBasicMaterial color={PALETTE.ember} transparent opacity={0.7} />
         </mesh>
       ) : null}
     </group>
   )
 }
+
+/** decorative outer menhirs so the circle reads as a stone ring even when few
+ * guardians stand — static silhouettes only. */
+const CIRCLE_STONES: readonly { angle: number; height: number }[] = Array.from(
+  { length: 8 },
+  (_, i) => ({ angle: (i / 8) * Math.PI * 2 + 0.2, height: 1.1 + ((i * 37) % 5) * 0.12 }),
+)
 
 function RegistryCircle({ reduced }: { reduced: boolean }): JSX.Element {
   const assumptions = useQuestStore((s) => s.data.assumptions)
@@ -238,16 +448,61 @@ function RegistryCircle({ reduced }: { reduced: boolean }): JSX.Element {
   const standing = assumptions.filter((a) => a.status !== 'invalidated')
   const [cx, cy, cz] = REGISTRY_POSITION
 
+  // where the crowned menhir stands, so its ember light can pool there
+  let emberX = 0
+  let emberZ = 0
+  let hasEmber = false
+  standing.forEach((a, index) => {
+    if (riskiest !== null && riskiest.id === a.id) {
+      const angle = (index / Math.max(standing.length, 1)) * Math.PI * 2
+      emberX = Math.cos(angle) * 2.2
+      emberZ = Math.sin(angle) * 2.2
+      hasEmber = true
+    }
+  })
+
   return (
     <group position={[cx, cy, cz]}>
+      {/* the inscribed ground circle */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <ringGeometry args={[2.9, 3.15, 40]} />
-        <meshBasicMaterial color="#6f5cf0" transparent opacity={0.5} />
+        <ringGeometry args={[2.9, 3.15, 48]} />
+        <meshBasicMaterial color={PALETTE.teal} transparent opacity={0.5} />
       </mesh>
-      <mesh position={[0, 0.08, 0]}>
-        <cylinderGeometry args={[0.5, 0.6, 0.16, 12]} />
-        <meshStandardMaterial color="#2a2447" emissive="#6f5cf0" emissiveIntensity={0.25} />
+      {/* the central altar */}
+      <mesh position={[0, 0.1, 0]}>
+        <cylinderGeometry args={[0.5, 0.62, 0.2, 12]} />
+        <meshToonMaterial
+          color={PALETTE.stone}
+          emissive={PALETTE.teal}
+          emissiveIntensity={0.35}
+          gradientMap={TOON_RAMP}
+        />
       </mesh>
+      {/* a teal pool of light over the circle (constant) + a warning ember that
+          dims to nothing when nothing is riskiest (constant count, no recompile) */}
+      {!LOW_POWER ? (
+        <>
+          <pointLight position={[0, 2.2, 0]} color={PALETTE.teal} intensity={0.8} distance={8} decay={2} />
+          <pointLight
+            position={[emberX, 1.6, emberZ]}
+            color={PALETTE.ember}
+            intensity={hasEmber ? 0.9 : 0}
+            distance={6}
+            decay={2}
+          />
+        </>
+      ) : null}
+      {/* the outer standing stones */}
+      {CIRCLE_STONES.map((stone, i) => (
+        <mesh
+          key={i}
+          position={[Math.cos(stone.angle) * 3.05, stone.height / 2, Math.sin(stone.angle) * 3.05]}
+          rotation={[0.04, stone.angle, ((i % 3) - 1) * 0.05]}
+        >
+          <cylinderGeometry args={[0.18, 0.28, stone.height, 5]} />
+          <meshToonMaterial color={PALETTE.stoneCool} gradientMap={TOON_RAMP} />
+        </mesh>
+      ))}
       {standing.map((assumption, index) => {
         const angle = (index / Math.max(standing.length, 1)) * Math.PI * 2
         return (
@@ -258,6 +513,7 @@ function RegistryCircle({ reduced }: { reduced: boolean }): JSX.Element {
             crowned={riskiest !== null && riskiest.id === assumption.id}
             reduced={reduced}
             position={[Math.cos(angle) * 2.2, 0, Math.sin(angle) * 2.2]}
+            facing={-angle + Math.PI / 2}
           />
         )
       })}
@@ -294,6 +550,41 @@ function chipLabel(spec: InteractableSpec): string {
   }
 }
 
+/** A single point light that pools on the active target and pulses gently on
+ * proximity. Always mounted (dims to zero when idle) so the light count never
+ * changes — no shader recompiles as focus moves. Steady under reduced motion. */
+function ProximityLight({ reduced }: { reduced: boolean }): JSX.Element {
+  const targetId = useInteractionStore(activeTargetId)
+  const roaming = useUiStore((s) => s.mode === 'roam')
+  const spec = targetId !== null ? SPEC_BY_ID.get(targetId) : undefined
+  const light = useRef<PointLight>(null)
+  const active = roaming && spec !== undefined
+  const [px, py, pz] = spec ? spec.position : ([0, 0, 0] as [number, number, number])
+  const ly = spec?.kind === 'vault' ? py + 0.4 : 1.5
+
+  useFrame(({ clock }) => {
+    const l = light.current
+    if (l === null) return
+    if (!active) {
+      l.intensity += (0 - l.intensity) * 0.2
+      return
+    }
+    const base = 1.1
+    l.intensity = reduced ? base : base + Math.sin(clock.elapsedTime * 3) * 0.35
+  })
+
+  return (
+    <pointLight
+      ref={light}
+      position={[px, ly, pz]}
+      color={PALETTE.amberBright}
+      intensity={0}
+      distance={6}
+      decay={2}
+    />
+  )
+}
+
 function HighlightRing({ reduced }: { reduced: boolean }): JSX.Element | null {
   const targetId = useInteractionStore(activeTargetId)
   const roaming = useUiStore((s) => s.mode === 'roam')
@@ -327,7 +618,7 @@ function HighlightRing({ reduced }: { reduced: boolean }): JSX.Element | null {
 
   return (
     <group>
-      <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.05, z]}>
+      <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.06, z]}>
         <ringGeometry args={[1.0, 1.25, 40]} />
         <meshBasicMaterial color="#fbbf24" transparent opacity={0.85} depthWrite={false} />
       </mesh>
@@ -361,15 +652,16 @@ export function Interactables({ reduced }: InteractablesProps): JSX.Element {
       {STAGE1_LAYOUT.map((spec) => {
         switch (spec.kind) {
           case 'shrine':
-            return <ShrineStone key={spec.id} spec={spec} />
+            return <ShrineStone key={spec.id} spec={spec} reduced={reduced} />
           case 'flagpole':
-            return <Flagpole key={spec.id} spec={spec} />
+            return <Flagpole key={spec.id} spec={spec} reduced={reduced} />
           case 'vault':
             return <VaultMonument key={spec.id} spec={spec} reduced={reduced} />
           case 'registry':
             return <RegistryCircle key={spec.id} reduced={reduced} />
         }
       })}
+      {!LOW_POWER ? <ProximityLight reduced={reduced} /> : null}
       <HighlightRing reduced={reduced} />
     </group>
   )

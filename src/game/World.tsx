@@ -8,6 +8,7 @@
 import { Suspense, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, Physics, RigidBody } from '@react-three/rapier'
+import { ACESFilmicToneMapping, NoToneMapping } from 'three'
 import { useUiStore } from '../state/ui'
 import { WORLD_COPY } from '../strings'
 import { CameraRig } from './CameraRig'
@@ -15,8 +16,12 @@ import type { WorldEvents } from './contracts'
 import { useWorldControls } from './controls'
 import { defaultWorldEvents } from './events'
 import { Interactables } from './Interactables'
+import { PALETTE, TOON_RAMP } from './materials'
 import { Nebula } from './Nebula'
+import { LOW_POWER, WORLD_DPR } from './perf'
 import { Player, PLAYER_SPAWN } from './Player'
+import { PostFx } from './PostFx'
+import { GroundField } from './props'
 import { ShadowTwin } from './ShadowTwin'
 import { FpsSampler } from './useFps'
 import { useReducedMotion } from './useReducedMotion'
@@ -61,29 +66,38 @@ function Ground(): JSX.Element {
           rotation={[0, wall.yaw, 0]}
         />
       ))}
+      {/* the plateau's drum — a dark toon cliff below the dressed top disk */}
       <mesh position={[0, -0.5, 0]}>
         <cylinderGeometry args={[PLATEAU_RADIUS, PLATEAU_RADIUS + 2, 1, 48]} />
-        <meshStandardMaterial color="#221c38" />
+        <meshToonMaterial color="#241d3c" gradientMap={TOON_RAMP} />
       </mesh>
       {/* the ground's edge dissolves into the nebula — a faint rim glow */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-        <ringGeometry args={[PLATEAU_RADIUS - 1.5, PLATEAU_RADIUS, 48]} />
-        <meshBasicMaterial color="#6f5cf0" transparent opacity={0.25} depthWrite={false} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
+        <ringGeometry args={[PLATEAU_RADIUS - 1.5, PLATEAU_RADIUS + 0.5, 48]} />
+        <meshBasicMaterial color={PALETTE.violet} transparent opacity={0.3} depthWrite={false} />
       </mesh>
     </RigidBody>
   )
 }
 
 /**
- * Fires `onFirstFrame` once, on the scene's first rendered frame. Mounted
- * INSIDE the world's Suspense boundary, so the callback proves the whole
- * scene (rapier WASM included) resolved and a frame actually drew — the same
- * readiness signal the dev FPS sampler uses (ruled fix 7).
+ * Fires `onFirstFrame` once, after the scene's first few rendered frames.
+ * Mounted INSIDE the world's Suspense boundary, so the callback proves the
+ * whole scene (rapier WASM included) resolved and frames actually drew — the
+ * same readiness signal the dev FPS sampler uses (ruled fix 7). We wait for a
+ * handful of painted frames rather than exactly one: it makes the readiness
+ * signal unambiguous and gives the DOM loading line a stable, observable
+ * lifetime (it never blinks out sub-frame on a fast warm boot).
  */
+const READY_FRAMES = 3
+
 function FirstFrameNotifier({ onFirstFrame }: { onFirstFrame: () => void }): null {
   const fired = useRef(false)
+  const frames = useRef(0)
   useFrame(() => {
     if (fired.current) return
+    frames.current += 1
+    if (frames.current < READY_FRAMES) return
     fired.current = true
     onFirstFrame()
   })
@@ -101,21 +115,25 @@ export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
   const paused = useUiStore((s) => s.mode !== 'roam')
   return (
     <>
-      <color attach="background" args={['#0b0817']} />
-      <fog attach="fog" args={['#191233', 20, 95]} />
-      {/* §8 light budget: one directional + one hemisphere, no shadow maps */}
-      <hemisphereLight args={['#7d6ff0', '#151022', 0.7]} />
-      <directionalLight position={[10, 16, 8]} intensity={1.0} />
+      <color attach="background" args={[PALETTE.space]} />
+      <fog attach="fog" args={[PALETTE.fog, 24, 96]} />
+      {/* §8 light budget: a warm golden-hour key + a cool violet fill, no shadow
+          maps. Monuments carry their own small accent lights (constant count). */}
+      <hemisphereLight args={[PALETTE.fillCool, '#151022', 0.55]} />
+      <ambientLight color={PALETTE.fillCool} intensity={0.16} />
+      <directionalLight color={PALETTE.keyWarm} position={[13, 9, 6]} intensity={1.25} />
       <Nebula reduced={reduced} />
+      <GroundField />
       <Interactables reduced={reduced} />
       <ShadowTwin reduced={reduced} />
       <CameraRig reduced={reduced} />
       <Physics paused={paused} timeStep={1 / 60}>
         <Ground />
-        <Player />
+        <Player reduced={reduced} />
       </Physics>
       {onFirstFrame !== undefined ? <FirstFrameNotifier onFirstFrame={onFirstFrame} /> : null}
       {import.meta.env.DEV ? <FpsSampler /> : null}
+      <PostFx reduced={reduced} lowPower={LOW_POWER} />
     </>
   )
 }
@@ -134,14 +152,21 @@ export function GameRoot({ events = defaultWorldEvents, onFirstFrame }: GameRoot
   return (
     <div className="absolute inset-0" role="application" aria-label={WORLD_COPY.worldName}>
       <Canvas
-        dpr={[1, 1.5]}
+        dpr={WORLD_DPR}
         camera={{
           fov: 50,
           near: 0.1,
-          far: 160,
+          far: 400,
           position: [PLAYER_SPAWN[0], PLAYER_SPAWN[1] + 2.2, PLAYER_SPAWN[2] + 6],
         }}
-        gl={{ antialias: true, powerPreference: 'high-performance' }}
+        // Full path: NoToneMapping on the renderer so the PostFx ToneMapping
+        // effect owns the final curve (never double-mapped). Low power: no
+        // composer, so the renderer tone-maps in-shader (cheap, one pass).
+        gl={{
+          antialias: !LOW_POWER,
+          powerPreference: 'high-performance',
+          toneMapping: LOW_POWER ? ACESFilmicToneMapping : NoToneMapping,
+        }}
       >
         <Suspense fallback={null}>
           <World reduced={reduced} onFirstFrame={onFirstFrame} />

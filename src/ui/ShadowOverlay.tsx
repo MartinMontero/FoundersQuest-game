@@ -27,27 +27,30 @@ export function ShadowOverlay({ onAction, onDismiss }: ShadowOverlayProps): Reac
       onClose={onDismiss}
       role="alertdialog"
       layerClassName="z-shadow"
-      panelClassName="max-w-lg border-violet-700"
+      panelClassName="quest-panel--shadow max-w-lg"
       testId="shadow-overlay"
     >
-      <h2 id={titleId} className="text-sm font-semibold uppercase tracking-widest text-violet-300">
+      <h2
+        id={titleId}
+        className="quest-eyebrow text-sm font-semibold text-[#c4b0ef] [text-shadow:0_0_14px_rgba(122,92,220,0.55)]"
+      >
         {UI.shadow.title}
       </h2>
       {/* the founder's own words, quoted back — nothing invented */}
       <blockquote
         id={quoteId}
         data-testid="shadow-quote"
-        className="mt-3 whitespace-pre-line border-l-2 border-violet-500 pl-3 text-base italic text-slate-100"
+        className="mt-4 whitespace-pre-line border-l-2 border-[#7a5cdc] pl-4 font-display text-base italic text-[#ece7fa]"
       >
         {shadow.quote}
       </blockquote>
-      <div className="mt-4 flex items-center gap-3">
+      <div className="mt-5 flex items-center gap-3">
         {/* exactly one low-friction action */}
         <button
           type="button"
           data-testid="shadow-action"
           onClick={onAction}
-          className="rounded bg-violet-400 px-3 py-1.5 text-sm font-semibold text-slate-950"
+          className="quest-btn quest-btn-gold px-4 py-1.5 text-sm"
         >
           {shadow.action}
         </button>
@@ -55,7 +58,7 @@ export function ShadowOverlay({ onAction, onDismiss }: ShadowOverlayProps): Reac
           type="button"
           data-testid="shadow-dismiss"
           onClick={onDismiss}
-          className="rounded border border-slate-600 px-3 py-1.5 text-sm text-slate-200"
+          className="quest-btn px-3 py-1.5 text-sm text-[#cfc4ef] [border:1px_solid_rgba(168,140,226,0.4)] hover:[background-color:rgba(168,140,226,0.14)]"
         >
           {UI.shadow.dismiss}
         </button>

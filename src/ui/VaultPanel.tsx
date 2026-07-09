@@ -32,17 +32,24 @@ export function VaultPanel(): ReactElement {
 
   return (
     <DialogShell titleId={titleId} onClose={closePanel} layerClassName="z-panel" testId="vault-panel">
-      <h2 id={titleId} className="text-lg font-semibold text-slate-100">
+      <div
+        aria-hidden="true"
+        className="mb-3 h-px w-16 rounded-full bg-gradient-to-r from-ink-line/70 to-transparent"
+      />
+      <h2 id={titleId} className="quest-heading text-xl font-semibold">
         {UI.vault.panelTitle}
       </h2>
-      <p className="mt-1 text-sm text-slate-400">{UI.vault.sealedLine}</p>
-      <p data-testid="vault-count" className="mt-3 text-base text-slate-100">
+      <p className="mt-2 text-xs text-ink-faint">{UI.vault.sealedLine}</p>
+      <p
+        data-testid="vault-count"
+        className="quest-heading mt-4 text-2xl font-semibold text-ink"
+      >
         {UI.vault.countLabel(count)}
       </p>
 
       {/* capture always works — two taps, zero justification (law 10) */}
-      <div className="mt-4 flex flex-col gap-2">
-        <label className="flex flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
+      <div className="mt-5 flex flex-col gap-2">
+        <label className="quest-label flex flex-col gap-1 text-2xs">
           <span>{UI.vault.captureLabel}</span>
           <input
             ref={textRef}
@@ -52,7 +59,7 @@ export function VaultPanel(): ReactElement {
               setText(event.target.value)
               setConfirming(false)
             }}
-            className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm normal-case tracking-normal text-slate-100"
+            className="quest-input px-2 py-1.5 text-sm normal-case tracking-normal"
           />
         </label>
         <div className="flex items-center gap-2">
@@ -61,7 +68,7 @@ export function VaultPanel(): ReactElement {
               type="button"
               data-testid="vault-capture-confirm"
               onClick={capture}
-              className="rounded bg-violet-400 px-3 py-1.5 text-sm font-semibold text-slate-950"
+              className="quest-btn quest-btn-violet px-3 py-1.5 text-sm"
             >
               {UI.vault.nudgeConfirm}
             </button>
@@ -71,13 +78,13 @@ export function VaultPanel(): ReactElement {
               data-testid="vault-capture"
               disabled={text.trim() === ''}
               onClick={() => setConfirming(true)}
-              className="rounded border border-violet-400 px-3 py-1.5 text-sm text-violet-200 disabled:cursor-not-allowed disabled:opacity-40"
+              className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
             >
               {UI.vault.nudgeCapture}
             </button>
           )}
           {captured ? (
-            <p role="status" className="text-2xs text-violet-300">
+            <p role="status" className="text-2xs font-medium text-[#5f43aa]">
               {UI.vault.nudgeCaptured}
             </p>
           ) : null}
@@ -89,7 +96,7 @@ export function VaultPanel(): ReactElement {
           type="button"
           data-testid="vault-close"
           onClick={closePanel}
-          className="rounded border border-slate-600 px-3 py-1.5 text-sm text-slate-200"
+          className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
         >
           {UI.common.close}
         </button>

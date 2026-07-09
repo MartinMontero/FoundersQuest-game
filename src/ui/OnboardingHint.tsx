@@ -16,11 +16,13 @@ export function OnboardingHint(): ReactElement | null {
     <div
       role="note"
       data-testid="onboarding-hint"
-      className="pointer-events-none fixed inset-x-0 bottom-6 z-hud flex justify-center px-4"
+      className="pointer-events-none fixed inset-x-0 bottom-6 z-hud flex justify-center px-4 motion-safe:animate-quest-fade"
     >
-      <div className="rounded-lg border border-slate-700 bg-slate-900/90 px-4 py-2 text-center">
-        <p className="text-xs text-slate-300">{UI.onboarding.movement}</p>
-        <p className="mt-0.5 text-sm font-medium text-slate-100">{UI.onboarding.interact}</p>
+      <div className="quest-hud px-5 py-3 text-center">
+        <p className="text-xs tracking-wide text-parchment-300/85">{UI.onboarding.movement}</p>
+        <p className="quest-heading mt-1 text-sm font-semibold text-amber-accent-200">
+          {UI.onboarding.interact}
+        </p>
       </div>
     </div>
   )

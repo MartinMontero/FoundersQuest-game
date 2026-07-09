@@ -4,13 +4,21 @@
 // useFrame (never setState per frame, §8). The same loop derives the
 // walk-up proximity target — the world owns no state of record; the
 // interaction store holds only the ephemeral highlight.
+//
+// The VISUAL is a small cloaked wanderer built from toon-shaded primitives
+// (the physics stays a plain capsule collider). It bobs while idle, leans and
+// faces its heading while walking, and carries a soft cool rim light — all of
+// which fall still under prefers-reduced-motion.
 
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
+import type { Group } from 'three'
 import { STAGE1_LAYOUT } from './contracts'
 import { getMoveInput } from './controls'
 import { INTERACT_RADIUS, useInteractionStore } from './interaction'
+import { PALETTE, TOON_RAMP } from './materials'
+import { LOW_POWER } from './perf'
 import { cameraYaw, playerWorldPos } from './refs'
 import { useUiStore } from '../state/ui'
 
@@ -43,10 +51,68 @@ function updateNearest(x: number, z: number): void {
   useInteractionStore.getState().setNearest(best)
 }
 
-export function Player(): JSX.Element {
-  const body = useRef<RapierRigidBody>(null)
+/** The cloaked wanderer — a chunky toon silhouette, never a bare capsule. */
+function Wanderer(): JSX.Element {
+  return (
+    <group>
+      {/* the cloak: wide at the hem, narrowing to the shoulders */}
+      <mesh position={[0, -0.05, 0]}>
+        <coneGeometry args={[0.46, 1.3, 10, 1]} />
+        <meshToonMaterial color={PALETTE.cloak} gradientMap={TOON_RAMP} />
+      </mesh>
+      {/* an inner fold for a little silhouette irregularity */}
+      <mesh position={[0.04, -0.1, 0.02]} rotation={[0.05, 0.4, 0.06]}>
+        <coneGeometry args={[0.34, 1.1, 8, 1]} />
+        <meshToonMaterial color={PALETTE.cloakDeep} gradientMap={TOON_RAMP} />
+      </mesh>
+      {/* the scarf ring at the neck, warm and faintly lit */}
+      <mesh position={[0, 0.46, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.2, 0.06, 8, 16]} />
+        <meshToonMaterial
+          color={PALETTE.scarf}
+          emissive={PALETTE.scarf}
+          emissiveIntensity={0.28}
+          gradientMap={TOON_RAMP}
+        />
+      </mesh>
+      {/* a trailing scarf end, tossed behind (local -z) */}
+      <mesh position={[0.12, 0.42, -0.24]} rotation={[0.5, 0, -0.4]}>
+        <boxGeometry args={[0.1, 0.36, 0.02]} />
+        <meshToonMaterial color={PALETTE.scarf} gradientMap={TOON_RAMP} />
+      </mesh>
+      {/* the hood */}
+      <mesh position={[0, 0.72, -0.02]}>
+        <sphereGeometry args={[0.29, 14, 14]} />
+        <meshToonMaterial color={PALETTE.cloak} gradientMap={TOON_RAMP} />
+      </mesh>
+      {/* the hood's peak */}
+      <mesh position={[0, 1.0, -0.05]} rotation={[0.2, 0, 0]}>
+        <coneGeometry args={[0.16, 0.34, 8, 1]} />
+        <meshToonMaterial color={PALETTE.cloakDeep} gradientMap={TOON_RAMP} />
+      </mesh>
+      {/* the shadowed face, set into the hood and looking forward (local +z) */}
+      <mesh position={[0, 0.7, 0.2]}>
+        <sphereGeometry args={[0.19, 12, 12]} />
+        <meshToonMaterial
+          color="#1a1530"
+          emissive={PALETTE.teal}
+          emissiveIntensity={0.14}
+          gradientMap={TOON_RAMP}
+        />
+      </mesh>
+    </group>
+  )
+}
 
-  useFrame(() => {
+export interface PlayerProps {
+  reduced: boolean
+}
+
+export function Player({ reduced }: PlayerProps): JSX.Element {
+  const body = useRef<RapierRigidBody>(null)
+  const visual = useRef<Group>(null)
+
+  useFrame(({ clock }, delta) => {
     const rb = body.current
     if (rb === null) return
 
@@ -93,6 +159,29 @@ export function Player(): JSX.Element {
     }
     const velocity = rb.linvel()
     rb.setLinvel({ x: vx, y: velocity.y, z: vz }, true)
+
+    // wanderer idle bob / walk lean / heading — all still under reduced motion
+    const vis = visual.current
+    if (vis !== null) {
+      const speed = Math.hypot(vx, vz)
+      const moving = speed > 0.05
+      if (reduced) {
+        vis.position.y = 0
+        vis.rotation.x = 0
+        if (moving) vis.rotation.y = Math.atan2(vx, vz)
+      } else {
+        const time = clock.elapsedTime
+        const bounce = moving ? Math.sin(time * 9) * 0.05 : 0
+        vis.position.y = Math.sin(time * 1.8) * 0.03 + bounce
+        const lean = moving ? 0.14 : 0
+        vis.rotation.x += (lean - vis.rotation.x) * Math.min(1, delta * 6)
+        if (moving) {
+          const desired = Math.atan2(vx, vz)
+          const d = Math.atan2(Math.sin(desired - vis.rotation.y), Math.cos(desired - vis.rotation.y))
+          vis.rotation.y += d * Math.min(1, delta * 8)
+        }
+      }
+    }
   })
 
   return (
@@ -104,10 +193,13 @@ export function Player(): JSX.Element {
       linearDamping={0.4}
     >
       <CapsuleCollider args={[0.55, 0.4]} />
-      <mesh>
-        <capsuleGeometry args={[0.4, 1.1, 6, 16]} />
-        <meshStandardMaterial color="#b8b2d9" emissive="#4a3f8f" emissiveIntensity={0.2} />
-      </mesh>
+      <group ref={visual}>
+        <Wanderer />
+      </group>
+      {/* a soft cool rim so the silhouette lifts off the warm ground */}
+      {!LOW_POWER ? (
+        <pointLight position={[0.8, 1.9, -0.9]} color={PALETTE.rimCool} intensity={0.5} distance={5} decay={2} />
+      ) : null}
     </RigidBody>
   )
 }

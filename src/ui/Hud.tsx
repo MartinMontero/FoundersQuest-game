@@ -26,20 +26,28 @@ export function Hud(): ReactElement | null {
   return (
     <div
       data-testid="hud"
-      className="pointer-events-none fixed left-4 top-4 z-hud flex w-80 select-none flex-col gap-2"
+      className="quest-hud pointer-events-none fixed left-4 top-4 z-hud flex w-80 select-none flex-col gap-3 p-4 motion-safe:animate-quest-fade"
     >
-      <p
-        data-testid="stage-banner"
-        className="text-2xs uppercase tracking-widest text-slate-400"
-      >
+      <p data-testid="stage-banner" className="quest-eyebrow text-2xs text-amber-accent-200/90">
         {stageBanner(stage)}
       </p>
 
-      {/* Truth leads — larger, first (game-design §4) */}
+      {/* Truth leads — larger, first, a glowing sigil meter (game-design §4) */}
       <div>
-        <div className="flex items-baseline justify-between">
-          <span className="text-sm font-semibold text-amber-200">{UI.hud.truthLabel}</span>
-          <span data-testid="hud-truth-value" className="text-sm text-amber-200">
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="h-2.5 w-2.5 rotate-45 rounded-[2px] bg-gradient-to-br from-amber-accent-200 to-amber-accent-500 [box-shadow:0_0_8px_rgba(242,182,74,0.75)] motion-safe:animate-quest-sigil"
+            />
+            <span className="font-display text-sm font-semibold tracking-wide text-amber-accent-200">
+              {UI.hud.truthLabel}
+            </span>
+          </span>
+          <span
+            data-testid="hud-truth-value"
+            className="font-display text-base font-semibold text-amber-accent-200"
+          >
             {truthText}
           </span>
         </div>
@@ -51,12 +59,12 @@ export function Hud(): ReactElement | null {
           aria-valuenow={truthValue === null ? 0 : Math.round(truthValue * 100)}
           aria-valuetext={truthText}
           data-testid="hud-truth"
-          className={`mt-1 h-3 w-full overflow-hidden rounded bg-slate-800 ${
-            banked ? 'ring-1 ring-amber-300/70 shadow-[0_0_10px_rgba(251,191,36,0.45)]' : ''
+          className={`quest-track mt-1.5 h-3 w-full rounded-full ${
+            banked ? 'ring-1 ring-amber-accent-300/70 shadow-amber-glow' : ''
           }`}
         >
           <div
-            className="h-full bg-amber-400"
+            className="h-full rounded-full bg-gradient-to-r from-amber-accent-300 to-amber-accent-500 [box-shadow:0_0_10px_rgba(242,182,74,0.6)]"
             style={{ width: `${truthValue === null ? 0 : Math.round(truthValue * 100)}%` }}
           />
         </div>
@@ -67,18 +75,20 @@ export function Hud(): ReactElement | null {
           <p
             role="status"
             data-testid="hud-truth-banked"
-            className="mt-1 animate-pulse text-2xs italic text-amber-300 motion-reduce:animate-none"
+            className="mt-1.5 animate-pulse text-2xs italic text-amber-accent-300 motion-reduce:animate-none"
           >
             {UI.hud.truthBanked}
           </p>
         ) : null}
       </div>
 
-      {/* Action follows — smaller, second */}
+      {/* Action follows — a smaller teal-rune banner meter */}
       <div>
         <div className="flex items-baseline justify-between">
-          <span className="text-xs font-medium text-sky-200">{UI.hud.actionLabel}</span>
-          <span data-testid="hud-action-value" className="text-xs text-sky-200">
+          <span className="text-xs font-medium tracking-wide text-teal-rune-200">
+            {UI.hud.actionLabel}
+          </span>
+          <span data-testid="hud-action-value" className="text-xs text-teal-rune-200">
             {actionText}
           </span>
         </div>
@@ -90,27 +100,49 @@ export function Hud(): ReactElement | null {
           aria-valuenow={Math.round(actionValue * 100)}
           aria-valuetext={actionText}
           data-testid="hud-action"
-          className="mt-1 h-1.5 w-full overflow-hidden rounded bg-slate-800"
+          className="quest-track mt-1.5 h-1.5 w-full rounded-full"
         >
-          <div className="h-full bg-sky-400" style={{ width: `${Math.round(actionValue * 100)}%` }} />
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-teal-rune-300 to-teal-rune-500 [box-shadow:0_0_8px_rgba(63,217,200,0.5)]"
+            style={{ width: `${Math.round(actionValue * 100)}%` }}
+          />
         </div>
       </div>
 
-      {/* tier coin tallies: literal code + mythic metal + count */}
-      <ul aria-label={UI.hud.coinsLabel} className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-        {TIERS.map((tier) => (
-          <li
-            key={tier}
-            data-testid={`hud-coin-e${tier}`}
-            className="flex items-baseline gap-1 text-2xs text-slate-300"
-          >
-            <span className="font-mono font-bold">{TIER_CODES[tier]}</span>
-            <span className="text-slate-400">{TIER_METALS[tier]}</span>
-            <span data-testid={`hud-coin-e${tier}-count`} className="font-mono">
-              {coinCount(coins[tier])}
-            </span>
-          </li>
-        ))}
+      {/* tier coins as embossed medallions: literal code (E0–E4) struck when held */}
+      <ul
+        aria-label={UI.hud.coinsLabel}
+        className="mt-0.5 grid grid-cols-5 gap-1.5 border-t border-amber-accent-500/20 pt-3"
+      >
+        {TIERS.map((tier) => {
+          const struck = coins[tier] > 0
+          return (
+            <li
+              key={tier}
+              data-testid={`hud-coin-e${tier}`}
+              className="flex flex-col items-center gap-1"
+            >
+              <span
+                className={`quest-medallion font-mono text-[10px] font-bold ${
+                  struck ? 'quest-medallion-struck' : ''
+                }`}
+              >
+                {TIER_CODES[tier]}
+              </span>
+              <span className="text-[10px] leading-none text-parchment-300/70">
+                {TIER_METALS[tier]}
+              </span>
+              <span
+                data-testid={`hud-coin-e${tier}-count`}
+                className={`font-mono text-2xs leading-none ${
+                  struck ? 'text-amber-accent-200' : 'text-parchment-300/50'
+                }`}
+              >
+                {coinCount(coins[tier])}
+              </span>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )

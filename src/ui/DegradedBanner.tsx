@@ -14,7 +14,7 @@ export function DegradedBanner(): ReactElement | null {
     <div
       role="alert"
       data-testid="degraded-banner"
-      className="fixed inset-x-0 top-0 z-banner bg-amber-500 px-4 py-2 text-center text-sm font-medium text-slate-950"
+      className="fixed inset-x-0 top-0 z-banner border-b border-[#8a5a10] bg-gradient-to-b from-amber-accent-300 to-amber-accent-500 px-4 py-2.5 text-center text-sm font-semibold text-ink [box-shadow:0_6px_18px_-6px_rgba(0,0,0,0.55)]"
     >
       {UI.banner.degraded}
     </div>
