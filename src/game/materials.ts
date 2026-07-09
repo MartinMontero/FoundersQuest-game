@@ -8,18 +8,20 @@
 import { DataTexture, NearestFilter, RedFormat } from 'three'
 
 /** Named palette — every component pulls its colours from here so the world
- * reads as one painted scene (Ghibli-adjacent, NOT neon). */
+ * reads as one painted scene (warm N64-era low-poly, NOT cold neon). World 1 is
+ * violet/indigo THEME warmed with gold dust and teal rune accents. */
 export const PALETTE = {
   /** deep-space background behind the sky dome */
-  space: '#0b0817',
-  /** atmospheric fog near the horizon — a deep indigo, not a grey */
-  fog: '#241a45',
+  space: '#0c0817',
+  /** atmospheric fog banked into the distance — a WARM indigo haze, the OoT
+   * "air": distance softens to warmth so the cool world reads inviting */
+  fog: '#352247',
   /** sky gradient: violet zenith → indigo horizon */
-  skyZenith: '#241a52',
-  skyHorizon: '#120d2c',
-  /** warm golden-hour glow banked low in the sky */
-  skyGlow: '#6b3f6e',
-  /** the drifting aurora band */
+  skyZenith: '#281a52',
+  skyHorizon: '#160f2e',
+  /** golden-hour glow banked low in the sky — warm rose-gold, not muddy purple */
+  skyGlow: '#bd7a55',
+  /** the drifting aurora band (teal rune accent) */
   aurora: '#2f8f86',
   /** rune / crystal glow */
   teal: '#3fe0d8',
@@ -28,18 +30,26 @@ export const PALETTE = {
   amber: '#e8b34b',
   amberBright: '#ffcf6a',
   /** lights */
-  keyWarm: '#ffe2b0',
-  fillCool: '#7c78e0',
+  keyWarm: '#ffe0a6',
+  fillCool: '#8079db',
   rimCool: '#8ea6ff',
-  /** stone / props — desaturated warm */
-  stone: '#5f574a',
-  stoneWarm: '#847258',
-  stoneCool: '#453f5e',
+  /** a low warm back-rim so the cool Nebula still reads inviting (pillar 1) */
+  rimWarm: '#ffb877',
+  /** warm-dark hemisphere ground bounce (upward faces catch earth warmth) */
+  groundBounce: '#2b1d26',
+  /** drifting gold-dust motes — little warm points of light that draw the eye */
+  dust: '#ffcf8a',
+  /** stone / props — desaturated WARM */
+  stone: '#655a4c',
+  stoneWarm: '#8c7659',
+  stoneCool: '#463f5c',
+  /** the sun-warmed gold on the brightest ground patches */
+  goldAccent: '#e9b86a',
   /** violet monument body + faint rune-idle glow */
   violet: '#6f5cf0',
   violetDeep: '#2f2760',
   /** grass tufts */
-  grass: '#5d6b4a',
+  grass: '#61704c',
   grassCool: '#43614f',
   /** the riskiest guardian's warning ember */
   ember: '#ff7a3c',
@@ -52,17 +62,18 @@ export const PALETTE = {
 
 /**
  * Build a stepped grayscale ramp as a DataTexture — the cel gradient map every
- * MeshToonMaterial samples to quantise its diffuse into flat bands. Weighted so
- * the lit band dominates (painted, not a harsh two-tone). NearestFilter + no
- * mipmaps is required for a gradient map to read as discrete steps.
+ * MeshToonMaterial samples to quantise its diffuse into flat bands. A raised
+ * `floor` keeps the darkest band lit (soft, warm shadows — the painted OoT
+ * look, never crushed to cold black) while a gentle gamma lifts the mids so the
+ * lit band dominates. NearestFilter + no mipmaps keeps the steps discrete.
  */
-export function makeToonRamp(steps: number): DataTexture {
+export function makeToonRamp(steps: number, floor = 0): DataTexture {
   const size = Math.max(2, steps)
   const data = new Uint8Array(size)
   for (let i = 0; i < size; i += 1) {
     const t = i / (size - 1)
-    // a gentle gamma lifts the mid bands so shadows stay soft, not crushed
-    data[i] = Math.round(Math.pow(t, 0.8) * 255)
+    const v = floor + (1 - floor) * Math.pow(t, 0.85)
+    data[i] = Math.round(v * 255)
   }
   const ramp = new DataTexture(data, size, 1, RedFormat)
   ramp.minFilter = NearestFilter
@@ -72,7 +83,9 @@ export function makeToonRamp(steps: number): DataTexture {
   return ramp
 }
 
-/** The shared 4-step ramp — one texture for the whole scene (draw-call friendly). */
-export const TOON_RAMP = makeToonRamp(4)
-/** A softer 3-step ramp for large surfaces (ground, distant rock) — fewer, wider bands. */
-export const TOON_RAMP_SOFT = makeToonRamp(3)
+/** The shared 4-step ramp — one texture for the whole scene (draw-call friendly).
+ * Floor 0.32: shadows stay warm and readable, not a hard two-tone. */
+export const TOON_RAMP = makeToonRamp(4, 0.32)
+/** A softer 3-step ramp for large surfaces (ground, distant rock) — fewer, wider,
+ * flatter-lit bands (floor 0.42) so the painted plateau reads even and warm. */
+export const TOON_RAMP_SOFT = makeToonRamp(3, 0.42)

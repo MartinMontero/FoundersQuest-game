@@ -51,52 +51,59 @@ function updateNearest(x: number, z: number): void {
   useInteractionStore.getState().setNearest(best)
 }
 
-/** The cloaked wanderer — a chunky toon silhouette, never a bare capsule. */
+/** The cloaked wanderer — a chunky, rounded N64 silhouette (big-hood charm,
+ * hood + scarf, faceless-mysterious). A soft cowl, never a pointed hat; never a
+ * bare capsule. */
 function Wanderer(): JSX.Element {
   return (
     <group>
-      {/* the cloak: wide at the hem, narrowing to the shoulders */}
-      <mesh position={[0, -0.05, 0]}>
-        <coneGeometry args={[0.46, 1.3, 10, 1]} />
+      {/* the cloak: a chunky rounded bell, wide at the hem */}
+      <mesh position={[0, -0.02, 0]}>
+        <coneGeometry args={[0.54, 1.34, 12, 1]} />
         <meshToonMaterial color={PALETTE.cloak} gradientMap={TOON_RAMP} />
       </mesh>
       {/* an inner fold for a little silhouette irregularity */}
-      <mesh position={[0.04, -0.1, 0.02]} rotation={[0.05, 0.4, 0.06]}>
-        <coneGeometry args={[0.34, 1.1, 8, 1]} />
+      <mesh position={[0.05, -0.08, 0.03]} rotation={[0.04, 0.4, 0.06]}>
+        <coneGeometry args={[0.4, 1.14, 10, 1]} />
         <meshToonMaterial color={PALETTE.cloakDeep} gradientMap={TOON_RAMP} />
       </mesh>
-      {/* the scarf ring at the neck, warm and faintly lit */}
-      <mesh position={[0, 0.46, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.2, 0.06, 8, 16]} />
+      {/* rounded shoulders — a squashed dome that fattens the N64 silhouette */}
+      <mesh position={[0, 0.44, 0]} scale={[1, 0.62, 1]}>
+        <sphereGeometry args={[0.33, 14, 12]} />
+        <meshToonMaterial color={PALETTE.cloak} gradientMap={TOON_RAMP} />
+      </mesh>
+      {/* the scarf ring at the neck — chunky, warm and faintly lit */}
+      <mesh position={[0, 0.5, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.22, 0.08, 10, 18]} />
         <meshToonMaterial
           color={PALETTE.scarf}
           emissive={PALETTE.scarf}
-          emissiveIntensity={0.28}
+          emissiveIntensity={0.3}
           gradientMap={TOON_RAMP}
         />
       </mesh>
       {/* a trailing scarf end, tossed behind (local -z) */}
-      <mesh position={[0.12, 0.42, -0.24]} rotation={[0.5, 0, -0.4]}>
-        <boxGeometry args={[0.1, 0.36, 0.02]} />
+      <mesh position={[0.13, 0.44, -0.26]} rotation={[0.55, 0, -0.4]}>
+        <boxGeometry args={[0.12, 0.4, 0.03]} />
         <meshToonMaterial color={PALETTE.scarf} gradientMap={TOON_RAMP} />
       </mesh>
-      {/* the hood */}
-      <mesh position={[0, 0.72, -0.02]}>
-        <sphereGeometry args={[0.29, 14, 14]} />
+      {/* the hood — a big rounded head, N64 charm */}
+      <mesh position={[0, 0.82, -0.02]}>
+        <sphereGeometry args={[0.34, 16, 16]} />
         <meshToonMaterial color={PALETTE.cloak} gradientMap={TOON_RAMP} />
       </mesh>
-      {/* the hood's peak */}
-      <mesh position={[0, 1.0, -0.05]} rotation={[0.2, 0, 0]}>
-        <coneGeometry args={[0.16, 0.34, 8, 1]} />
+      {/* the hood's rounded back-fold — a soft cowl, deliberately NOT a peak */}
+      <mesh position={[0, 0.9, -0.2]} rotation={[0.6, 0, 0]} scale={[1, 1.2, 1]}>
+        <sphereGeometry args={[0.2, 12, 12]} />
         <meshToonMaterial color={PALETTE.cloakDeep} gradientMap={TOON_RAMP} />
       </mesh>
       {/* the shadowed face, set into the hood and looking forward (local +z) */}
-      <mesh position={[0, 0.7, 0.2]}>
-        <sphereGeometry args={[0.19, 12, 12]} />
+      <mesh position={[0, 0.8, 0.23]}>
+        <sphereGeometry args={[0.21, 12, 12]} />
         <meshToonMaterial
-          color="#1a1530"
+          color="#160f28"
           emissive={PALETTE.teal}
-          emissiveIntensity={0.14}
+          emissiveIntensity={0.16}
           gradientMap={TOON_RAMP}
         />
       </mesh>
@@ -168,13 +175,18 @@ export function Player({ reduced }: PlayerProps): JSX.Element {
       if (reduced) {
         vis.position.y = 0
         vis.rotation.x = 0
+        vis.rotation.z = 0
         if (moving) vis.rotation.y = Math.atan2(vx, vz)
       } else {
         const time = clock.elapsedTime
-        const bounce = moving ? Math.sin(time * 9) * 0.05 : 0
-        vis.position.y = Math.sin(time * 1.8) * 0.03 + bounce
-        const lean = moving ? 0.14 : 0
+        const bounce = moving ? Math.sin(time * 9) * 0.055 : 0
+        vis.position.y = Math.sin(time * 1.8) * 0.035 + bounce
+        const lean = moving ? 0.15 : 0
         vis.rotation.x += (lean - vis.rotation.x) * Math.min(1, delta * 6)
+        // a gentle waddle: a wider side-to-side roll on the march, a soft
+        // breathing tilt at rest — the little N64 life, still under reduced motion
+        const sway = moving ? Math.sin(time * 4.5) * 0.06 : Math.sin(time * 1.2) * 0.015
+        vis.rotation.z += (sway - vis.rotation.z) * Math.min(1, delta * 6)
         if (moving) {
           const desired = Math.atan2(vx, vz)
           const d = Math.atan2(Math.sin(desired - vis.rotation.y), Math.cos(desired - vis.rotation.y))

@@ -270,6 +270,67 @@
     box-shadow: inset 0 1px 0 rgba(255, 244, 214, 0.5), 0 0 10px rgba(242, 182, 74, 0.4);
   }
 
+  /* ---- Corner-anchored HUD clusters (art-direction pillar 5) ----
+     Chunky, rounded, warm-bordered panels tucked into the screen corners — a
+     game HUD, not a document. The fill is near-opaque so the HUD stays readable
+     on the constrained tier, where backdrop-filter is dropped; the blur is a
+     progressive enhancement only (never relied upon). Distinct from .quest-hud
+     (the OnboardingHint bar), which is intentionally left as-is. */
+  .quest-hud-cluster {
+    border: 1.5px solid rgba(242, 182, 74, 0.34);
+    border-radius: theme('borderRadius.card');
+    background: linear-gradient(180deg, rgba(30, 23, 56, 0.93) 0%, rgba(13, 9, 24, 0.95) 100%);
+    box-shadow: theme('boxShadow.hud-cluster');
+    backdrop-filter: blur(7px) saturate(1.05);
+  }
+
+  /* the world banner — the OoT "area name": warm serif, softly lit */
+  .quest-hud-title {
+    font-family: theme('fontFamily.display');
+    color: theme('colors.amber-accent.200');
+    letter-spacing: 0.01em;
+    text-shadow:
+      0 0 10px rgba(242, 182, 74, 0.32),
+      0 1px 2px rgba(0, 0, 0, 0.6);
+  }
+
+  /* the Truth crystal — a chunky faceted gem in the "life" slot; the breathing
+     glow is added by motion-safe:animate-quest-sigil (stands down when reduced) */
+  .quest-crystal {
+    position: relative;
+    width: 1.05rem;
+    height: 1.05rem;
+    transform: rotate(45deg);
+    border-radius: 4px;
+    background: linear-gradient(135deg, #fbeecb 0%, #f5c974 48%, #dd9a2f 100%);
+    border: 1px solid rgba(120, 70, 15, 0.55);
+    box-shadow:
+      0 0 10px rgba(242, 182, 74, 0.8),
+      inset 0 0 4px rgba(255, 244, 214, 0.85),
+      inset -2px -2px 4px rgba(120, 70, 15, 0.45);
+  }
+  .quest-crystal::before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: 2px;
+    background: linear-gradient(135deg, rgba(255, 250, 235, 0.9) 0%, transparent 55%);
+  }
+
+  /* glossy meter fills — a lit top edge + soft bloom (pillar 4, in the HUD) */
+  .quest-fill-truth {
+    background: linear-gradient(180deg, #f9dc92 0%, #f2b64a 55%, #dd9a2f 100%);
+    box-shadow:
+      0 0 12px rgba(242, 182, 74, 0.6),
+      inset 0 1px 0 rgba(255, 244, 214, 0.7);
+  }
+  .quest-fill-action {
+    background: linear-gradient(180deg, #8defe1 0%, #3fd9c8 55%, #22b3a3 100%);
+    box-shadow:
+      0 0 9px rgba(63, 217, 200, 0.5),
+      inset 0 1px 0 rgba(203, 245, 239, 0.6);
+  }
+
   /* the sealed Vault (canon 01: "captured, visible, and sealed until Stage 3"):
      captured text renders present-but-unreadable until vaultUnlocked. */
   .quest-vault-blur {

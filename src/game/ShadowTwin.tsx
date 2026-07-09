@@ -65,14 +65,15 @@ export function ShadowTwin({ reduced }: ShadowTwinProps): JSX.Element {
 
   return (
     <group ref={group} visible={false}>
-      <mesh material={material} position={[0, -0.05, 0]}>
-        <coneGeometry args={[0.46, 1.3, 10, 1]} />
+      {/* mirrors the wanderer's chunky rounded silhouette, cast in near-black */}
+      <mesh material={material} position={[0, -0.02, 0]}>
+        <coneGeometry args={[0.54, 1.34, 12, 1]} />
       </mesh>
-      <mesh material={material} position={[0, 0.72, -0.02]}>
-        <sphereGeometry args={[0.29, 14, 14]} />
+      <mesh material={material} position={[0, 0.82, -0.02]}>
+        <sphereGeometry args={[0.34, 16, 16]} />
       </mesh>
-      <mesh material={material} position={[0, 1.0, -0.05]} rotation={[0.2, 0, 0]}>
-        <coneGeometry args={[0.16, 0.34, 8, 1]} />
+      <mesh material={material} position={[0, 0.9, -0.2]} rotation={[0.6, 0, 0]} scale={[1, 1.2, 1]}>
+        <sphereGeometry args={[0.2, 12, 12]} />
       </mesh>
     </group>
   )

@@ -67,10 +67,10 @@ function Ground(): JSX.Element {
           rotation={[0, wall.yaw, 0]}
         />
       ))}
-      {/* the plateau's drum — a dark toon cliff below the dressed top disk */}
+      {/* the plateau's drum — a warm-dark toon cliff below the dressed top disk */}
       <mesh position={[0, -0.5, 0]}>
         <cylinderGeometry args={[PLATEAU_RADIUS, PLATEAU_RADIUS + 2, 1, 48]} />
-        <meshToonMaterial color="#241d3c" gradientMap={TOON_RAMP} />
+        <meshToonMaterial color="#2b2138" gradientMap={TOON_RAMP} />
       </mesh>
       {/* the ground's edge dissolves into the nebula — a faint rim glow */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
@@ -117,12 +117,16 @@ export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
   return (
     <>
       <color attach="background" args={[PALETTE.space]} />
-      <fog attach="fog" args={[PALETTE.fog, 24, 96]} />
-      {/* §8 light budget: a warm golden-hour key + a cool violet fill, no shadow
-          maps. Monuments carry their own small accent lights (constant count). */}
-      <hemisphereLight args={[PALETTE.fillCool, '#151022', 0.55]} />
-      <ambientLight color={PALETTE.fillCool} intensity={0.16} />
-      <directionalLight color={PALETTE.keyWarm} position={[13, 9, 6]} intensity={1.25} />
+      {/* warm indigo fog banked into the distance — depth + the OoT "air" */}
+      <fog attach="fog" args={[PALETTE.fog, 30, 88]} />
+      {/* §8 light budget (no shadow maps, constant light count): a low warm
+          golden-hour KEY, a soft warm back-RIM so the cool Nebula still reads
+          inviting, a cool-violet hemisphere with a warm ground bounce, and a
+          gentle warm ambient lift. Monuments carry their own small accents. */}
+      <hemisphereLight args={[PALETTE.fillCool, PALETTE.groundBounce, 0.6]} />
+      <ambientLight color={PALETTE.keyWarm} intensity={0.18} />
+      <directionalLight color={PALETTE.keyWarm} position={[16, 7, 8]} intensity={1.35} />
+      <directionalLight color={PALETTE.rimWarm} position={[-12, 4, -11]} intensity={0.4} />
       <Nebula reduced={reduced} />
       <GroundField />
       <Interactables reduced={reduced} />

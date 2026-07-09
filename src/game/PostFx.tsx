@@ -33,12 +33,12 @@ export function PostFx({ reduced, lowPower }: PostFxProps): JSX.Element | null {
     <EffectComposer multisampling={0}>
       <Bloom
         mipmapBlur
-        intensity={0.85}
-        luminanceThreshold={0.62}
-        luminanceSmoothing={0.28}
-        radius={0.7}
+        intensity={0.95}
+        luminanceThreshold={0.72}
+        luminanceSmoothing={0.3}
+        radius={0.9}
       />
-      <Vignette offset={0.28} darkness={0.62} eskil={false} />
+      <Vignette offset={0.3} darkness={0.5} eskil={false} />
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
     </EffectComposer>
   )

@@ -50,6 +50,7 @@ function makeGroundGeometry(radius: number, rings: number, segments: number): Bu
   const base = new Color(PALETTE.stone)
   const warm = new Color(PALETTE.stoneWarm)
   const cool = new Color(PALETTE.stoneCool)
+  const gold = new Color(PALETTE.goldAccent)
   const scratch = new Color()
 
   const positions: number[] = []
@@ -64,8 +65,13 @@ function makeGroundGeometry(radius: number, rings: number, segments: number): Bu
     normals.push(0, 1, 0)
     const n = 0.5 + 0.5 * groundNoise(x, z)
     scratch.copy(base)
-    if (n > 0.5) scratch.lerp(warm, (n - 0.5) * 0.6)
-    else scratch.lerp(cool, (0.5 - n) * 0.5)
+    if (n > 0.5) {
+      // warm earth patches, tipping into sun-warmed gold at the brightest
+      scratch.lerp(warm, (n - 0.5) * 0.9)
+      if (n > 0.78) scratch.lerp(gold, (n - 0.78) * 0.8)
+    } else {
+      scratch.lerp(cool, (0.5 - n) * 0.45)
+    }
     colors.push(scratch.r, scratch.g, scratch.b)
   }
 
@@ -237,7 +243,7 @@ export function GroundField(): JSX.Element {
   )
   const crystals = useMemo(
     () => ({
-      placements: scatter(0x0c53, 16, {
+      placements: scatter(0x0c53, 20, {
         minR: 5,
         maxR: 21,
         pad: 1.1,
@@ -259,7 +265,7 @@ export function GroundField(): JSX.Element {
   )
   const grass = useMemo(
     () => ({
-      placements: scatter(0x0d71, 74, {
+      placements: scatter(0x0d71, 92, {
         minR: 3,
         maxR: 22,
         pad: 0.7,
@@ -274,6 +280,31 @@ export function GroundField(): JSX.Element {
     }),
     [],
   )
+  // warm gold-dust motes — tiny emissive sparks hovering low over the plateau,
+  // little points of warm light that draw the eye (pillar 4). One instanced draw
+  // call; emissive so they still read on the constrained tier (no bloom there).
+  const motes = useMemo(
+    () => ({
+      placements: scatter(0x0e90, 24, {
+        minR: 4,
+        maxR: 21,
+        pad: 1.0,
+        yBase: 0.55,
+        scaleMin: 0.06,
+        scaleMax: 0.13,
+        scaleY: [0.06, 0.13],
+        tilt: 0.4,
+      }),
+      geometry: new OctahedronGeometry(0.5, 0),
+      material: new MeshToonMaterial({
+        color: PALETTE.dust,
+        emissive: PALETTE.dust,
+        emissiveIntensity: 1.1,
+        gradientMap: TOON_RAMP,
+      }),
+    }),
+    [],
+  )
 
   return (
     <group>
@@ -282,6 +313,7 @@ export function GroundField(): JSX.Element {
       <ScatterField {...boulders} />
       <ScatterField {...crystals} />
       <ScatterField {...grass} />
+      <ScatterField {...motes} />
     </group>
   )
 }

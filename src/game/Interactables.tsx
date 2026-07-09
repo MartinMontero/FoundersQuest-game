@@ -165,8 +165,18 @@ function ShrineStone({ spec, reduced }: ShrineProps): JSX.Element {
         <coneGeometry args={[0.42, 0.5, 6, 1]} />
         <meshToonMaterial color={PALETTE.stoneWarm} gradientMap={TOON_RAMP} />
       </mesh>
-      {/* the floating glyph */}
+      {/* the floating glyph, wrapped in a soft glow core that catches bloom
+          (full) / reads as a bright emissive point (constrained) */}
       <group ref={glyph} position={[0, 2.6, 0]}>
+        <mesh scale={answered ? 0.62 : 0.5}>
+          <sphereGeometry args={[0.34, 12, 12]} />
+          <meshBasicMaterial
+            color={glow}
+            transparent
+            opacity={answered ? 0.42 : 0.28}
+            depthWrite={false}
+          />
+        </mesh>
         <mesh>
           <GlyphGeometry kind={kind} />
           <meshToonMaterial
@@ -199,10 +209,10 @@ function Flagpole({ spec, reduced }: ShrineProps): JSX.Element {
 
   return (
     <group position={[x, y, z]}>
-      {/* the pole */}
+      {/* the pole — a warm weathered timber, not cold steel */}
       <mesh position={[0, 1.6, 0]}>
         <cylinderGeometry args={[0.06, 0.08, 3.2, 8]} />
-        <meshToonMaterial color="#8f89b8" gradientMap={TOON_RAMP} />
+        <meshToonMaterial color="#9a8a86" gradientMap={TOON_RAMP} />
       </mesh>
       {/* the finial */}
       <mesh position={[0, 3.25, 0]}>

@@ -85,6 +85,10 @@ export default {
         card: '0 22px 55px -22px rgba(4,2,12,0.75), 0 4px 14px -6px rgba(4,2,12,0.5)',
         // the ornate HUD glass bar
         hud: '0 16px 40px -20px rgba(4,2,12,0.8), inset 0 1px 0 rgba(248,221,160,0.18)',
+        // chunky corner-anchored HUD cluster (art-direction pillar 5): a lifted
+        // drop + warm inset top highlight so it reads as a game HUD, not a card
+        'hud-cluster':
+          '0 18px 42px -18px rgba(4,2,12,0.85), 0 3px 10px -4px rgba(4,2,12,0.6), inset 0 1px 0 rgba(248,221,160,0.22)',
         // wax-seal emboss for the Inscribe button
         seal: '0 5px 12px -3px rgba(120,60,10,0.6), inset 0 1px 0 rgba(255,244,214,0.55), inset 0 -3px 6px rgba(120,60,10,0.4)',
         // soft accent glows (bloom-adjacent, cheap)
@@ -107,12 +111,23 @@ export default {
           '0%,100%': { opacity: '0.9', filter: 'drop-shadow(0 0 3px rgba(242,182,74,0.55))' },
           '50%': { opacity: '1', filter: 'drop-shadow(0 0 9px rgba(242,182,74,0.9))' },
         },
+        // banked Truth: a warm breathing ring while the Mirror's verdict pends
+        'quest-truth-glow': {
+          '0%,100%': {
+            boxShadow: '0 0 0 2px rgba(245,201,116,0.6), 0 0 10px rgba(242,182,74,0.4)',
+          },
+          '50%': {
+            boxShadow: '0 0 0 2px rgba(245,201,116,0.9), 0 0 20px rgba(242,182,74,0.65)',
+          },
+        },
       },
       animation: {
         // paired with motion-safe: — never runs under prefers-reduced-motion
         'quest-rise': 'quest-rise 220ms cubic-bezier(0.2,0.7,0.2,1)',
         'quest-fade': 'quest-fade 180ms ease-out',
         'quest-sigil': 'quest-sigil 2.6s ease-in-out infinite',
+        // paired with motion-safe: on the banked Truth track
+        'quest-truth-glow': 'quest-truth-glow 2.8s ease-in-out infinite',
       },
       zIndex: {
         // QuestStyles z-layer ladder — components use these names, never ad-hoc numbers.

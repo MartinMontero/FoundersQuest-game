@@ -49,10 +49,12 @@ function buildStars(): StarField {
     positions[i * 3] = Math.cos(angle) * radius
     positions[i * 3 + 1] = (rng() - 0.5) * 16 + 4 - t * 6
     positions[i * 3 + 2] = Math.sin(angle) * radius
+    // gold dust dominant, teal runes accented, the rest a cool pale — the
+    // World-1 warmed-violet register (art-direction pillar 1 + 4)
     const pick = rng()
     tint.copy(pale)
-    if (pick > 0.82) tint.copy(warm)
-    else if (pick > 0.62) tint.copy(cool)
+    if (pick > 0.68) tint.copy(warm)
+    else if (pick > 0.5) tint.copy(cool)
     const bright = 0.55 + rng() * 0.6
     colors[i * 3] = tint.r * bright
     colors[i * 3 + 1] = tint.g * bright
@@ -84,8 +86,8 @@ const SKY_FRAG = /* glsl */ `
     float t = clamp(h * 0.5 + 0.5, 0.0, 1.0);
     vec3 col = mix(uHorizon, uZenith, pow(t, 1.25));
     // warm golden-hour glow banked low in the sky
-    float glow = smoothstep(0.22, -0.12, h);
-    col = mix(col, uGlow, glow * 0.55);
+    float glow = smoothstep(0.26, -0.14, h);
+    col = mix(col, uGlow, glow * 0.6);
     // a soft aurora band drifting across the mid sky
     float band = exp(-pow((h - 0.16) * 5.5, 2.0));
     float ripple = 0.55 + 0.45 * sin(vDir.x * 2.6 + uTime * 0.18) * sin(vDir.z * 2.1 - uTime * 0.12);
