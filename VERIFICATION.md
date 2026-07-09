@@ -2,6 +2,26 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
+## Round 4 — mobile crash fix: render tiers + context-loss recovery (2026-07-08)
+
+**Tree:** `66ddaf1`. Trigger: operator field report — the reskinned preview crashed on a real phone ("the world failed to hold together" = the app error boundary), preceded by rendering instability.
+
+**Root cause (identified; the exact GL throw NOT reproduced — see below):** `perf.ts` gated render cost only on `navigator.webdriver`, so every real device — including phones — received the full **desktop** tier (Bloom + MSAA + DPR 1.5 + high-performance GPU hint). A mobile GPU can't sustain that → WebGL context loss → and with no recovery handler, that surfaced as the error boundary. The e2e never caught it: the same webdriver gate meant tests only ran the cheapest automation tier — the shipping render path was **untested**.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Reproduce full-power path here | **could NOT reproduce the crash** | container software-GL (SwiftShader) boots the full path clean and even a forced `WEBGL_lose_context` didn't trip the boundary — confirming the crash is **real-GPU-specific**, honestly stated |
+| Fix: three render tiers | in place | full / constrained (phones: no post-fx, cheap sky, DPR 1, no MSAA) / automation; errs toward constrained; `?render=` override |
+| Fix: context-loss recovery | in place + tested | `preventDefault` on loss + `invalidate` on restore; forced loss→restore cycle recovers, no boundary, canvas survives |
+| all 3 tiers boot clean | PASS | full/desktop, constrained/mobile, auto-detect/mobile — firstFrame reached, zero console/page errors (local repro + e2e) |
+| phone auto-detects constrained | PASS | new e2e asserts a touch/coarse context routes to the safe tier (webdriver spoofed off, as a real phone) |
+| `tsc`/eslint/vitest/build | PASS | 273 unit unchanged |
+| e2e full suite | PASS | **11/11** (+5 new: render-tiers ×4, context-loss ×1) |
+| gitleaks / osv | PASS | clean; 4 documented dev-only filters |
+| redeploy | LIVE | same alias URL now serves `66ddaf1` |
+
+**UNTESTED (plainly):** the fix on the operator's actual phone hardware — the whole point; needs an operator re-test. The constrained tier + recovery handler are the defensive fix (can't prove a mobile-GPU loss is gone on software GL), now regression-guarded so the shipping paths stay covered.
+
 ## Round 3 — Phase 2b cel-shaded presentation pass (2026-07-08)
 
 **Tree:** `a6aac57`. Trigger: Gate 2 presentation FAIL (grey-box rejected as "MS Paint").
