@@ -27,7 +27,7 @@ tier: constrained   gl: Adreno (TM) 650   ua: Firefox/152.0 (Android 16)
 | gitleaks | PASS | clean |
 | redeploy | LIVE | same alias URL serves `a4fe8eb` |
 
-**UNTESTED:** the operator's actual S23 — but this round I reproduced the crash and the fix locally under the real policy, so confidence is high; the phone is the final confirmation.
+**OPERATOR-CONFIRMED (2026-07-08):** the world holds together on the operator's Galaxy S23 Ultra (mobile), and loads fast + plays smoothly on a Windows 11 laptop in both Firefox and Chrome — mechanics work, gameplay responsive. The crash saga is closed; the CSP/WASM fix is verified on real hardware, not just locally. Operator Verification Queue item (first cross-device playable) ✅.
 
 ## Round 4 — mobile render hardening: tiers + context-loss recovery (2026-07-08)
 
