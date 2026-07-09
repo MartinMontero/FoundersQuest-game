@@ -2,7 +2,37 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
-## Round 4 — mobile crash fix: render tiers + context-loss recovery (2026-07-08)
+## Round 5 — THE mobile crash, root-caused and fixed: CSP blocked WASM (2026-07-08)
+
+**Tree:** `a4fe8eb`. The on-device error readout (round 4's instrumentation) captured the exact cause — and it was mine:
+
+```
+call to WebAssembly.instantiate() blocked by CSP
+tier: constrained   gl: Adreno (TM) 650   ua: Firefox/152.0 (Android 16)
+```
+
+**Root cause:** `public/_headers` set `script-src 'self'` with no WebAssembly allowance. rapier physics instantiates a WASM module ~1s after the scene renders; the CSP blocked it on **every** browser (hence Firefox *and* Chrome), rapier threw, the error boundary showed. `tier: constrained` proves round 4's tier work was correct but **not the cause** — round 4 was necessary mobile hardening, not the fix; this is.
+
+**Why nothing caught it:** the CSP is a Cloudflare Pages HTTP header. `vite dev`, `vite preview`, and the Playwright container all serve **without** `_headers`, so the shipping security policy was exercised by zero tests. A second blind spot (after the automation-only render tier in round 4).
+
+**Fix:** `script-src 'self' 'wasm-unsafe-eval'` — same-origin WebAssembly instantiation only, **not** JS eval. Key-theft defense intact: `connect-src` still `'self' https://api.anthropic.com`, no third-party scripts, no `unsafe-eval`. (`worker-src 'self' blob:` added too.)
+
+| Check | Result | Evidence |
+|---|---|---|
+| **Reproduced locally** (finally) | YES | `e2e/csp.spec.ts` regression guard serves the real dist under the OLD CSP → app-crashed visible in 1.2s — the exact field bug |
+| Fix under the REAL CSP | PASS | csp.spec serves dist under the real parsed `_headers` → world boots, WASM instantiates, no CSP/WASM console error |
+| Blind spot closed | YES | csp-server.ts parses the actual `_headers` and applies it; removing `wasm-unsafe-eval` turns the suite red |
+| `tsc`/eslint/vitest | PASS | 273 unit unchanged |
+| e2e full suite | PASS | **13/13** (+2 CSP specs); one boot flake under load resolved on rerun; CI gains 1 retry |
+| gitleaks | PASS | clean |
+| redeploy | LIVE | same alias URL serves `a4fe8eb` |
+
+**UNTESTED:** the operator's actual S23 — but this round I reproduced the crash and the fix locally under the real policy, so confidence is high; the phone is the final confirmation.
+
+## Round 4 — mobile render hardening: tiers + context-loss recovery (2026-07-08)
+
+**Correction (see Round 5):** this round did NOT fix the field crash — the real cause was a CSP/WASM block, not the render tier. The tier system + context-loss recovery are genuine, kept mobile hardening (a phone should not run the desktop effect stack), but the "mobile crash fix" framing was premature. Round 5 is the actual fix.
+
 
 **Tree:** `66ddaf1`. Trigger: operator field report — the reskinned preview crashed on a real phone ("the world failed to hold together" = the app error boundary), preceded by rendering instability.
 
