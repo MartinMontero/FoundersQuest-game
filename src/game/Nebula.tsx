@@ -72,6 +72,7 @@ const SKY_VERT = /* glsl */ `
 `
 
 const SKY_FRAG = /* glsl */ `
+  precision mediump float;
   uniform vec3 uZenith;
   uniform vec3 uHorizon;
   uniform vec3 uGlow;
@@ -95,6 +96,7 @@ const SKY_FRAG = /* glsl */ `
 
 // low power: a plain two-stop gradient, no pow/exp/smoothstep/sin per pixel
 const SKY_FRAG_CHEAP = /* glsl */ `
+  precision mediump float;
   uniform vec3 uZenith;
   uniform vec3 uHorizon;
   varying vec3 vDir;

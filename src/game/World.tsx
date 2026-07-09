@@ -6,7 +6,7 @@
 // This module makes ZERO network calls; fetch lives only in src/transport.
 
 import { Suspense, useRef } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Canvas, useFrame, type RootState } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, Physics, RigidBody } from '@react-three/rapier'
 import { ACESFilmicToneMapping, NoToneMapping } from 'three'
 import { useUiStore } from '../state/ui'
@@ -18,7 +18,7 @@ import { defaultWorldEvents } from './events'
 import { Interactables } from './Interactables'
 import { PALETTE, TOON_RAMP } from './materials'
 import { Nebula } from './Nebula'
-import { LOW_POWER, WORLD_DPR } from './perf'
+import { FULL_POWER, LOW_POWER, WORLD_DPR } from './perf'
 import { Player, PLAYER_SPAWN } from './Player'
 import { PostFx } from './PostFx'
 import { GroundField } from './props'
@@ -145,6 +145,17 @@ export interface GameRootProps {
   onFirstFrame?: () => void
 }
 
+/** Recover from WebGL context loss instead of dying to the app error boundary.
+ * `preventDefault()` on 'webglcontextlost' asks the browser to restore the
+ * context; on 'webglcontextrestored' we invalidate so R3F repaints the scene.
+ * Mobile GPUs drop contexts under memory/thermal pressure routinely — this
+ * turns "the world failed to hold together" into a recoverable blip. */
+function handleCreated(state: RootState): void {
+  const canvas = state.gl.domElement
+  canvas.addEventListener('webglcontextlost', (e) => e.preventDefault(), false)
+  canvas.addEventListener('webglcontextrestored', () => state.invalidate(), false)
+}
+
 /** The world mount: keyboard bindings + the R3F canvas. */
 export function GameRoot({ events = defaultWorldEvents, onFirstFrame }: GameRootProps): JSX.Element {
   useWorldControls(events)
@@ -162,11 +173,17 @@ export function GameRoot({ events = defaultWorldEvents, onFirstFrame }: GameRoot
         // Full path: NoToneMapping on the renderer so the PostFx ToneMapping
         // effect owns the final curve (never double-mapped). Low power: no
         // composer, so the renderer tone-maps in-shader (cheap, one pass).
+        // 'high-performance' only on the full tier — on a phone it can force a
+        // hotter GPU path for no benefit (constrained ships no effect stack).
         gl={{
-          antialias: !LOW_POWER,
-          powerPreference: 'high-performance',
+          antialias: FULL_POWER,
+          powerPreference: FULL_POWER ? 'high-performance' : 'default',
           toneMapping: LOW_POWER ? ACESFilmicToneMapping : NoToneMapping,
+          // let a lost context be recovered rather than abandoned as a dead frame
+          preserveDrawingBuffer: false,
+          failIfMajorPerformanceCaveat: false,
         }}
+        onCreated={handleCreated}
       >
         <Suspense fallback={null}>
           <World reduced={reduced} onFirstFrame={onFirstFrame} />
