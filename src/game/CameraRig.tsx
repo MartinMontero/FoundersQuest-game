@@ -5,12 +5,12 @@
 // 150 ms opacity crossfade). Camera state is mutated in useFrame only.
 
 import { useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
 import { Vector3 } from 'three'
 import { useUiStore } from '../state/ui'
 import { STAGE1_LAYOUT } from './contracts'
 import { getMoveInput } from './controls'
 import { cameraYaw, playerWorldPos } from './refs'
+import { useSafeFrame } from './useSafeFrame'
 
 const FOLLOW_DISTANCE = 6
 const FOLLOW_HEIGHT = 2.2
@@ -45,7 +45,7 @@ export function CameraRig({ reduced }: CameraRigProps): null {
   const targetLook = useRef(new Vector3())
   const smoothedLook = useRef(new Vector3().copy(playerWorldPos))
 
-  useFrame(({ camera }, delta) => {
+  useSafeFrame(({ camera }, delta) => {
     const ui = useUiStore.getState()
 
     // yaw orbit only while roaming — the trance framing owns the camera

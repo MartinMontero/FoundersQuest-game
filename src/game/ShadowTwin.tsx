@@ -9,11 +9,11 @@
 // black with a cold rune glimmer, so it reads as the founder's shadow self.
 
 import { useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
 import { type Group, MeshToonMaterial } from 'three'
 import { useUiStore } from '../state/ui'
 import { PALETTE, TOON_RAMP } from './materials'
 import { cameraYaw, playerWorldPos } from './refs'
+import { useSafeFrame } from './useSafeFrame'
 
 const SHADOW_OPACITY = 0.55
 const FADE_RATE = 2.5 // 1/s
@@ -39,7 +39,7 @@ export function ShadowTwin({ reduced }: ShadowTwinProps): JSX.Element {
     [],
   )
 
-  useFrame((_, delta) => {
+  useSafeFrame((_, delta) => {
     const g = group.current
     if (g === null) return
 

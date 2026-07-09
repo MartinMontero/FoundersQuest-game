@@ -6,7 +6,7 @@
 // This module makes ZERO network calls; fetch lives only in src/transport.
 
 import { Suspense, useRef } from 'react'
-import { Canvas, useFrame, type RootState } from '@react-three/fiber'
+import { Canvas, type RootState } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, Physics, RigidBody } from '@react-three/rapier'
 import { ACESFilmicToneMapping, NoToneMapping } from 'three'
 import { useUiStore } from '../state/ui'
@@ -25,6 +25,7 @@ import { GroundField } from './props'
 import { ShadowTwin } from './ShadowTwin'
 import { FpsSampler } from './useFps'
 import { useReducedMotion } from './useReducedMotion'
+import { useSafeFrame } from './useSafeFrame'
 
 const PLATEAU_RADIUS = 24
 /** rim wall radius — just inside the disk so the capsule can never step off it */
@@ -94,7 +95,7 @@ const READY_FRAMES = 3
 function FirstFrameNotifier({ onFirstFrame }: { onFirstFrame: () => void }): null {
   const fired = useRef(false)
   const frames = useRef(0)
-  useFrame(() => {
+  useSafeFrame(() => {
     if (fired.current) return
     frames.current += 1
     if (frames.current < READY_FRAMES) return

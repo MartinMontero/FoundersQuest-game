@@ -7,7 +7,7 @@
 // During a trance the world holds its breath — the swirl slows (§2 F1).
 
 import { useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useSafeFrame } from './useSafeFrame'
 import { BackSide, Color, type Points } from 'three'
 import { useUiStore } from '../state/ui'
 import { PALETTE, TOON_RAMP } from './materials'
@@ -120,7 +120,7 @@ function SkyDome({ reduced }: { reduced: boolean }): JSX.Element {
     [],
   )
 
-  useFrame((_, delta) => {
+  useSafeFrame((_, delta) => {
     if (reduced || LOW_POWER) return // aurora holds still under reduced motion / low power
     uniforms.uTime.value += delta
   })
@@ -194,7 +194,7 @@ export function Nebula({ reduced }: NebulaProps): JSX.Element {
   const swirl = useRef<Points>(null)
   const stars = useMemo(buildStars, [])
 
-  useFrame((_, delta) => {
+  useSafeFrame((_, delta) => {
     if (reduced) return // static particles under prefers-reduced-motion
     const points = swirl.current
     if (points === null) return

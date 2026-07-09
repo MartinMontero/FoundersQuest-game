@@ -18,7 +18,6 @@
 // player roams.
 
 import { useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
 import { Float, Html } from '@react-three/drei'
 import { DoubleSide } from 'three'
 import type { Group, Mesh, PointLight } from 'three'
@@ -36,6 +35,7 @@ import {
 import { SPEC_BY_ID, activeTargetId, useInteractionStore } from './interaction'
 import { PALETTE, TOON_RAMP } from './materials'
 import { LOW_POWER } from './perf'
+import { useSafeFrame } from './useSafeFrame'
 
 // ---- derived lookups (strings/contracts, built once) ----
 
@@ -121,7 +121,7 @@ function ShrineStone({ spec, reduced }: ShrineProps): JSX.Element {
   const [x, y, z] = spec.position
 
   // the glyph hovers and turns slowly; dead still under reduced motion (§2 F0)
-  useFrame(({ clock }) => {
+  useSafeFrame(({ clock }) => {
     const g = glyph.current
     if (g === null) return
     if (reduced) {
@@ -191,7 +191,7 @@ function Flagpole({ spec, reduced }: ShrineProps): JSX.Element {
   const flagY = raised ? 2.7 : 1.0
 
   // the banner sways like cloth catching a slow wind; still under reduced motion
-  useFrame(({ clock }) => {
+  useSafeFrame(({ clock }) => {
     const b = banner.current
     if (b === null) return
     b.rotation.y = reduced ? 0 : Math.sin(clock.elapsedTime * 1.3 + x) * 0.22
@@ -370,7 +370,7 @@ function GuardianFigure({
   const tint = TIER_TINT[tierOf(assumption, evidence)]
 
   // riskiest: a larger idle animation — a slow bob, static under reduced motion
-  useFrame(({ clock }) => {
+  useSafeFrame(({ clock }) => {
     const g = group.current
     if (g === null) return
     g.position.y = crowned && !reduced ? Math.sin(clock.elapsedTime * 2) * 0.08 : 0
@@ -562,7 +562,7 @@ function ProximityLight({ reduced }: { reduced: boolean }): JSX.Element {
   const [px, py, pz] = spec ? spec.position : ([0, 0, 0] as [number, number, number])
   const ly = spec?.kind === 'vault' ? py + 0.4 : 1.5
 
-  useFrame(({ clock }) => {
+  useSafeFrame(({ clock }) => {
     const l = light.current
     if (l === null) return
     if (!active) {
@@ -599,7 +599,7 @@ function HighlightRing({ reduced }: { reduced: boolean }): JSX.Element | null {
   const ring = useRef<Mesh>(null)
 
   // gentle pulse — static under reduced motion (no shake, ever)
-  useFrame(({ clock }) => {
+  useSafeFrame(({ clock }) => {
     const mesh = ring.current
     if (mesh === null) return
     const pulse = reduced ? 1 : 1 + Math.sin(clock.elapsedTime * 3) * 0.06

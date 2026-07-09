@@ -11,7 +11,6 @@
 // which fall still under prefers-reduced-motion.
 
 import { useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
 import type { Group } from 'three'
 import { STAGE1_LAYOUT } from './contracts'
@@ -20,6 +19,7 @@ import { INTERACT_RADIUS, useInteractionStore } from './interaction'
 import { PALETTE, TOON_RAMP } from './materials'
 import { LOW_POWER } from './perf'
 import { cameraYaw, playerWorldPos } from './refs'
+import { useSafeFrame } from './useSafeFrame'
 import { useUiStore } from '../state/ui'
 
 const RUN_SPEED = 6
@@ -112,7 +112,7 @@ export function Player({ reduced }: PlayerProps): JSX.Element {
   const body = useRef<RapierRigidBody>(null)
   const visual = useRef<Group>(null)
 
-  useFrame(({ clock }, delta) => {
+  useSafeFrame(({ clock }, delta) => {
     const rb = body.current
     if (rb === null) return
 
