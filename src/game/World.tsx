@@ -12,6 +12,7 @@ import { CuboidCollider, CylinderCollider, Physics, RigidBody } from '@react-thr
 import { ACESFilmicToneMapping, type Mesh, NoToneMapping } from 'three'
 import { useUiStore } from '../state/ui'
 import { WORLD_COPY } from '../strings'
+import { AssetBoundary } from './AssetBoundary'
 import { CameraRig } from './CameraRig'
 import type { WorldEvents } from './contracts'
 import { useWorldControls } from './controls'
@@ -136,7 +137,15 @@ export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
           only, no background: our nebula sky stays. Skipped on the software-GL
           automation tier (its PMREM prefilter is the one step SwiftShader chokes
           on under parallel CI load); brighter direct lights stand in there. */}
-      {!IS_AUTOMATION ? <Environment files="/hdr/venice_sunset_1k.hdr" /> : null}
+      {!IS_AUTOMATION ? (
+        // the HDR (1.4 MB) drives IBL; if it aborts on a slow link the direct
+        // lights still light the scene, so a failure degrades, never crashes.
+        <AssetBoundary fallback={null} label="hdr">
+          <Suspense fallback={null}>
+            <Environment files="/hdr/venice_sunset_1k.hdr" />
+          </Suspense>
+        </AssetBoundary>
+      ) : null}
       {/* a warm golden-hour KEY that also casts the world's real shadows (full
           tier), a soft warm back-RIM, a cool-violet hemisphere with a warm ground
           bounce, and an ambient lift (stronger when there is no IBL to fill). */}
@@ -164,8 +173,15 @@ export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
       <GroundField />
       <Grass reduced={reduced} />
       {/* real trees off the CI tier (keeps the ~4 MB of bark textures out of
-          the software-GL automation path) */}
-      {IS_AUTOMATION ? null : <Trees />}
+          the software-GL automation path). Boundary-wrapped: a failed/aborted
+          tree download drops the trees, never the world. */}
+      {IS_AUTOMATION ? null : (
+        <AssetBoundary fallback={null} label="trees">
+          <Suspense fallback={null}>
+            <Trees />
+          </Suspense>
+        </AssetBoundary>
+      )}
       <Interactables reduced={reduced} />
       <ShadowTwin reduced={reduced} />
       <CameraRig reduced={reduced} />

@@ -10,9 +10,10 @@
 // faces its heading while walking, and carries a soft cool rim light — all of
 // which fall still under prefers-reduced-motion.
 
-import { useEffect, useRef } from 'react'
+import { Suspense, useEffect, useRef } from 'react'
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
 import type { Group } from 'three'
+import { AssetBoundary } from './AssetBoundary'
 import { layoutForStage } from './contracts'
 import { getMoveInput } from './controls'
 import { INTERACT_RADIUS, useInteractionStore } from './interaction'
@@ -55,6 +56,17 @@ function updateNearest(x: number, z: number): void {
 
 export interface PlayerProps {
   reduced: boolean
+}
+
+/** The lightweight stand-in avatar: the CI/automation tier, the streaming-in
+ *  state, and the graceful fallback when the rigged model can't load. */
+function CapsuleAvatar(): JSX.Element {
+  return (
+    <mesh position={[0, 0, 0]}>
+      <capsuleGeometry args={[0.4, 1.0, 4, 8]} />
+      <meshStandardMaterial color={PALETTE.cloak} roughness={0.8} />
+    </mesh>
+  )
 }
 
 export function Player({ reduced }: PlayerProps): JSX.Element {
@@ -163,14 +175,19 @@ export function Player({ reduced }: PlayerProps): JSX.Element {
             skinning is the dominant CPU cost there; at a few fps the fixed-step
             physics runs in slow motion and the movement journey flakes). A cheap
             capsule stands in — tests assert gameplay, not the avatar's look; the
-            real character is exercised on the full/constrained boot specs. */}
+            real character is exercised on the full/constrained boot specs. On real
+            tiers the rigged character loads inside an AssetBoundary + Suspense: it
+            shows the capsule while the 3.6 MB model streams in, and KEEPS the
+            capsule if that download aborts on a slow connection / weak GPU — a
+            degraded avatar, never a collapsed world. */}
         {IS_AUTOMATION ? (
-          <mesh position={[0, 0, 0]}>
-            <capsuleGeometry args={[0.4, 1.0, 4, 8]} />
-            <meshStandardMaterial color={PALETTE.cloak} roughness={0.8} />
-          </mesh>
+          <CapsuleAvatar />
         ) : (
-          <RogueCharacter gait={gait} reduced={reduced} />
+          <AssetBoundary fallback={<CapsuleAvatar />} label="rogue.glb">
+            <Suspense fallback={<CapsuleAvatar />}>
+              <RogueCharacter gait={gait} reduced={reduced} />
+            </Suspense>
+          </AssetBoundary>
         )}
       </group>
       {/* a soft cool rim so the silhouette lifts off the warm ground */}

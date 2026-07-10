@@ -7,7 +7,7 @@
 // motion. Placement is seeded so every boot and screenshot is identical, and
 // nothing lands on top of an interactable.
 
-import { useMemo } from 'react'
+import { Suspense, useMemo } from 'react'
 import { useTexture } from '@react-three/drei'
 import {
   BufferAttribute,
@@ -22,6 +22,7 @@ import {
   SRGBColorSpace,
   type Texture,
 } from 'three'
+import { AssetBoundary } from './AssetBoundary'
 import { BACK_POSITION, ONWARD_POSITION, STAGE1_LAYOUT } from './contracts'
 import { PALETTE } from './materials'
 import { IS_AUTOMATION } from './perf'
@@ -390,7 +391,17 @@ export function GroundField(): JSX.Element {
 
   return (
     <group>
-      {IS_AUTOMATION ? <GroundDiskPlain /> : <GroundDiskTextured />}
+      {IS_AUTOMATION ? (
+        <GroundDiskPlain />
+      ) : (
+        // if the PBR ground textures abort on a slow link, fall back to the
+        // vertex-coloured disk — the ground always renders, the world holds.
+        <AssetBoundary fallback={<GroundDiskPlain />} label="ground-textures">
+          <Suspense fallback={<GroundDiskPlain />}>
+            <GroundDiskTextured />
+          </Suspense>
+        </AssetBoundary>
+      )}
       <ScatterField {...rocks} />
       <ScatterField {...boulders} />
       <ScatterField {...crystalsTeal} />
