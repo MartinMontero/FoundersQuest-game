@@ -237,6 +237,29 @@ function scatter(
   return out
 }
 
+// Rock / boulder scatter params, named so the physics colliders (World.tsx) can
+// rebuild the EXACT same placements the visuals use — same seed, same options,
+// identical deterministic output. Solid mass the founder must walk around.
+const ROCK_SCATTER = {
+  seed: 0x0a17,
+  count: 44,
+  opts: { minR: 3.5, maxR: 22, pad: 0.8, yBase: 0.06, scaleMin: 0.22, scaleMax: 0.7, tilt: 0.5 },
+} as const
+const BOULDER_SCATTER = {
+  seed: 0x0b29,
+  count: 9,
+  opts: { minR: 8, maxR: 21, pad: 1.4, yBase: 0.05, scaleMin: 0.9, scaleMax: 1.6, tilt: 0.35 },
+} as const
+
+/** The rock placements — shared by the visual instances and their colliders. */
+export function rockPlacements(): Placement[] {
+  return scatter(ROCK_SCATTER.seed, ROCK_SCATTER.count, ROCK_SCATTER.opts)
+}
+/** The boulder placements — shared by the visual instances and their colliders. */
+export function boulderPlacements(): Placement[] {
+  return scatter(BOULDER_SCATTER.seed, BOULDER_SCATTER.count, BOULDER_SCATTER.opts)
+}
+
 function ScatterField({
   placements,
   geometry,
@@ -275,15 +298,7 @@ function ScatterField({
 export function GroundField(): JSX.Element {
   const rocks = useMemo(
     () => ({
-      placements: scatter(0x0a17, 44, {
-        minR: 3.5,
-        maxR: 22,
-        pad: 0.8,
-        yBase: 0.06,
-        scaleMin: 0.22,
-        scaleMax: 0.7,
-        tilt: 0.5,
-      }),
+      placements: rockPlacements(),
       geometry: new DodecahedronGeometry(1, 0),
       material: new MeshStandardMaterial({ color: PALETTE.stone, roughness: 0.82, metalness: 0.04 }),
     }),
@@ -291,15 +306,7 @@ export function GroundField(): JSX.Element {
   )
   const boulders = useMemo(
     () => ({
-      placements: scatter(0x0b29, 9, {
-        minR: 8,
-        maxR: 21,
-        pad: 1.4,
-        yBase: 0.05,
-        scaleMin: 0.9,
-        scaleMax: 1.6,
-        tilt: 0.35,
-      }),
+      placements: boulderPlacements(),
       geometry: new DodecahedronGeometry(1, 0),
       material: new MeshStandardMaterial({ color: PALETTE.stoneWarm, roughness: 0.82, metalness: 0.04 }),
     }),

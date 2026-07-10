@@ -27,6 +27,7 @@ import { Player, PLAYER_SPAWN } from './Player'
 import { PostFx } from './PostFx'
 import { GroundField } from './props'
 import { ShadowTwin } from './ShadowTwin'
+import { WorldColliders } from './WorldColliders'
 import { FpsSampler } from './useFps'
 import { useReducedMotion } from './useReducedMotion'
 import { useSafeFrame } from './useSafeFrame'
@@ -170,6 +171,11 @@ export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
       <CameraRig reduced={reduced} />
       <Physics paused={paused} timeStep={1 / 60}>
         <Ground />
+        {/* solid boundaries for the props/trees/monuments — the founder walks
+            around them. Mirrors the visuals' automation gating (they, and these,
+            are off the software-GL CI tier), so the movement journey is unchanged
+            and collision is a full/constrained-tier feature, verified live. */}
+        {IS_AUTOMATION ? null : <WorldColliders />}
         <Player reduced={reduced} />
       </Physics>
       {onFirstFrame !== undefined ? <FirstFrameNotifier onFirstFrame={onFirstFrame} /> : null}

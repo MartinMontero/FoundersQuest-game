@@ -2,6 +2,33 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
+## Round 14 — full-length staff + physical collision boundaries (2026-07-10)
+
+Two operator asks before the world build-out. **(1) Full-length staff.** It read as a baton floating at
+hand height. The staff group is now PLANTED on the ground (group-local y=0 = the feet/ground) while its
+X/Z tracks the gripping hand each frame; the shaft runs the full 2.1 u from the earth up past the hand
+to a crystal crown above the head. Verified side-on at the constrained tier — a continuous pole from
+crown to grass, no floating gap. **(2) Collision.** Every solid mass got a static collider: boulders
+(ball, per-instance scale), the larger rocks (≥0.5 scale; small ones stay walk-over clutter), tree
+trunks (tall thin cylinder), shrine pillars, flagpoles, the Vault (its floating sanctum), and the
+Registry's outer standing stones. All in ONE fixed RigidBody inside `<Physics>`, rebuilt from the SAME
+deterministic placement builders the visuals use (props.tsx/Trees.tsx now export them), so a collider
+stands exactly where — and only where — an object stands. Interaction is preserved: the 2.75 u interact
+radius exceeds every monument collider, so the kneel/approach chip lights before the capsule meets the
+stone.
+
+**Automation gating (honest):** the colliders are mounted only off the software-GL CI tier
+(`IS_AUTOMATION ? null : <WorldColliders/>`), mirroring the trees/props they mirror — so the Stage-1
+movement journey is byte-unchanged and collision is a full/constrained-tier feature. It is therefore NOT
+covered by the automation e2e; instead it was driven directly: at the constrained tier the capsule
+marched into shrine s1-th (z=14) and STOPPED at z=14.99 (collider 0.6 + capsule 0.4 = 1.0), never
+passing through (before this change it walked straight to the far rim). 
+
+**Tree:** committed this round. | `tsc`/`eslint` PASS · `vitest` **288/288** · e2e **18/18** serial
+(automation unchanged: stage-1 self-play, render-tiers full+constrained boot with colliders present,
+context-loss — all green). Staff + collision screenshotted at the constrained tier; **live full-tier
+verification run against the deploy** (egress to `*.pages.dev` now allowlisted) — see below.
+
 ## Round 13 — founder rename affordance (2026-07-10)
 
 Operator saw the naming card behave correctly (per-origin localStorage: named "Montero" on the branch

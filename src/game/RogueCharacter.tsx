@@ -69,8 +69,10 @@ export function RogueCharacter({ gait, reduced }: RogueCharacterProps): JSX.Elem
   // The staff is a WORLD-SCALE child of the character group (so its size is
   // predictable — reparenting into the hand bone made it tiny, that bone carries
   // the rig's baked scale). Instead we cache the right-hand weapon bone and, each
-  // frame, move the staff to the hand's world position (expressed in the group's
-  // local frame). It stays upright — a walking staff gripped in the right hand.
+  // frame, PLANT the staff on the ground (group-local y ≈ 0 is the feet/ground)
+  // while it tracks the gripping hand in X/Z. That makes it a full-length walking
+  // staff — its foot on the earth, its shaft rising past the hand to the crown —
+  // instead of a short baton floating at hand height.
   const handBone = useRef<Object3D | null>(null)
   useEffect(() => {
     // GLTFLoader strips the '.' from bone names, so `handslot.r` → `handslotr`.
@@ -84,7 +86,8 @@ export function RogueCharacter({ gait, reduced }: RogueCharacterProps): JSX.Elem
     if (s === null || hand === null || g === null) return
     hand.getWorldPosition(HAND_WORLD)
     g.worldToLocal(HAND_WORLD)
-    s.position.copy(HAND_WORLD)
+    // foot planted on the ground, gripped where the hand is (X/Z only)
+    s.position.set(HAND_WORLD.x, 0, HAND_WORLD.z)
   })
 
   // start on a calm idle
@@ -113,21 +116,25 @@ export function RogueCharacter({ gait, reduced }: RogueCharacterProps): JSX.Elem
   return (
     <group ref={group} position={[0, -0.92, 0]} rotation={[0, Math.PI, 0]} dispose={null}>
       <primitive object={scene} />
-      {/* the founder's staff — a world-scale group whose position tracks the
-          right hand each frame (effect above). The grip sits near the hand; the
-          shaft rises and a glowing crystal shard crowns it (Bloom catches it) —
-          the mystical-founder read the operator asked to keep. Held vertical. */}
-      <group ref={staff} rotation={[0.12, 0, 0.06]}>
-        <mesh position={[0, 0.62, 0]} castShadow>
-          <cylinderGeometry args={[0.028, 0.038, 1.7, 6]} />
+      {/* the founder's staff — a world-scale group planted on the ground, its
+          X/Z tracking the gripping hand each frame (effect above). The shaft runs
+          the FULL height from the earth up past the hand, and a glowing crystal
+          shard crowns it above the head (Bloom catches it) — the mystical-founder
+          read the operator asked to keep, now a true staff, not a baton. */}
+      <group ref={staff}>
+        {/* the shaft — from the ground (y≈0) to just under the crown */}
+        <mesh position={[0, 1.05, 0]} castShadow>
+          <cylinderGeometry args={[0.035, 0.05, 2.1, 6]} />
           <meshStandardMaterial color="#6b5236" roughness={0.85} metalness={0.05} />
         </mesh>
-        <mesh position={[0, 1.44, 0]}>
-          <torusGeometry args={[0.05, 0.018, 6, 12]} />
+        {/* the amber binding just beneath the crown */}
+        <mesh position={[0, 1.98, 0]}>
+          <torusGeometry args={[0.06, 0.02, 6, 12]} />
           <meshStandardMaterial color={PALETTE.amber} roughness={0.4} metalness={0.5} />
         </mesh>
-        <mesh position={[0, 1.6, 0]}>
-          <octahedronGeometry args={[0.11, 0]} />
+        {/* the crystal crown, above the founder's head */}
+        <mesh position={[0, 2.16, 0]}>
+          <octahedronGeometry args={[0.12, 0]} />
           <meshStandardMaterial
             color={PALETTE.crystalCore}
             emissive={PALETTE.teal}
@@ -136,11 +143,11 @@ export function RogueCharacter({ gait, reduced }: RogueCharacterProps): JSX.Elem
             metalness={0}
           />
         </mesh>
-        <mesh position={[0, 1.6, 0]}>
-          <sphereGeometry args={[0.2, 10, 10]} />
+        <mesh position={[0, 2.16, 0]}>
+          <sphereGeometry args={[0.22, 10, 10]} />
           <meshBasicMaterial color={PALETTE.teal} transparent opacity={0.3} depthWrite={false} />
         </mesh>
-        <pointLight position={[0, 1.6, 0]} color={PALETTE.teal} intensity={0.5} distance={3} decay={2} />
+        <pointLight position={[0, 2.16, 0]} color={PALETTE.teal} intensity={0.5} distance={3} decay={2} />
       </group>
     </group>
   )

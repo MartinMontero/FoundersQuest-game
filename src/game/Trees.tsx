@@ -41,11 +41,20 @@ function clearOf(x: number, z: number): boolean {
   return true
 }
 
-interface TreePlacement {
+export interface TreePlacement {
   pos: [number, number, number]
   yaw: number
   scale: number
   variant: 0 | 1
+}
+
+/** The visible tree count for the active tier — the colliders match it exactly. */
+export const TREE_PLACEMENT_COUNT = TREE_COUNT
+
+/** The tree placements — shared by the visual clones and their trunk colliders,
+ * so a collider stands at every tree and only where a tree stands. */
+export function treePlacements(count: number = TREE_COUNT): TreePlacement[] {
+  return buildPlacements(count)
 }
 
 function buildPlacements(count: number): TreePlacement[] {
