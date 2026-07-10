@@ -26,8 +26,17 @@ passing through (before this change it walked straight to the far rim).
 
 **Tree:** committed this round. | `tsc`/`eslint` PASS · `vitest` **288/288** · e2e **18/18** serial
 (automation unchanged: stage-1 self-play, render-tiers full+constrained boot with colliders present,
-context-loss — all green). Staff + collision screenshotted at the constrained tier; **live full-tier
-verification run against the deploy** (egress to `*.pages.dev` now allowlisted) — see below.
+context-loss — all green). Staff + collision screenshotted and driven at the constrained tier LOCALLY
+(the authoritative behavioral proof — identical code to the deploy).
+
+**Live deploy (596→…→faca6684):** confirmed serving the exact new build by curl — the live index.html
+references the same `dist/assets/index-*.js` hash produced by this round's `vite build`, and the live
+CSP `connect-src` includes `blob:` (the glTF-texture fix). **Correction / honest limit:** I could NOT
+drive a headless browser against the live URL from this container. The `*.pages.dev` allowlist fixed the
+policy denial (curl now 200s), but headless Chromium's TLS tunnel THROUGH the agent proxy is reset
+(`net::ERR_CONNECTION_RESET`, 3/3 attempts) — a proxy-transport quirk specific to Chromium, not an app
+fault. So the live in-browser render remains **operator-verified only**; my behavioral proof is the
+identical build exercised at the constrained tier locally.
 
 ## Round 13 — founder rename affordance (2026-07-10)
 
