@@ -12,7 +12,8 @@
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
 import { riskiest, trough } from '../core/metrics'
 import type { QuestData } from '../core/schema'
-import { useQuestData } from '../state/store'
+import { useJourneyStore } from '../state/journey'
+import { questStore, useQuestData } from '../state/store'
 import { shouldSummonShadow } from '../state/tunables'
 import { useUiStore } from '../state/ui'
 import { STAGES, UI } from '../strings'
@@ -65,6 +66,17 @@ export function UiRoot(): ReactElement {
 
   const summonNow = shouldSummonShadow(data)
   const inTrough = trough(data)
+
+  // The Vault unseals at Stage 3 (canon 01) — a one-way flag. Fires on first
+  // reach AND on a reload that resumes at World 3+ (currentStage is device-local,
+  // never inside founders-quest:v3), so the seal state always matches the world.
+  const currentStage = useJourneyStore((s) => s.currentStage)
+  useEffect(() => {
+    const VAULT_UNSEAL_STAGE = 3
+    if (currentStage >= VAULT_UNSEAL_STAGE && !data.vaultUnlocked) {
+      questStore.getState().unlockVault()
+    }
+  }, [currentStage, data.vaultUnlocked])
 
   useEffect(() => {
     const ui = useUiStore.getState()

@@ -80,6 +80,18 @@ test('World 5 controls: verdict reads the seal, decision is citation-locked, the
   await waitForWorldReady(page)
   await expect(page.getByTestId('stage-banner')).toContainText('The Mirror')
 
+  // the Vault unseals on reaching World 3+ (here, a reload that resumes at W5)
+  await expect.poll(async () => (await readData(page)).vaultUnlocked).toBe(true)
+
+  // verdict-first lock: another Mirror shrine is sealed until the verdict is ruled
+  await tabToTarget(page, 's5-dec')
+  await page.keyboard.press('KeyE')
+  await expect(page.getByTestId('trance-panel')).toBeVisible()
+  await expect(page.getByTestId('verdict-lock')).toBeVisible()
+  await expect(page.getByTestId('trance-inscribe')).toBeHidden() // nothing to commit while locked
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('trance-panel')).toBeHidden()
+
   // ---- verdict (s5-th): the sealed thread is shown; rule yes ----
   await tabToTarget(page, 's5-th')
   await page.keyboard.press('KeyE')

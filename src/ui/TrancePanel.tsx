@@ -20,7 +20,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react'
-import { tierOf } from '../core/metrics'
+import { tierOf, verdictRecorded } from '../core/metrics'
 import type { Answer, Assumption, EvidenceEntry, Importance } from '../core/schema'
 import { questStore, useQuestStore, type VaultEntry } from '../state/store'
 import { useUiStore } from '../state/ui'
@@ -749,6 +749,10 @@ export function TrancePanel({ qid }: TrancePanelProps): ReactElement | null {
 
   const complete = isComplete(draft)
   const selfCommit = question.tag !== null && SELF_COMMIT_TAGS.has(question.tag)
+  // the W5 verdict-first lock (03): every other Mirror shrine stays sealed until
+  // the founder rules on Ariadne's Thread (s5-th) — face the verdict before you
+  // interpret. A genuine sequence lock (not a warn), like the Vault seal.
+  const verdictLocked = stageId === 's5' && qid !== 's5-th' && !verdictRecorded(questStore.getState().data)
 
   const registerGuardian = (
     statement: string,
@@ -788,8 +792,9 @@ export function TrancePanel({ qid }: TrancePanelProps): ReactElement | null {
   }
 
   const inscribe = (): void => {
-    // seal / registry own their commit (two-step confirm + store side effects)
-    if (selfCommit || !complete) return
+    // seal / registry own their commit (two-step confirm + store side effects);
+    // a verdict-locked Mirror shrine cannot be inscribed at all
+    if (verdictLocked || selfCommit || !complete) return
     inscribeAnswer(stageId, qid, answerFields(draft, ctx))
     sessionDrafts.delete(qid)
     exitTrance()
@@ -841,13 +846,25 @@ export function TrancePanel({ qid }: TrancePanelProps): ReactElement | null {
           />
         ) : null}
 
-        <div className="mt-5">{renderControl(draft, updateDraft, ctx)}</div>
+        {verdictLocked ? (
+          // the Mirror shrine is sealed until the verdict is ruled — show why,
+          // no control, no inscribe (a genuine sequence lock, canon 03)
+          <div
+            role="status"
+            data-testid="verdict-lock"
+            className="quest-aside-violet mt-5 p-3.5 text-sm"
+          >
+            {UI.locks.verdictFirst}
+          </div>
+        ) : (
+          <div className="mt-5">{renderControl(draft, updateDraft, ctx)}</div>
+        )}
 
         <div className="mt-6 flex items-center justify-between gap-4 border-t border-ink-line/25 pt-4">
           <p className="text-2xs italic text-ink-faint">{UI.trance.keysHint}</p>
-          {/* seal / registry commit through their own control; hide the generic
-              Inscribe so there is one honest commit path, never two */}
-          {selfCommit ? null : (
+          {/* seal / registry commit through their own control; a verdict-locked
+              shrine has nothing to commit — hide the generic Inscribe in both */}
+          {selfCommit || verdictLocked ? null : (
             <button
               type="button"
               data-testid="trance-inscribe"

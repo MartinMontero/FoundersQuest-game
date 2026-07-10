@@ -205,6 +205,11 @@ export const UI = {
     label: 'Name the moment',
     prompt: 'Design it on purpose.',
   },
+  /** canon sequence locks — verdict-first at the Mirror (W5). */
+  locks: {
+    verdictFirst:
+      'The Mirror will not answer until you rule on Ariadne’s Thread. Open the sealed verdict first — yes or no — before you interpret anything else.',
+  },
   vault: {
     /** gentle, dismissible, never blocks saving (03 Stage 1 rule; law 10) */
     nudgeText: 'That reads like a solution. The Vault can hold it while you stay with the problem.',
