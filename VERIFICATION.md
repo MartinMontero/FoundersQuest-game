@@ -26,8 +26,18 @@ the settings-key/v3 separation, and zero-Anthropic.
 **Tree:** committed this round. | `tsc`/`eslint` PASS · `vitest` **286/286** (+13: settings founderName
 ×5, founder store/helpers ×8) · e2e **17/17** serial (boot · plateau · reduced-motion ×2 · storage-
 degraded · stage-1 self-play 1.3 min · render-tiers ×4 · context-loss · csp ×2 · **founder-naming ×2**).
-Naming card + named HUD captured at the constrained tier. **UNTESTED:** live preview CSP (deploy still
-blocked on the operator's Pages:Edit token, per Round 1 tail); real-hardware FPS (re-flagged).
+Naming card + named HUD captured at the constrained tier.
+
+**Preview deploy — UNBLOCKED and shipped (2026-07-10).** The operator granted the API token
+`Cloudflare Pages → Edit`; the previously-failing `GET /accounts/{id}/pages/projects` now returns 200
+(project `founders-quest-game`), token verify = active. Fresh `vite build` → `wrangler pages deploy dist`
+succeeded: deployment `596dcba1`, `latest_stage: deploy success`, `_headers` (CSP incl. `connect-src …
+blob:`) uploaded, alias attached → **https://claude-dev-environment-setup.founders-quest-game.pages.dev**.
+**UNTESTED from this container:** the live in-browser render — the egress policy 403s arbitrary
+`*.pages.dev`, so a headless browser can't reach the deployed URL from here. Mitigation: the deployed
+`dist/` is byte-identical to the build screenshot-verified locally at the constrained tier this round,
+and the CSP `blob:` fix is confirmed present in the uploaded `_headers`. Operator eyes-on the URL is the
+final check. **Also UNTESTED:** real-hardware FPS with the full stack (re-flagged).
 
 ## Round 11 — photoreal push IV: soft cloud banks / atmosphere (2026-07-09)
 
