@@ -29,5 +29,10 @@ export const WORLD_COPY = {
     registry: 'E — open the Registry',
     flagpoleRaise: 'E — raise the flag',
     flagpoleLower: 'E — lower the flag',
+    portal: 'E — travel',
   },
+
+  /** path-portal chip labels — composed with the destination world name */
+  portalOnward: 'Onward',
+  portalBack: 'Back',
 } as const

@@ -15,21 +15,23 @@
 
 import type { ReactElement } from 'react'
 import type { EvidenceTier } from '../core/schema'
-import { STAGE1_MILESTONE_IDS } from '../game/contracts'
+import { milestoneIdsForStage } from '../game/contracts'
 import { founderDisplayName, useFounderStore } from '../state/founder'
+import { useJourneyStore } from '../state/journey'
 import { useAction, useEvidenceBanked, useTierCounts, useTruth } from '../state/store'
 import { STAGES, TIER_CODES, TIER_METALS, UI, coinCount, formatPercent, stageBanner } from '../strings'
 
 const TIERS: readonly EvidenceTier[] = [0, 1, 2, 3, 4]
 
 export function Hud(): ReactElement | null {
+  const currentStage = useJourneyStore((s) => s.currentStage)
   const truthValue = useTruth()
-  const actionValue = useAction(STAGE1_MILESTONE_IDS)
+  const actionValue = useAction(milestoneIdsForStage(currentStage))
   const banked = useEvidenceBanked()
   const coins = useTierCounts()
   const founderName = useFounderStore((s) => s.name)
   const openRename = useFounderStore((s) => s.openRename)
-  const stage = STAGES.find((s) => s.stage === 1)
+  const stage = STAGES.find((s) => s.stage === currentStage)
   if (stage === undefined) return null
 
   const truthText = truthValue === null ? UI.hud.truthUnlit : formatPercent(truthValue)

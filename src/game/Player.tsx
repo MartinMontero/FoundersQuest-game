@@ -10,10 +10,10 @@
 // faces its heading while walking, and carries a soft cool rim light — all of
 // which fall still under prefers-reduced-motion.
 
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from '@react-three/rapier'
 import type { Group } from 'three'
-import { STAGE1_LAYOUT } from './contracts'
+import { layoutForStage } from './contracts'
 import { getMoveInput } from './controls'
 import { INTERACT_RADIUS, useInteractionStore } from './interaction'
 import { PALETTE } from './materials'
@@ -21,6 +21,7 @@ import { IS_AUTOMATION, LOW_POWER } from './perf'
 import { cameraYaw, playerWorldPos } from './refs'
 import { RogueCharacter, type Gait } from './RogueCharacter'
 import { useSafeFrame } from './useSafeFrame'
+import { useJourneyStore, currentStage } from '../state/journey'
 import { useUiStore } from '../state/ui'
 
 const RUN_SPEED = 6
@@ -42,7 +43,7 @@ declare global {
 function updateNearest(x: number, z: number): void {
   let best: string | null = null
   let bestDistance = INTERACT_RADIUS
-  for (const spec of STAGE1_LAYOUT) {
+  for (const spec of layoutForStage(currentStage())) {
     const distance = Math.hypot(spec.position[0] - x, spec.position[2] - z)
     if (distance < bestDistance) {
       best = spec.id
@@ -62,6 +63,19 @@ export function Player({ reduced }: PlayerProps): JSX.Element {
   // live gait for the rigged character's animation state machine (idle/walk/run);
   // written here in the physics frame, read inside <RogueCharacter/> — no re-render
   const gait = useRef<Gait>('idle')
+
+  // travelling to another world drops the founder back at the campfire spawn (each
+  // grey-box world shares the spawn point for now); a stale position across the jump
+  // would strand them off the new layout.
+  useEffect(() => {
+    const unsubscribe = useJourneyStore.subscribe(() => {
+      const rb = body.current
+      if (rb === null) return
+      rb.setTranslation({ x: PLAYER_SPAWN[0], y: PLAYER_SPAWN[1], z: PLAYER_SPAWN[2] }, true)
+      rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
+    })
+    return unsubscribe
+  }, [])
 
   useSafeFrame((_, delta) => {
     const rb = body.current

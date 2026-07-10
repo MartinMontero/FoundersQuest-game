@@ -6,18 +6,19 @@
 // NOT state of record: never persisted, never serialized.
 
 import { create } from 'zustand'
-import { STAGE1_LAYOUT, type InteractableSpec } from './contracts'
+import { useJourneyStore } from '../state/journey'
+import { ALL_SPECS_BY_ID, layoutForStage } from './contracts'
 
 /** Walk-up highlight radius (metres, horizontal). */
 export const INTERACT_RADIUS = 2.75
 
-/** Tab order = layout order: shrines in canon order, flagpoles, vault, registry. */
-const CYCLE_ORDER: readonly string[] = STAGE1_LAYOUT.map((spec) => spec.id)
+/** Tab order for the CURRENT world (layout order: shrines, flagpoles, set-pieces, portals). */
+function cycleOrder(): readonly string[] {
+  return layoutForStage(useJourneyStore.getState().currentStage).map((spec) => spec.id)
+}
 
-/** Spec lookup shared by controls, rings, and chips. */
-export const SPEC_BY_ID: ReadonlyMap<string, InteractableSpec> = new Map(
-  STAGE1_LAYOUT.map((spec) => [spec.id, spec]),
-)
+/** Spec lookup shared by controls, rings, and chips — global across all worlds. */
+export const SPEC_BY_ID = ALL_SPECS_BY_ID
 
 export interface InteractionState {
   /** nearest interactable within INTERACT_RADIUS, else null (proximity-derived) */
@@ -47,12 +48,13 @@ export const useInteractionStore = create<InteractionState>()((set) => ({
 
   cycleFocus(step: 1 | -1): void {
     set((s) => {
-      const total = CYCLE_ORDER.length
+      const order = cycleOrder()
+      const total = order.length
       if (total === 0) return s
       const current = activeTargetId(s)
-      const index = current === null ? -1 : CYCLE_ORDER.indexOf(current)
+      const index = current === null ? -1 : order.indexOf(current)
       const start = index === -1 ? (step === 1 ? 0 : total - 1) : (index + step + total) % total
-      return { focusedId: CYCLE_ORDER[start] ?? null }
+      return { focusedId: order[start] ?? null }
     })
   },
 

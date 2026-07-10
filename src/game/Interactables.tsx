@@ -28,10 +28,11 @@ import { useUiStore } from '../state/ui'
 import { STAGES, WORLD_COPY } from '../strings'
 import {
   REGISTRY_POSITION,
-  STAGE1_LAYOUT,
-  STAGE1_MILESTONES,
+  layoutForStage,
+  milestonesForStage,
   type InteractableSpec,
 } from './contracts'
+import { useJourneyStore } from '../state/journey'
 import { SPEC_BY_ID, activeTargetId, useInteractionStore } from './interaction'
 import { PALETTE } from './materials'
 import { Pillar } from './models'
@@ -40,14 +41,16 @@ import { useSafeFrame } from './useSafeFrame'
 
 // ---- derived lookups (strings/contracts, built once) ----
 
-const stage1 = STAGES.find((s) => s.stage === 1)
-/** question text by qid — canon copy from src/strings, shown on the name chip */
+/** question text by qid — canon copy from src/strings, shown on the name chip (all worlds) */
 const QUESTION_TEXT: ReadonlyMap<string, string> = new Map(
-  (stage1?.questions ?? []).map((q) => [q.id, q.text]),
+  STAGES.flatMap((s) => s.questions.map((q) => [q.id, q.text] as const)),
 )
+/** milestone label by id, across every world (s{n}-m{k}) */
 const MILESTONE_LABEL: ReadonlyMap<string, string> = new Map(
-  STAGE1_MILESTONES.map((m) => [m.id, m.label]),
+  STAGES.flatMap((s) => milestonesForStage(s.stage).map((m) => [m.id, m.label] as const)),
 )
+/** world name by stage number — for the traversal portal chips */
+const WORLD_NAME: ReadonlyMap<number, string> = new Map(STAGES.map((s) => [s.stage, s.world]))
 
 /** An answer counts as ink when any 02 field holds content. */
 function hasInk(answer: Answer | undefined): boolean {
@@ -114,7 +117,9 @@ interface ShrineProps {
 
 function ShrineStone({ spec, reduced }: ShrineProps): JSX.Element {
   const qid = spec.qid ?? spec.id
-  const answered = useQuestStore((s) => hasInk(s.data.answers['s1']?.[qid]))
+  // stageId is the qid prefix (s2-th → s2) — the shrine lights from THIS world's answers
+  const stageId = qid.slice(0, qid.indexOf('-'))
+  const answered = useQuestStore((s) => hasInk(s.data.answers[stageId]?.[qid]))
   const glyph = useRef<Group>(null)
   const yaw = hashUnit(qid) * Math.PI * 2
   const kind = GLYPH_BY_QID[qid] ?? 'diamond'
@@ -517,6 +522,46 @@ function RegistryCircle({ reduced }: { reduced: boolean }): JSX.Element {
   )
 }
 
+// ---- the traversal portal: a shimmering stone archway you walk into ----
+
+function PortalArch({ spec, reduced }: ShrineProps): JSX.Element {
+  const [x, y, z] = spec.position
+  const onward = spec.portalDir === 'onward'
+  const glow = onward ? PALETTE.teal : PALETTE.violet
+  const shimmer = useRef<Mesh>(null)
+  // the veil pulses; still under reduced motion
+  useSafeFrame(({ clock }) => {
+    const m = shimmer.current
+    if (m === null) return
+    const mat = m.material as { opacity?: number }
+    mat.opacity = reduced ? 0.5 : 0.4 + Math.sin(clock.elapsedTime * 2) * 0.14
+  })
+  return (
+    <group position={[x, y, z]}>
+      {/* the arch uprights + lintel — a plain stone gate */}
+      {[-0.95, 0.95].map((px) => (
+        <mesh key={px} position={[px, 1.5, 0]} castShadow>
+          <boxGeometry args={[0.4, 3, 0.4]} />
+          <meshStandardMaterial color={PALETTE.stoneCool} roughness={0.8} metalness={0.05} />
+        </mesh>
+      ))}
+      <mesh position={[0, 3.1, 0]} castShadow>
+        <boxGeometry args={[2.5, 0.45, 0.5]} />
+        <meshStandardMaterial color={PALETTE.stoneWarm} roughness={0.8} metalness={0.05} />
+      </mesh>
+      {/* the shimmering veil */}
+      <mesh ref={shimmer} position={[0, 1.5, 0]}>
+        <planeGeometry args={[1.7, 2.9]} />
+        <meshBasicMaterial color={glow} transparent opacity={0.45} depthWrite={false} side={DoubleSide} />
+      </mesh>
+      {/* a keystone light so the gate reads from across the world */}
+      {!LOW_POWER ? (
+        <pointLight position={[0, 2.4, 0.4]} color={glow} intensity={0.7} distance={7} decay={2} />
+      ) : null}
+    </group>
+  )
+}
+
 // ---- the shared highlight: ground ring + name chip + prompt chip ----
 
 /** chip anchor height per kind (the vault hovers, so its chip sits higher) */
@@ -530,6 +575,8 @@ function chipHeight(spec: InteractableSpec): number {
       return 2.6
     case 'shrine':
       return 2.5
+    case 'portal':
+      return 3.8
   }
 }
 
@@ -543,6 +590,11 @@ function chipLabel(spec: InteractableSpec): string {
       return WORLD_COPY.vaultName
     case 'registry':
       return WORLD_COPY.registryName
+    case 'portal': {
+      const dir = spec.portalDir === 'back' ? WORLD_COPY.portalBack : WORLD_COPY.portalOnward
+      const name = spec.targetStage !== undefined ? WORLD_NAME.get(spec.targetStage) : undefined
+      return name !== undefined ? `${dir} · ${name}` : dir
+    }
   }
 }
 
@@ -643,9 +695,10 @@ export interface InteractablesProps {
 }
 
 export function Interactables({ reduced }: InteractablesProps): JSX.Element {
+  const stage = useJourneyStore((s) => s.currentStage)
   return (
     <group>
-      {STAGE1_LAYOUT.map((spec) => {
+      {layoutForStage(stage).map((spec) => {
         switch (spec.kind) {
           case 'shrine':
             return <ShrineStone key={spec.id} spec={spec} reduced={reduced} />
@@ -655,6 +708,8 @@ export function Interactables({ reduced }: InteractablesProps): JSX.Element {
             return <VaultMonument key={spec.id} spec={spec} reduced={reduced} />
           case 'registry':
             return <RegistryCircle key={spec.id} reduced={reduced} />
+          case 'portal':
+            return <PortalArch key={spec.id} spec={spec} reduced={reduced} />
         }
       })}
       {!LOW_POWER ? <ProximityLight reduced={reduced} /> : null}

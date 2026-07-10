@@ -4,8 +4,10 @@
 // The UI layer may pass its own WorldEvents into <GameRoot events={...}/> and
 // override any of these.
 
+import { useJourneyStore } from '../state/journey'
 import { questStore } from '../state/store'
 import { useUiStore } from '../state/ui'
+import { useInteractionStore } from './interaction'
 import type { WorldEvents } from './contracts'
 
 export const defaultWorldEvents: WorldEvents = {
@@ -21,5 +23,11 @@ export const defaultWorldEvents: WorldEvents = {
   onFlagpole(id: string): void {
     // self-report: milestones[id] flips — Action only, never Truth (02/04 map)
     questStore.getState().toggleMilestone(id)
+  },
+  onPortal(targetStage: number): void {
+    // travel to another world; the highlight is stale across the jump, so drop it
+    useInteractionStore.getState().clearFocus()
+    useInteractionStore.getState().setNearest(null)
+    useJourneyStore.getState().goToStage(targetStage)
   },
 }

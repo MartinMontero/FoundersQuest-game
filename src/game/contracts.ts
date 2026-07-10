@@ -16,9 +16,11 @@ export interface WorldEvents {
   onRegistryApproach(): void
   /** player pulls a milestone flagpole (raise or lower — self-report, Action only) */
   onFlagpole(id: string): void
+  /** player walks into an onward/back path portal → travel to that world */
+  onPortal(targetStage: number): void
 }
 
-export type InteractableKind = 'shrine' | 'vault' | 'registry' | 'flagpole'
+export type InteractableKind = 'shrine' | 'vault' | 'registry' | 'flagpole' | 'portal'
 
 export interface InteractableSpec {
   id: string
@@ -29,6 +31,10 @@ export interface InteractableSpec {
   qid?: string
   /** set when kind === 'flagpole' */
   milestoneId?: string
+  /** set when kind === 'portal' — the world this portal travels to (1..8) */
+  targetStage?: number
+  /** portal direction, for the chip label */
+  portalDir?: 'onward' | 'back'
 }
 
 export interface MilestoneSpec {
@@ -88,13 +94,128 @@ function flagpoleSpec(milestone: MilestoneSpec, index: number): InteractableSpec
   return { id: milestone.id, kind: 'flagpole', position, milestoneId: milestone.id }
 }
 
+// ---- Traversal portals (game-design §1: the path is walkable from minute one) ----
+// Grey-box: an onward portal at each world's far edge → the next world, and a back
+// portal near spawn → the previous world. (Act-Gate doors and loop toll-portals are
+// layered on in later cycles; these plain portals carry the spine's traversal now.)
+
+const ONWARD_POSITION: [number, number, number] = [0, 0, -21]
+const BACK_POSITION: [number, number, number] = [-19, 0, 18]
+
+function onwardPortal(fromStage: number): InteractableSpec {
+  return {
+    id: `portal-${fromStage}-onward`,
+    kind: 'portal',
+    position: ONWARD_POSITION,
+    targetStage: fromStage + 1,
+    portalDir: 'onward',
+  }
+}
+
+function backPortal(fromStage: number): InteractableSpec {
+  return {
+    id: `portal-${fromStage}-back`,
+    kind: 'portal',
+    position: BACK_POSITION,
+    targetStage: fromStage - 1,
+    portalDir: 'back',
+  }
+}
+
+/** Portals for a world: onward (unless the last) + back (unless the first). */
+function portalsForStage(stage: number): InteractableSpec[] {
+  const out: InteractableSpec[] = []
+  if (stage < STAGES.length) out.push(onwardPortal(stage))
+  if (stage > 1) out.push(backPortal(stage))
+  return out
+}
+
 /**
  * Every placed interactable in the Stage 1 slice: all 8 s1 shrines (ids from
- * src/strings, canon order), 3 milestone flagpoles, the Vault, the Registry.
+ * src/strings, canon order), 3 milestone flagpoles, the Vault, the Registry, plus
+ * the onward portal to World 2.
  */
 export const STAGE1_LAYOUT: readonly InteractableSpec[] = [
   ...stage1.questions.map((q) => shrineSpec(q.id)),
   ...STAGE1_MILESTONES.map((m, i) => flagpoleSpec(m, i)),
   { id: 'vault', kind: 'vault', position: VAULT_POSITION },
   { id: 'registry', kind: 'registry', position: REGISTRY_POSITION },
+  ...portalsForStage(1),
 ]
+
+// ---- Generalized per-stage layout (Worlds 2..8; World 1 keeps its hand-authored
+// spiral above). Grey-box: shrines on an inward spiral, flagpoles clustered near
+// spawn, portals for traversal. Per-world set-pieces (the Raven fellowship circle,
+// the forge pyre, the maze, the mirror causeway, the graveyard, the bridge, the
+// launch pad) and distinct visuals are layered on in each world's own cycle. ----
+
+const SPIRAL_MAX_R = 18
+const SPIRAL_MIN_R = 4
+/** shrines wind inward from near spawn (+z) across ~1.15 turns */
+function spiralPositions(count: number): [number, number, number][] {
+  const out: [number, number, number][] = []
+  for (let i = 0; i < count; i += 1) {
+    const t = count <= 1 ? 0 : i / (count - 1)
+    const r = SPIRAL_MAX_R - t * (SPIRAL_MAX_R - SPIRAL_MIN_R)
+    const angle = Math.PI / 2 + t * Math.PI * 2.3 // start at +z (near spawn), wind in
+    out.push([
+      Math.round(Math.cos(angle) * r * 10) / 10,
+      0,
+      Math.round(Math.sin(angle) * r * 10) / 10,
+    ])
+  }
+  return out
+}
+
+/** three flagpoles in a short row on the near-right, clear of the back portal */
+const GENERIC_FLAGPOLES: readonly [number, number, number][] = [
+  [7, 0, 16],
+  [10, 0, 15],
+  [13, 0, 14],
+]
+
+function generatedLayout(stage: number): InteractableSpec[] {
+  const stageData = STAGES.find((s) => s.stage === stage)
+  if (stageData === undefined) throw new Error(`contracts: no STAGES entry for stage ${stage}`)
+  const shrinePositions = spiralPositions(stageData.questions.length)
+  const shrines: InteractableSpec[] = stageData.questions.map((q, i) => ({
+    id: q.id,
+    kind: 'shrine',
+    position: shrinePositions[i] ?? [0, 0, 0],
+    qid: q.id,
+  }))
+  const milestones = milestonesForStage(stage)
+  const poles: InteractableSpec[] = milestones.map((m, i) => ({
+    id: m.id,
+    kind: 'flagpole',
+    position: GENERIC_FLAGPOLES[i] ?? [7, 0, 16],
+    milestoneId: m.id,
+  }))
+  return [...shrines, ...poles, ...portalsForStage(stage)]
+}
+
+/** Milestones for any stage, ids per R-K: s{n}-m{1..3}. */
+export function milestonesForStage(stage: number): MilestoneSpec[] {
+  const stageData = STAGES.find((s) => s.stage === stage)
+  if (stageData === undefined) return []
+  return stageData.milestones.map((label, index) => ({ id: `s${stage}-m${index + 1}`, label }))
+}
+
+export function milestoneIdsForStage(stage: number): string[] {
+  return milestonesForStage(stage).map((m) => m.id)
+}
+
+/** The full interactable layout for a world: World 1 is hand-authored, 2..8 generated. */
+const LAYOUT_BY_STAGE: ReadonlyMap<number, readonly InteractableSpec[]> = new Map(
+  STAGES.map((s) => [s.stage, s.stage === 1 ? STAGE1_LAYOUT : generatedLayout(s.stage)]),
+)
+
+export function layoutForStage(stage: number): readonly InteractableSpec[] {
+  return LAYOUT_BY_STAGE.get(stage) ?? STAGE1_LAYOUT
+}
+
+/** Global spec lookup across ALL worlds — ids are globally unique (qids, s{n}-m{k},
+ *  stage-scoped set-pieces, portal-{n}-{dir}), so one map serves every world. */
+export const ALL_SPECS_BY_ID: ReadonlyMap<string, InteractableSpec> = new Map(
+  STAGES.flatMap((s) => layoutForStage(s.stage).map((spec) => [spec.id, spec] as const)),
+)

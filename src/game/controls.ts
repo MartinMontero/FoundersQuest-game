@@ -76,6 +76,9 @@ function activate(events: WorldEvents): void {
     case 'flagpole':
       if (spec.milestoneId !== undefined) events.onFlagpole(spec.milestoneId)
       break
+    case 'portal':
+      if (spec.targetStage !== undefined) events.onPortal(spec.targetStage)
+      break
   }
 }
 

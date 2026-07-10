@@ -17,7 +17,8 @@
 
 import { useMemo } from 'react'
 import { BallCollider, CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
-import { REGISTRY_POSITION, STAGE1_LAYOUT, VAULT_POSITION } from './contracts'
+import { REGISTRY_POSITION, VAULT_POSITION, layoutForStage } from './contracts'
+import { useJourneyStore } from '../state/journey'
 import { boulderPlacements, rockPlacements } from './props'
 import { treePlacements } from './Trees'
 
@@ -34,12 +35,16 @@ const REGISTRY_STONES = Array.from({ length: 8 }, (_, i) => {
 })
 
 export function WorldColliders(): JSX.Element {
+  const stage = useJourneyStore((s) => s.currentStage)
   const boulders = useMemo(boulderPlacements, [])
   const rocks = useMemo(rockPlacements, [])
   const trees = useMemo(() => treePlacements(), [])
 
-  const shrines = STAGE1_LAYOUT.filter((s) => s.kind === 'shrine')
-  const flagpoles = STAGE1_LAYOUT.filter((s) => s.kind === 'flagpole')
+  const layout = layoutForStage(stage)
+  const shrines = layout.filter((s) => s.kind === 'shrine')
+  const flagpoles = layout.filter((s) => s.kind === 'flagpole')
+  const hasVault = layout.some((s) => s.kind === 'vault')
+  const hasRegistry = layout.some((s) => s.kind === 'registry')
 
   return (
     <RigidBody type="fixed" colliders={false}>
@@ -88,15 +93,17 @@ export function WorldColliders(): JSX.Element {
         />
       ))}
       {/* the Vault — its floating sanctum is solid; the founder stops at its edge */}
-      <CuboidCollider args={[0.7, 0.5, 0.55]} position={VAULT_POSITION} />
+      {hasVault ? <CuboidCollider args={[0.7, 0.5, 0.55]} position={VAULT_POSITION} /> : null}
       {/* the Registry's outer standing stones */}
-      {REGISTRY_STONES.map((stone, i) => (
-        <CylinderCollider
-          key={`registry-stone-${i}`}
-          args={[0.7, 0.3]}
-          position={[REGISTRY_POSITION[0] + stone.x, 0.7, REGISTRY_POSITION[2] + stone.z]}
-        />
-      ))}
+      {hasRegistry
+        ? REGISTRY_STONES.map((stone, i) => (
+            <CylinderCollider
+              key={`registry-stone-${i}`}
+              args={[0.7, 0.3]}
+              position={[REGISTRY_POSITION[0] + stone.x, 0.7, REGISTRY_POSITION[2] + stone.z]}
+            />
+          ))
+        : null}
     </RigidBody>
   )
 }
