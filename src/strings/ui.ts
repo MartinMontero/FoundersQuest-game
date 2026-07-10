@@ -210,6 +210,23 @@ export const UI = {
     verdictFirst:
       'The Mirror will not answer until you rule on Ariadne’s Thread. Open the sealed verdict first — yes or no — before you interpret anything else.',
   },
+  /** the Act Gate threshold (03; warn, never block — canon 01). */
+  gate: {
+    criteriaLabel: 'To cross cleanly:',
+    met: 'The bar is met — the way is open.',
+    unmet: 'The bar is not met. You may still cross — but name why, for the trail.',
+    pass: 'Cross the threshold',
+    reasonLabel: 'Why cross now?',
+    override: 'Cross anyway',
+    turnBack: 'Not yet',
+  },
+  /** a named loop's toll-portal (03): every loop demands one learning line. */
+  loop: {
+    tollLine: (name: string): string => `${name} — a loop back. Name the one thing you learned.`,
+    learningLabel: 'What did you learn?',
+    pay: 'Loop back',
+    turnBack: 'Stay',
+  },
   vault: {
     /** gentle, dismissible, never blocks saving (03 Stage 1 rule; law 10) */
     nudgeText: 'That reads like a solution. The Vault can hold it while you stay with the problem.',

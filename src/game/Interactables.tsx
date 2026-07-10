@@ -563,9 +563,19 @@ const GATE_RUNES: readonly [number, number][] = [
 function PortalArch({ spec, reduced }: ShrineProps): JSX.Element {
   const [x, y, z] = spec.position
   const onward = spec.portalDir === 'onward'
+  const isLoop = spec.portalDir === 'loop'
   const glow = onward ? PALETTE.teal : PALETTE.violet
-  const dir = onward ? WORLD_COPY.portalOnward : WORLD_COPY.portalBack
-  const worldName = spec.targetStage !== undefined ? WORLD_NAME.get(spec.targetStage) : undefined
+  const dir = onward
+    ? WORLD_COPY.portalOnward
+    : isLoop
+      ? WORLD_COPY.portalLoop
+      : WORLD_COPY.portalBack
+  // a loop portal's sign names the loop (03); onward/back name the destination world
+  const worldName = isLoop
+    ? spec.loopName
+    : spec.targetStage !== undefined
+      ? WORLD_NAME.get(spec.targetStage)
+      : undefined
   const shimmer = useRef<Mesh>(null)
   const runes = useRef<Group>(null)
 
@@ -696,6 +706,10 @@ function chipLabel(spec: InteractableSpec): string {
     case 'registry':
       return WORLD_COPY.registryName
     case 'portal': {
+      // a loop toll-portal reads by its named loop (03); onward/back by destination
+      if (spec.portalDir === 'loop') {
+        return `${WORLD_COPY.portalLoop} · ${spec.loopName ?? ''}`
+      }
       const dir = spec.portalDir === 'back' ? WORLD_COPY.portalBack : WORLD_COPY.portalOnward
       const name = spec.targetStage !== undefined ? WORLD_NAME.get(spec.targetStage) : undefined
       return name !== undefined ? `${dir} · ${name}` : dir

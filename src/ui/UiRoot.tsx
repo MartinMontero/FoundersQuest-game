@@ -19,7 +19,9 @@ import { useUiStore } from '../state/ui'
 import { STAGES, UI } from '../strings'
 import { DegradedBanner } from './DegradedBanner'
 import { FounderNaming } from './FounderNaming'
+import { GatePanel } from './GatePanel'
 import { Hud } from './Hud'
+import { LoopPanel } from './LoopPanel'
 import { OnboardingHint } from './OnboardingHint'
 import { RegistryPanel } from './RegistryPanel'
 import { ShadowOverlay } from './ShadowOverlay'
@@ -122,6 +124,8 @@ export function UiRoot(): ReactElement {
       ) : null}
       {mode === 'panel:vault' ? <VaultPanel /> : null}
       {mode === 'panel:registry' ? <RegistryPanel focusRiskiest={focusRiskiest} /> : null}
+      {mode === 'gate' ? <GatePanel /> : null}
+      {mode === 'loop' ? <LoopPanel /> : null}
       {shadowVisible ? (
         <ShadowOverlay onAction={handleShadowAction} onDismiss={handleShadowDismiss} />
       ) : null}

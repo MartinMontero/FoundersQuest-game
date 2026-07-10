@@ -5,8 +5,8 @@
 // never inside founders-quest:v3). Keyboard only; zero Anthropic calls.
 
 import { expect, test } from '@playwright/test'
-import { STAGES, WORLD_COPY } from '../src/strings'
-import { recordRun, seedFounderName, tabToChip, waitForWorldReady } from './helpers'
+import { STAGES } from '../src/strings'
+import { recordRun, seedFounderName, tabToTarget, waitForWorldReady } from './helpers'
 
 test.describe.configure({ timeout: 240_000 })
 
@@ -25,18 +25,26 @@ test('traversal: World 1 → 8 and back, a later-world shrine writes its answers
   const banner = page.getByTestId('stage-banner')
   await expect(banner).toContainText(worldName(1)) // Swirling Nebula
 
-  // walk onward through every world; the banner must land on each in turn
+  // walk onward through every world; the banner must land on each in turn.
+  // Navigate by the portal's exact interactable id (deterministic — immune to
+  // the drei <Html> chip label lag at the low FPS of a headless container).
   for (let s = 2; s <= STAGES.length; s += 1) {
-    await tabToChip(page, `${WORLD_COPY.portalOnward} · ${worldName(s)}`)
+    await tabToTarget(page, `portal-${s - 1}-onward`)
     await page.keyboard.press('KeyE')
+    // entering an act's far side (W3/W6/W8) meets its Act Gate; a pure-traversal
+    // run leaves every bar unmet, so cross with a written override reason
+    if (s === 3 || s === 6 || s === 8) {
+      await expect(page.getByTestId('gate-panel')).toBeVisible()
+      await page.getByTestId('gate-reason').fill(`crossing to ${worldName(s)} for the traversal check`)
+      await page.getByTestId('gate-cross').press('Enter')
+      await expect(page.getByTestId('gate-panel')).toBeHidden()
+    }
     await expect(banner).toContainText(worldName(s))
   }
   await expect(banner).toContainText(worldName(STAGES.length)) // The Rocket (World 8)
 
   // answer a prose shrine in World 8 → writes the exact 02 key answers.s8['s8-l4']
-  const q = STAGES[7]?.questions.find((x) => x.id === 's8-l4')
-  if (q === undefined) throw new Error('s8-l4 missing')
-  await tabToChip(page, q.text)
+  await tabToTarget(page, 's8-l4')
   await page.keyboard.press('KeyE')
   await expect(page.getByTestId('trance-panel')).toBeVisible()
   const ANSWER = 'Yes — with eyes open and the thread sealed.'
@@ -50,7 +58,7 @@ test('traversal: World 1 → 8 and back, a later-world shrine writes its answers
   expect(saved).toEqual({ text: ANSWER })
 
   // walk back one world (World 8 → World 7 · The Bridge)
-  await tabToChip(page, `${WORLD_COPY.portalBack} · ${worldName(7)}`)
+  await tabToTarget(page, 'portal-8-back')
   await page.keyboard.press('KeyE')
   await expect(banner).toContainText(worldName(7))
 

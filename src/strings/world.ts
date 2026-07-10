@@ -35,4 +35,6 @@ export const WORLD_COPY = {
   /** path-portal chip labels — composed with the destination world name */
   portalOnward: 'Onward',
   portalBack: 'Back',
+  /** named-loop toll-portal chip label — composed with the loop's name (03) */
+  portalLoop: 'Loop',
 } as const

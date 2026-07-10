@@ -6,7 +6,7 @@
 // milestones appear in src/strings questions.ts (03 verbatim); cross-checked
 // against the v3 source when the operator's upload lands.
 
-import { STAGES } from '../strings'
+import { NAMED_LOOPS, STAGES, type NamedLoop } from '../strings'
 
 /** Callbacks the world fires; the UI layer supplies the implementation. */
 export interface WorldEvents {
@@ -18,6 +18,8 @@ export interface WorldEvents {
   onFlagpole(id: string): void
   /** player walks into an onward/back path portal → travel to that world */
   onPortal(targetStage: number): void
+  /** player takes a named-loop toll-portal → the loop toll (learning line) before travel */
+  onLoop(name: string, toStage: number): void
 }
 
 export type InteractableKind = 'shrine' | 'vault' | 'registry' | 'flagpole' | 'portal'
@@ -34,7 +36,9 @@ export interface InteractableSpec {
   /** set when kind === 'portal' — the world this portal travels to (1..8) */
   targetStage?: number
   /** portal direction, for the chip label */
-  portalDir?: 'onward' | 'back'
+  portalDir?: 'onward' | 'back' | 'loop'
+  /** set when portalDir === 'loop' — the named loop (03) this toll-portal serves */
+  loopName?: string
 }
 
 export interface MilestoneSpec {
@@ -134,6 +138,28 @@ function portalsForStage(stage: number): InteractableSpec[] {
   return out
 }
 
+// ---- Named-loop toll-portals (03): a marked portal back to an earlier world.
+// Reality Check (W5→W1), Re-Build (W7→W3), Reset (W8→W1). Distinct from the plain
+// back portal: taking it demands a learning line (→ trail), so it routes through
+// the loop toll, not a silent jump. One clear spot on the right, in the KEEPOUT.
+export const LOOP_POSITION: [number, number, number] = [16, 0, -6]
+
+function loopPortal(loop: NamedLoop): InteractableSpec {
+  return {
+    id: `portal-${loop.from}-loop`,
+    kind: 'portal',
+    position: LOOP_POSITION,
+    targetStage: loop.to,
+    portalDir: 'loop',
+    loopName: loop.name,
+  }
+}
+
+/** The named-loop toll-portal(s) that loop back FROM this world (03), if any. */
+function loopPortalsForStage(stage: number): InteractableSpec[] {
+  return NAMED_LOOPS.filter((l) => l.from === stage).map(loopPortal)
+}
+
 /**
  * Every placed interactable in the Stage 1 slice: all 8 s1 shrines (ids from
  * src/strings, canon order), 3 milestone flagpoles, the Vault, the Registry, plus
@@ -195,7 +221,7 @@ function generatedLayout(stage: number): InteractableSpec[] {
     position: GENERIC_FLAGPOLES[i] ?? [7, 0, 16],
     milestoneId: m.id,
   }))
-  return [...shrines, ...poles, ...portalsForStage(stage)]
+  return [...shrines, ...poles, ...portalsForStage(stage), ...loopPortalsForStage(stage)]
 }
 
 /** Milestones for any stage, ids per R-K: s{n}-m{1..3}. */

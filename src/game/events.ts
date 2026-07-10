@@ -7,6 +7,7 @@
 import { useJourneyStore } from '../state/journey'
 import { questStore } from '../state/store'
 import { useUiStore } from '../state/ui'
+import { ACT_GATES } from '../strings'
 import { useInteractionStore } from './interaction'
 import type { WorldEvents } from './contracts'
 
@@ -25,9 +26,26 @@ export const defaultWorldEvents: WorldEvents = {
     questStore.getState().toggleMilestone(id)
   },
   onPortal(targetStage: number): void {
-    // travel to another world; the highlight is stale across the jump, so drop it
+    const journey = useJourneyStore.getState()
+    const from = journey.currentStage
+    // the highlight is stale across any world transition, so drop it either way
     useInteractionStore.getState().clearFocus()
     useInteractionStore.getState().setNearest(null)
-    useJourneyStore.getState().goToStage(targetStage)
+    // an onward crossing of an act boundary meets its Act Gate first — once, until
+    // the gate is recorded (passed or overridden); after that, onward is direct.
+    const gate = ACT_GATES.find((g) => g.afterStage === from && targetStage === from + 1)
+    if (gate !== undefined && questStore.getState().data.gates[gate.id] === undefined) {
+      useUiStore.getState().openGate({ gateId: gate.id, targetStage })
+      return
+    }
+    journey.goToStage(targetStage)
+  },
+  onLoop(name: string, toStage: number): void {
+    // a named loop demands one learning line before it lets you back (03) — open
+    // the toll; the LoopPanel records the learning to the trail and then travels
+    const journey = useJourneyStore.getState()
+    useInteractionStore.getState().clearFocus()
+    useInteractionStore.getState().setNearest(null)
+    useUiStore.getState().openLoop({ name, fromStage: journey.currentStage, toStage })
   },
 }
