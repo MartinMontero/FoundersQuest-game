@@ -46,10 +46,10 @@ World-1 slice without regressing it.
 - **J2 — Traversal.** Walk W1→W2→…→W8 via onward paths; HUD banner tracks the world; back portal; reload resumes. ✅ `npx playwright test e2e/traversal.spec.ts` → 1 passed (1.7m): W1→8 onward, banner lands on each world; W8→W7 back; reload resumes W7; zero console/Anthropic. (Act-Gate doors replace onward portals at act boundaries in a later cycle.)
 - **J3..J10 — Each world W1–W8 playable.** Every shrine kneelable; each answers with its canon input control writing exact 02 keys; all 3 flagpoles raise (Action only). ◐ shrines answerable in every world (unbuilt input tags fall back to prose; verified s8-l4 wrote `answers.s8` in traversal.spec). Designed controls (verbatim/vault/ifthen/seal/verdict/registry/decision/spine/joy) + per-world set-pieces are the next cycles. (W1 ✅ full.)
 - **J11 — Input controls.** verbatim(→E2), vault(reads vault[]), ifthen(+register guardian), seal(two-step, read-only after), verdict(shows sealed text→yes/no→unlock), registry(funeral→invalidated), decision(citation-locked), spine(per-beat [unproven]), joy. Each executed with representative + empty + invalid input. ◐ All 9 built + wired to exact 02 keys; two new store actions (`sealThread`, `invalidateAssumption`). **Logic executed** in `tests/trance-controls.spec.ts` (24) + `tests/state.spec.ts` (8: seal/funeral incl. 1.5× XP + Truth). **Live DOM+store executed** in `e2e/controls.spec.ts` (World 5: verdict reads the s4-th seal → decision citation-lock holds then releases → funeral buries a W1 guardian; keyboard-only, zero-Anthropic). Adversarially reviewed (6 dimensions × verify): 2 confirmed defects fixed (ifthen focus-strand + guardian-dedup). Remaining for ✅: e2e for the W2–4/W8 controls (logic proven; navigation via new deterministic `tabToTarget`).
-- **J12 — Sequence locks.** Vault sealed till W3 & unseals on W3 entry; W5 shrines locked until verdict; `s5-dec` locked until a citation. ⬜
-- **J13 — Act Gates.** Walk W2/W5/W7 exit door met (pass) and unmet (override + written reason); `gates` + `trail` written; export shows it. ⬜
-- **J14 — Funerals.** W5 graveyard: invalidate a W1 guardian; headstone stands; 1.5× XP only when derived tier≥2 else "unproven funeral". ⬜
-- **J15 — Loops.** Toll portals W5→W1, W7→W3, W8→W1: learning line → `trail`; The Reset adds retro + critique. ⬜
+- **J12 — Sequence locks.** Vault sealed till W3 & unseals on W3 entry; W5 shrines locked until verdict; `s5-dec` locked until a citation. ✅ Vault unseal via a UiRoot effect on reach/resume-into-W3+ (`unlockVault`); verdict-first lock in `TrancePanel` (non-verdict Mirror shrines render a sealed notice, no control/Inscribe, until `s5-th` records yes/no); `s5-dec` citation lock from J11. Executed: `e2e/controls.spec.ts` asserts `vaultUnlocked` flips on resume-into-W5 and `s5-dec` shows the verdict-lock until ruled.
+- **J13 — Act Gates.** Walk W2/W5/W7 exit door met (pass) and unmet (override + written reason); `gates` + `trail` written; export shows it. ✅ `GatePanel` (met→clean pass, unmet→written override, Esc/"Not yet"→back out); `onPortal` opens it once per act boundary. Executed: `e2e/gate.spec.ts` → 2 passed (met-pass records `gate-pass`; unmet backs out with no record, then overrides → `gates.act1=overridden` + `gate-override` in `trail`); `traversal.spec` crosses all three gates. (Export badge = J16.)
+- **J14 — Funerals.** W5 graveyard: invalidate a W1 guardian; headstone stands; 1.5× XP only when derived tier≥2 else "unproven funeral". ✅ `FuneralInput` (s5-l5) + `invalidateAssumption`; proven/unproven labelled from `tierOf≥2`; 1.5× (15 XP) derived by metrics. Executed: `tests/state.spec.ts` (proven→15 XP + Truth moves; unproven→0) + `e2e/controls.spec.ts` (buries a W1 guardian live). (Graveyard headstone visuals = a later visual pass.)
+- **J15 — Loops.** Toll portals W5→W1, W7→W3, W8→W1: learning line → `trail`; The Reset adds retro + critique. ◐ All three loop toll-portals built (`loopPortalsForStage` from `NAMED_LOOPS`); `LoopPanel` demands one learning line → `trail` (type `loop`) + `lastLoop`; "Stay"/Esc backs out. Executed: `e2e/loop.spec.ts` (Reality Check W5→W1 records the learning line; "Stay" backs out). **Deferred:** The Reset's extra cycle-retro + undefended Critique the Quest (a polish add on the existing `trail.critique` field).
 - **J16 — Campfire furniture.** Weather totem sets sky; field notes save; side-quest accept/complete; exports download real journal md; Dinner Card edits → leads the Brief. ⬜
 - **J17 — Launch (W8).** Spine cast → rocket engraves; raise final flag → launch sequence; world continues (Reset remains). ⬜
 - **J18 — Cross-cutting.** Keyboard-only full traversal; reduced-motion honored; zero console errors; zero api.anthropic.com calls anywhere in the spine. ⬜
@@ -62,6 +62,25 @@ World-1 slice without regressing it.
 - Fresh-eyes final pass: re-walk W1→W8 as a first-time player; anything demo-embarrassing is a defect.
 
 ## Progress log (evidence: command → salient output)
+- **Cycle 3 — sequence locks: Vault unseal · verdict-first · Act Gates · loop toll-portals (2026-07-10).**
+  The canon rules of WHEN/IN WHAT ORDER the controls may be used, on top of the 9 shrines.
+  - **3a foundation** (`core/metrics.ts` + `state/store.ts`): `gateMet(act1|2|3)` (derived Act-Gate
+    bars), `verdictRecorded`; four immutable/persist-first store actions — `unlockVault` (idempotent),
+    `passGate`/`overrideGate` (→ `gates` + `trail`), `recordLoop` (→ `trail` + `lastLoop`).
+  - **3b locks**: Vault unseals via a `UiRoot` effect on first reach / resume-into-W3+; the Mirror
+    verdict-first lock in `TrancePanel` (sealed notice, no control/Inscribe until `s5-th` rules).
+    New `ui` modes `gate`|`loop` + payloads (freeze the world for free via `mode !== 'roam'`).
+  - **3c Act Gates**: `GatePanel` (criteria + derived met/unmet; met→pass, unmet→written override,
+    "Not yet"→back out with no record); `events.onPortal` opens it once per act boundary before travel.
+  - **3d loop toll-portals**: a `'loop'` portalDir + `LOOP_POSITION` + `loopPortalsForStage` from
+    `NAMED_LOOPS` (W5→W1, W7→W3, W8→W1); colliders auto-apply; KEEPOUT updated; chip/arch read the
+    loop's name; `LoopPanel` takes the learning line. Reset's retro+critique deferred (J15 ◐).
+  - **Verified**: `typecheck`/`lint` 0 · `vitest` **329** (metrics +4 gate/verdict, state +5 actions).
+    e2e serial (deterministic id nav via `tabToTarget`, retiring the FPS-flaky `tabToChip`):
+    `gate.spec` 2 passed (met-pass · back-out+override), `loop.spec` 1 (Reality Check + Stay),
+    `controls.spec` 1 (adds vault-unseal + verdict-lock asserts), `traversal.spec` 1 (crosses all
+    three Act Gates). One failure found + fixed en route was a TEST bug (reading `.gates.act1` before
+    any persist — optional-chained), not product. Zero console/Anthropic on every route.
 - **Cycle 2 — the 9 per-world trance controls (2026-07-10).** Every shrine in Worlds 2–8 now
   answers with its canon mechanism, each writing the EXACT 02 Answer keys (J11). New components
   in `src/ui/inputs/`: `VerbatimInput` (5 quotes → `text`; per-quote "Log as E2" → `addEvidence`),

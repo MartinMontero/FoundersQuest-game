@@ -110,7 +110,8 @@ test('Act Gate — an unmet bar backs out with no record, then overrides with a 
   await page.getByTestId('gate-back').press('Enter')
   await expect(page.getByTestId('gate-panel')).toBeHidden()
   await expect(page.getByTestId('stage-banner')).toContainText(worldName(2)) // stayed
-  expect((await readData(page)).gates.act1).toBeUndefined() // no record on back-out
+  // no record on back-out — and nothing has persisted yet, so `gates` may be absent
+  expect((await readData(page)).gates?.act1).toBeUndefined()
 
   // now override with a written reason
   await tabToTarget(page, 'portal-2-onward')
