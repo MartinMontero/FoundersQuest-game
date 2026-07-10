@@ -17,7 +17,7 @@ import { STAGE1_LAYOUT } from './contracts'
 import { getMoveInput } from './controls'
 import { INTERACT_RADIUS, useInteractionStore } from './interaction'
 import { PALETTE } from './materials'
-import { LOW_POWER } from './perf'
+import { IS_AUTOMATION, LOW_POWER } from './perf'
 import { cameraYaw, playerWorldPos } from './refs'
 import { RogueCharacter, type Gait } from './RogueCharacter'
 import { useSafeFrame } from './useSafeFrame'
@@ -141,7 +141,19 @@ export function Player({ reduced }: PlayerProps): JSX.Element {
     >
       <CapsuleCollider args={[0.55, 0.4]} />
       <group ref={visual}>
-        <RogueCharacter gait={gait} reduced={reduced} />
+        {/* The software-GL automation/CI tier skips the rigged glTF (54-bone
+            skinning is the dominant CPU cost there; at a few fps the fixed-step
+            physics runs in slow motion and the movement journey flakes). A cheap
+            capsule stands in — tests assert gameplay, not the avatar's look; the
+            real character is exercised on the full/constrained boot specs. */}
+        {IS_AUTOMATION ? (
+          <mesh position={[0, 0, 0]}>
+            <capsuleGeometry args={[0.4, 1.0, 4, 8]} />
+            <meshStandardMaterial color={PALETTE.cloak} roughness={0.8} />
+          </mesh>
+        ) : (
+          <RogueCharacter gait={gait} reduced={reduced} />
+        )}
       </group>
       {/* a soft cool rim so the silhouette lifts off the warm ground */}
       {!LOW_POWER ? (

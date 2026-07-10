@@ -13,7 +13,6 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
-  ConeGeometry,
   DodecahedronGeometry,
   type Material,
   MeshStandardMaterial,
@@ -25,6 +24,7 @@ import {
 } from 'three'
 import { STAGE1_LAYOUT } from './contracts'
 import { PALETTE } from './materials'
+import { IS_AUTOMATION } from './perf'
 
 const PLATEAU_RADIUS = 24
 /** ground UV tiling: how many texture repeats per world unit (planar x/z) */
@@ -131,11 +131,15 @@ function makeGroundGeometry(radius: number, rings: number, segments: number): Bu
   return geometry
 }
 
-function GroundDisk(): JSX.Element {
-  const geometry = useMemo(() => makeGroundGeometry(PLATEAU_RADIUS + 0.5, 14, 56), [])
-  // real CC0 PBR ground (Poly Haven "aerial_grass_rock"): albedo + normal + an
-  // ARM map (AO/roughness/metalness packed). Tiled via the planar UVs above and
-  // RECEIVES shadows, so the plateau reads as real textured earth, not a plane.
+function useGroundGeometry(): BufferGeometry {
+  return useMemo(() => makeGroundGeometry(PLATEAU_RADIUS + 0.5, 14, 56), [])
+}
+
+/** Real CC0 PBR ground (Poly Haven "aerial_grass_rock"): albedo + normal + an
+ * ARM map (AO/roughness/metalness packed). Tiled via the planar UVs and RECEIVES
+ * shadows, so the plateau reads as real textured earth, not a plane. */
+function GroundDiskTextured(): JSX.Element {
+  const geometry = useGroundGeometry()
   const [map, normalMap, armMap] = useTexture([
     '/textures/ground/grassrock_diff.jpg',
     '/textures/ground/grassrock_nor.jpg',
@@ -161,6 +165,18 @@ function GroundDisk(): JSX.Element {
       />
     </mesh>
   )
+}
+
+/** The cheap software-GL / automation ground: the vertex-coloured disk, no
+ * texture sampling. Keeps the CI renderer fast and deterministic (skipping the
+ * PBR texture is one of the cuts that lets the movement journey run at speed). */
+function GroundDiskPlain(): JSX.Element {
+  const geometry = useGroundGeometry()
+  const material = useMemo(
+    () => new MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0 }),
+    [],
+  )
+  return <mesh geometry={geometry} material={material} position={[0, 0.02, 0]} receiveShadow />
 }
 
 // ---- scattered instanced dressing ----
@@ -338,23 +354,6 @@ export function GroundField(): JSX.Element {
     }),
     [],
   )
-  const grass = useMemo(
-    () => ({
-      placements: scatter(0x0d71, 92, {
-        minR: 3,
-        maxR: 22,
-        pad: 0.7,
-        yBase: 0.2,
-        scaleMin: 0.5,
-        scaleMax: 1.1,
-        scaleY: [0.8, 1.6],
-        tilt: 0.22,
-      }),
-      geometry: new ConeGeometry(0.11, 0.5, 4, 1),
-      material: new MeshStandardMaterial({ color: PALETTE.grass, roughness: 0.82, metalness: 0.04 }),
-    }),
-    [],
-  )
   // warm gold-dust motes — tiny emissive sparks hovering low over the plateau,
   // little points of warm light that draw the eye (pillar 4). One instanced draw
   // call; emissive so they still read on the constrained tier (no bloom there).
@@ -383,12 +382,11 @@ export function GroundField(): JSX.Element {
 
   return (
     <group>
-      <GroundDisk />
+      {IS_AUTOMATION ? <GroundDiskPlain /> : <GroundDiskTextured />}
       <ScatterField {...rocks} />
       <ScatterField {...boulders} />
       <ScatterField {...crystalsTeal} />
       <ScatterField {...crystalsViolet} />
-      <ScatterField {...grass} />
       <ScatterField {...motes} />
     </group>
   )

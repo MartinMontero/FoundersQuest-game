@@ -2,6 +2,27 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
+## Round 9 — photoreal push II: instanced wind-swept grass + an automation-tier FPS fix (2026-07-09)
+
+- **Grass** (`Grass.tsx`) — one InstancedMesh of a tapered curved blade, 9000 (full) / 3500
+  (constrained) / **0 (automation)**, GPU-instanced with a vertex-shader wind sway (one shared
+  `uTime` uniform, frozen under reduced motion). Per-instance colour + rotation + scale; no shadow
+  casting (thousands of casters for no gain). Turns the plateau into the benchmark's savanna field;
+  the old primitive cone "grass" is gone.
+
+- **Automation-tier FPS fix (real, diagnosed):** stage1 flaked at the vault step. Grass is 0 on
+  automation, so not grass — the CI software-GL FPS had collapsed to ~5.5 (rigged-character skinning
+  + textured PBR ground), and with rapier's FIXED timestep low fps runs the game in slow motion, so
+  the long movement journey times out. Fix: the automation tier swaps the 54-bone skinned character
+  for a cheap capsule and the textured ground for the vertex-colour disk (its whole job is the
+  cheapest deterministic path; the real character/ground are exercised by the full/constrained boot
+  specs). FPS recovered **5.5 → 10.6 mean**; stage1 back to a clean 1.7 min pass.
+
+**Tree:** committed this round. | `tsc`/`eslint` PASS · `vitest` **273/273** · e2e **13/13** (serial).
+**UNTESTED:** real-hardware FPS with grass — GPU-instanced blades are one draw call (cheap on a real
+GPU) but unmeasured on the operator's devices; asked them to confirm smoothness before more weight.
+**Still primitive (next, if it fits the nebula theme):** the Vault, optional trees, reflective water.
+
 ## Round 8 — photoreal push I: founder's staff + PBR ground texture; a live CSP bug fixed (2026-07-09)
 
 Operator locked the direction ("match the benchmark — photoreal") and asked to give the character a

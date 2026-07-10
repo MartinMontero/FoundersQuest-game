@@ -16,6 +16,7 @@ import { CameraRig } from './CameraRig'
 import type { WorldEvents } from './contracts'
 import { useWorldControls } from './controls'
 import { defaultWorldEvents } from './events'
+import { Grass } from './Grass'
 import { Interactables } from './Interactables'
 import { PALETTE } from './materials'
 import { Nebula, SunDisc } from './Nebula'
@@ -156,6 +157,7 @@ export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
       <SunDisc onReady={setSun} />
       <Nebula reduced={reduced} />
       <GroundField />
+      <Grass reduced={reduced} />
       <Interactables reduced={reduced} />
       <ShadowTwin reduced={reduced} />
       <CameraRig reduced={reduced} />
