@@ -22,9 +22,9 @@ import { useJourneyStore } from '../state/journey'
 import { boulderPlacements, rockPlacements } from './props'
 import { treePlacements } from './Trees'
 
-/** rocks smaller than this scale are ankle-height ground clutter — stepped over,
- * not walked around, so they carry no collider (only the larger masses do). */
-const ROCK_COLLIDER_MIN_SCALE = 0.5
+/** every rock is solid — the founder walks around them, not through them (operator
+ * ruling 2026-07-10). Colliders are sized snug to each instance's scale. */
+const ROCK_COLLIDER_MIN_SCALE = 0
 
 /** the Registry's 8 outer standing stones (same ring as Interactables.tsx) — the
  * founder passes BETWEEN them to reach the altar, but can't walk through one. */
@@ -56,13 +56,13 @@ export function WorldColliders(): JSX.Element {
           position={[p.position[0], 0.4, p.position[2]]}
         />
       ))}
-      {/* the larger rocks (small ones stay walk-over ground clutter) */}
+      {/* every rock is solid, collider snug to its size (operator ruling) */}
       {rocks
         .filter((p) => p.scale[0] >= ROCK_COLLIDER_MIN_SCALE)
         .map((p, i) => (
           <BallCollider
             key={`rock-${i}`}
-            args={[0.72 * p.scale[0]]}
+            args={[0.66 * p.scale[0]]}
             position={[p.position[0], 0.2, p.position[2]]}
           />
         ))}

@@ -135,7 +135,11 @@ export function Player({ reduced }: PlayerProps): JSX.Element {
     gait.current = !moving ? 'idle' : walking ? 'walk' : 'run'
     const vis = visual.current
     if (vis !== null && moving) {
-      const desired = Math.atan2(vx, vz)
+      // face the MOVEMENT direction. The model rests facing −Z (RogueCharacter's
+      // baseline π flip), so the heading that turns it toward (vx, vz) is
+      // atan2(−vx, −vz); atan2(vx, vz) pointed it 180° the wrong way (it moonwalked,
+      // facing the camera while moving into the terrain).
+      const desired = Math.atan2(-vx, -vz)
       if (reduced) {
         vis.rotation.y = desired
       } else {

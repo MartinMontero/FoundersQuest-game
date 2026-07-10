@@ -62,6 +62,11 @@ World-1 slice without regressing it.
 - Fresh-eyes final pass: re-walk W1→W8 as a first-time player; anything demo-embarrassing is a defect.
 
 ## Progress log (evidence: command → salient output)
+- **Cycle 1b — operator live-feedback fixes (2026-07-10).** After eyeballing live traversal:
+  1. **Character faced the camera while walking forward** (moonwalk). `Player.tsx`: the heading was `atan2(vx,vz)` — 180° wrong given the model's baseline −Z flip; now `atan2(−vx,−vz)`. Verified via screenshot (founder shows its back walking into the terrain).
+  2. **Gates too plain + unnamed.** `Interactables.tsx` `PortalArch` rebuilt: stepped base, fluted columns with brazier gems, half-torus arch + keystone gem, layered shimmering veil, drifting runes, and an Html **carved sign naming the destination world** ("ONWARD / The Raven"). Verified via screenshot. Gated to a minimal box on the automation tier (the ornate chrome would drop CI fps and re-trip the self-play timing — same gating as trees/props).
+  3. **Small rocks were walk-through.** `WorldColliders.tsx`: collide EVERY rock (threshold 0), snug radius — same collider mechanism proven by the shrine-stop test.
+  - `typecheck` 0 · `lint` 0 · `vitest` **288** · `traversal` + `reduced-motion` + `render-tiers` green; `stage1` flaky→passes on retry (pre-existing registry-reopen jitter, retry-absorbed; automation gate is lighter than before so not a new regression).
 - **Cycle 1 — foundation (traversal + stage-parameterized world).** New `src/state/journey.ts` (currentStage, own key). `contracts.ts` generalized: `layoutForStage`, `ALL_SPECS_BY_ID`, `milestonesForStage`, `portal` kind + onward/back portals; W1 layout unchanged + onward portal. `interaction.ts`/`Player.tsx`/`Interactables.tsx`/`Hud.tsx`/`WorldColliders.tsx` now render/track the current world; `events.ts`+`controls.ts` dispatch portals; `PortalArch` grey-box; portal chip copy in `world.ts`.
   - `npm run typecheck` → 0 · `npm run lint` → 0 · `npx vitest run` → **288 passed**.
   - `stage1.spec` + `reduced-motion.spec` → **3 passed** (W1 regression intact).

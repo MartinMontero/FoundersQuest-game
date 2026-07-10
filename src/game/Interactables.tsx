@@ -36,7 +36,7 @@ import { useJourneyStore } from '../state/journey'
 import { SPEC_BY_ID, activeTargetId, useInteractionStore } from './interaction'
 import { PALETTE } from './materials'
 import { Pillar } from './models'
-import { LOW_POWER } from './perf'
+import { IS_AUTOMATION, LOW_POWER } from './perf'
 import { useSafeFrame } from './useSafeFrame'
 
 // ---- derived lookups (strings/contracts, built once) ----
@@ -522,41 +522,146 @@ function RegistryCircle({ reduced }: { reduced: boolean }): JSX.Element {
   )
 }
 
-// ---- the traversal portal: a shimmering stone archway you walk into ----
+// ---- the traversal portal: an ornate rune-gate, its destination named on a
+// ---- carved sign, a shimmering veil between fluted columns you walk into ----
+
+/** one fluted column with a base, capital, and a brazier gem on top */
+function GateColumn({ x, glow }: { x: number; glow: string }): JSX.Element {
+  return (
+    <group position={[x, 0, 0]}>
+      {/* plinth */}
+      <mesh position={[0, 0.35, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.66, 0.7, 0.66]} />
+        <meshStandardMaterial color={PALETTE.stoneWarm} roughness={0.82} metalness={0.05} />
+      </mesh>
+      {/* fluted shaft */}
+      <mesh position={[0, 1.95, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.24, 0.3, 2.5, 10]} />
+        <meshStandardMaterial color={PALETTE.stoneCool} roughness={0.8} metalness={0.06} />
+      </mesh>
+      {/* capital */}
+      <mesh position={[0, 3.35, 0]} castShadow>
+        <boxGeometry args={[0.62, 0.34, 0.62]} />
+        <meshStandardMaterial color={PALETTE.stoneWarm} roughness={0.82} metalness={0.05} />
+      </mesh>
+      {/* a brazier flame gem crowning the column */}
+      <mesh position={[0, 3.72, 0]}>
+        <octahedronGeometry args={[0.14, 0]} />
+        <meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.4} roughness={0.2} />
+      </mesh>
+    </group>
+  )
+}
+
+/** the three runes floating within the arch, per gate */
+const GATE_RUNES: readonly [number, number][] = [
+  [-0.5, 2.0],
+  [0.5, 2.4],
+  [0, 1.6],
+]
 
 function PortalArch({ spec, reduced }: ShrineProps): JSX.Element {
   const [x, y, z] = spec.position
   const onward = spec.portalDir === 'onward'
   const glow = onward ? PALETTE.teal : PALETTE.violet
+  const dir = onward ? WORLD_COPY.portalOnward : WORLD_COPY.portalBack
+  const worldName = spec.targetStage !== undefined ? WORLD_NAME.get(spec.targetStage) : undefined
   const shimmer = useRef<Mesh>(null)
-  // the veil pulses; still under reduced motion
+  const runes = useRef<Group>(null)
+
+  // the veil breathes and the runes drift; both still under reduced motion
   useSafeFrame(({ clock }) => {
     const m = shimmer.current
-    if (m === null) return
-    const mat = m.material as { opacity?: number }
-    mat.opacity = reduced ? 0.5 : 0.4 + Math.sin(clock.elapsedTime * 2) * 0.14
+    if (m !== null) {
+      const mat = m.material as { opacity?: number }
+      mat.opacity = reduced ? 0.42 : 0.32 + Math.sin(clock.elapsedTime * 1.8) * 0.14
+    }
+    const r = runes.current
+    if (r !== null) r.rotation.y = reduced ? 0 : clock.elapsedTime * 0.4
   })
+
+  // The software-GL automation/CI tier gets a minimal gate — the ornate columns,
+  // arch, runes, lights, and the Html sign are real-tier chrome that would drop the
+  // already-low CI fps (and re-trip the rapid Tab-then-E timing in the self-play
+  // spec). The interactable still exists here, so traversal tests are unaffected.
+  if (IS_AUTOMATION) {
+    return (
+      <group position={[x, y, z]}>
+        <mesh position={[0, 1.5, 0]}>
+          <boxGeometry args={[2.3, 3, 0.3]} />
+          <meshStandardMaterial color={PALETTE.stoneCool} roughness={0.85} />
+        </mesh>
+      </group>
+    )
+  }
+
   return (
     <group position={[x, y, z]}>
-      {/* the arch uprights + lintel — a plain stone gate */}
-      {[-0.95, 0.95].map((px) => (
-        <mesh key={px} position={[px, 1.5, 0]} castShadow>
-          <boxGeometry args={[0.4, 3, 0.4]} />
-          <meshStandardMaterial color={PALETTE.stoneCool} roughness={0.8} metalness={0.05} />
-        </mesh>
-      ))}
-      <mesh position={[0, 3.1, 0]} castShadow>
-        <boxGeometry args={[2.5, 0.45, 0.5]} />
-        <meshStandardMaterial color={PALETTE.stoneWarm} roughness={0.8} metalness={0.05} />
+      {/* stepped stone base */}
+      <mesh position={[0, 0.08, 0]} receiveShadow>
+        <boxGeometry args={[3.6, 0.16, 1.7]} />
+        <meshStandardMaterial color={PALETTE.stoneCool} roughness={0.85} metalness={0.04} />
       </mesh>
-      {/* the shimmering veil */}
-      <mesh ref={shimmer} position={[0, 1.5, 0]}>
-        <planeGeometry args={[1.7, 2.9]} />
-        <meshBasicMaterial color={glow} transparent opacity={0.45} depthWrite={false} side={DoubleSide} />
+      <mesh position={[0, 0.24, 0]} receiveShadow>
+        <boxGeometry args={[3.1, 0.16, 1.3]} />
+        <meshStandardMaterial color={PALETTE.stone} roughness={0.85} metalness={0.04} />
       </mesh>
-      {/* a keystone light so the gate reads from across the world */}
+
+      <GateColumn x={-1.15} glow={glow} />
+      <GateColumn x={1.15} glow={glow} />
+
+      {/* the arch — a half-torus resting on the capitals */}
+      <mesh position={[0, 3.4, 0]} castShadow>
+        <torusGeometry args={[1.22, 0.17, 8, 28, Math.PI]} />
+        <meshStandardMaterial color={PALETTE.stoneWarm} roughness={0.82} metalness={0.06} />
+      </mesh>
+      {/* the keystone gem at the apex */}
+      <mesh position={[0, 4.62, 0]}>
+        <octahedronGeometry args={[0.26, 0]} />
+        <meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.5} roughness={0.15} />
+      </mesh>
+
+      {/* layered shimmering veil */}
+      <mesh ref={shimmer} position={[0, 1.9, 0]}>
+        <planeGeometry args={[1.9, 3.2]} />
+        <meshBasicMaterial color={glow} transparent opacity={0.4} depthWrite={false} side={DoubleSide} />
+      </mesh>
+      <mesh position={[0, 1.9, 0.02]}>
+        <planeGeometry args={[1.5, 2.9]} />
+        <meshBasicMaterial color="#eaf6ff" transparent opacity={0.08} depthWrite={false} side={DoubleSide} />
+      </mesh>
+
+      {/* runes drifting within the arch */}
+      <group ref={runes}>
+        {GATE_RUNES.map(([rx, ry], i) => (
+          <mesh key={i} position={[rx, ry, 0.1]}>
+            <tetrahedronGeometry args={[0.12, 0]} />
+            <meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.2} roughness={0.2} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* keystone + brazier light so the gate reads from across the world */}
       {!LOW_POWER ? (
-        <pointLight position={[0, 2.4, 0.4]} color={glow} intensity={0.7} distance={7} decay={2} />
+        <pointLight position={[0, 3.0, 0.5]} color={glow} intensity={0.9} distance={9} decay={2} />
+      ) : null}
+
+      {/* the carved sign: the destination world, named on the gate */}
+      {worldName !== undefined ? (
+        <Html
+          position={[0, 5.35, 0]}
+          center
+          distanceFactor={13}
+          zIndexRange={[3, 0]}
+          wrapperClass="pointer-events-none"
+        >
+          <div className="pointer-events-none flex select-none flex-col items-center whitespace-nowrap rounded-md border border-amber-300/40 bg-slate-950/85 px-3 py-1 text-center shadow-amber-glow">
+            <span className="text-[9px] uppercase tracking-[0.28em] text-parchment-300/70">{dir}</span>
+            <span className="quest-heading font-display text-sm font-semibold text-amber-accent-200">
+              {worldName}
+            </span>
+          </div>
+        </Html>
       ) : null}
     </group>
   )
