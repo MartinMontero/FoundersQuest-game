@@ -16,6 +16,7 @@ import { CameraRig } from './CameraRig'
 import type { WorldEvents } from './contracts'
 import { useWorldControls } from './controls'
 import { defaultWorldEvents } from './events'
+import { Clouds } from './Clouds'
 import { Grass } from './Grass'
 import { Interactables } from './Interactables'
 import { PALETTE } from './materials'
@@ -156,6 +157,8 @@ export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
       />
       <directionalLight color={PALETTE.rimWarm} position={[14, 5, 12]} intensity={0.4} />
       <SunDisc onReady={setSun} />
+      {/* soft cloud banks around the floating islands (off the CI tier) */}
+      {IS_AUTOMATION ? null : <Clouds reduced={reduced} />}
       <Nebula reduced={reduced} />
       <GroundField />
       <Grass reduced={reduced} />

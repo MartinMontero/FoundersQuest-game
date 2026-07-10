@@ -73,6 +73,9 @@ export const IS_AUTOMATION: boolean = RENDER_TIER === 'automation'
 export const LOW_POWER: boolean = !FULL_POWER
 
 /** device-pixel-ratio budget per tier: crisp but bounded on phones, tiny under
- * the software rasteriser so input timing stays deterministic. */
+ * the software rasteriser so input timing stays deterministic. (Kept at 0.75 —
+ * pushing automation to 0.5 raised fps enough to expose a timing race in the
+ * stage-1 registry re-open; the cheap-prop swaps elsewhere give the CI headroom
+ * without changing the frame cadence the specs were tuned against.) */
 export const WORLD_DPR: number | [number, number] =
   RENDER_TIER === 'full' ? [1, 1.5] : RENDER_TIER === 'constrained' ? 1 : 0.75
