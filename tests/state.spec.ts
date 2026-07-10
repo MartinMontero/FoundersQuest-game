@@ -500,6 +500,64 @@ describe('sequence-lock actions (unlockVault / passGate / overrideGate / recordL
   })
 })
 
+describe('campfire furniture actions (weather / field notes / side quests / dinner card)', () => {
+  it('logWeather APPENDS every tap — two same-day taps are BOTH kept (R-W)', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().logWeather(2)
+    store.getState().logWeather(4) // same day (FIXED_NOW) — appended, NOT replaced
+    expect(store.getState().data.weather).toEqual([
+      { id: 'weather-1', date: FIXED_NOW, value: 2 },
+      { id: 'weather-2', date: FIXED_NOW, value: 4 },
+    ])
+  })
+
+  it('saveFieldNote sets the note for a stage, leaving other stages untouched', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().saveFieldNote('s2', 'went outside; three cafés said no')
+    store.getState().saveFieldNote('s5', 'the mirror stung')
+    expect(store.getState().data.fieldNotes).toEqual({
+      s2: 'went outside; three cafés said no',
+      s5: 'the mirror stung',
+    })
+    store.getState().saveFieldNote('s2', 'overwritten') // same key updates in place
+    expect(store.getState().data.fieldNotes['s2']).toBe('overwritten')
+  })
+
+  it('startSideQuest records startedAt once and never resets it; completeSideQuest stamps completedAt', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().startSideQuest('the-404', 'The 404')
+    expect(store.getState().data.sideQuests['the-404']).toEqual({
+      text: 'The 404',
+      startedAt: FIXED_NOW,
+    })
+    // re-accepting is a no-op (keeps the original startedAt, never re-stamps)
+    store.getState().startSideQuest('the-404', 'The 404 (again)')
+    expect(store.getState().data.sideQuests['the-404']).toEqual({
+      text: 'The 404',
+      startedAt: FIXED_NOW,
+    })
+    store.getState().completeSideQuest('the-404')
+    expect(store.getState().data.sideQuests['the-404']?.completedAt).toBe(FIXED_NOW)
+    // +5 XP is DERIVED by metrics once complete
+    expect(xp(store.getState().data)).toBe(5)
+  })
+
+  it('completeSideQuest on an unknown or already-complete quest is a no-op', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().completeSideQuest('nope') // unknown — nothing added
+    expect(store.getState().data.sideQuests).toEqual({})
+  })
+
+  it('setDinnerCard writes { text, updatedAt }', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().setDinnerCard('what is going wrong: my pipeline is all warm intros')
+    expect(store.getState().data.dinnerCard).toEqual({
+      text: 'what is going wrong: my pipeline is all warm intros',
+      updatedAt: FIXED_NOW,
+    })
+  })
+})
+
 describe('captureVault / addGuardian / addEvidence write exact 02 shapes', () => {
   it('captureVault appends { id, text, date } — nothing else, no justification field', () => {
     const store = createQuestStore(makeDeps().deps)

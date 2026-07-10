@@ -18,6 +18,7 @@ import type {
   EvidenceTier,
   Importance,
   QuestData,
+  WeatherEntry,
 } from '../core/schema'
 import { loadQuestData, makeStore, saveQuestData, type QuestStore } from '../core/store'
 
@@ -88,6 +89,20 @@ export interface QuestState {
    * learning line, appended to the `trail` (type `loop`) and set as `lastLoop`.
    */
   recordLoop(name: string, fromStage: number, toStage: number, learning: string): void
+  /**
+   * Weather totem (03): APPEND a reading to `weather[]` (R-W, 2026-07-10 — every
+   * tap counts, none replaced). Cadence only; never Truth, XP, or the Action
+   * formula. The trough (02) windows the last-3-by-date across all taps.
+   */
+  logWeather(value: WeatherEntry['value']): void
+  /** Field-notes lectern: set the founder's own note for a stage (v2 reflections lineage). */
+  saveFieldNote(stageId: string, text: string): void
+  /** Side-quest board (03): accept a side quest — records `startedAt` once, never resets it. */
+  startSideQuest(id: string, text: string): void
+  /** Side-quest board: mark an accepted side quest complete (+5 XP, DERIVED by metrics). */
+  completeSideQuest(id: string): void
+  /** Dinner Card editor: the founder's own card that leads the Brief (R3). */
+  setDinnerCard(text: string): void
 }
 
 export interface QuestStoreDeps {
@@ -270,6 +285,42 @@ export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState
             { type: 'loop', name, fromId: `s${fromStage}`, toId: `s${toStage}`, learning, date },
           ],
         })
+      },
+
+      logWeather(value: WeatherEntry['value']): void {
+        const { data } = get()
+        // R-W (2026-07-10): APPEND every tap — nothing replaced, nothing locked
+        const entry: WeatherEntry = { id: makeId('weather'), date: now(), value }
+        commit({ ...data, weather: [...data.weather, entry] })
+      },
+
+      saveFieldNote(stageId: string, text: string): void {
+        const { data } = get()
+        commit({ ...data, fieldNotes: { ...data.fieldNotes, [stageId]: text } })
+      },
+
+      startSideQuest(id: string, text: string): void {
+        const { data } = get()
+        if (data.sideQuests[id] !== undefined) return // already accepted — keep startedAt
+        commit({
+          ...data,
+          sideQuests: { ...data.sideQuests, [id]: { text, startedAt: now() } },
+        })
+      },
+
+      completeSideQuest(id: string): void {
+        const { data } = get()
+        const quest = data.sideQuests[id]
+        if (quest === undefined || quest.completedAt !== undefined) return
+        commit({
+          ...data,
+          sideQuests: { ...data.sideQuests, [id]: { ...quest, completedAt: now() } },
+        })
+      },
+
+      setDinnerCard(text: string): void {
+        const { data } = get()
+        commit({ ...data, dinnerCard: { text, updatedAt: now() } })
       },
     }
   })
