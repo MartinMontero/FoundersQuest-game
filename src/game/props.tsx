@@ -42,6 +42,13 @@ function groundNoise(x: number, z: number): number {
   return (a + 0.5 * b) / 1.5
 }
 
+/** A second decorrelated field in [0, 1] — where mossy grass takes the ground. */
+function mossNoise(x: number, z: number): number {
+  const a = Math.sin(x * 0.33 - 2.1) * Math.cos(z * 0.29 + 1.7)
+  const b = Math.sin(x * 0.72 + 0.4) * Math.cos(z * 0.44 - 2.3)
+  return Math.max(0, (a + 0.4 * b) / 1.4)
+}
+
 /** A triangulated disk with per-vertex colour variation and a faint sculpted
  * bump — the visible plateau surface. Normals point straight up so the toon
  * ramp lights it evenly from the warm key. */
@@ -51,6 +58,7 @@ function makeGroundGeometry(radius: number, rings: number, segments: number): Bu
   const warm = new Color(PALETTE.stoneWarm)
   const cool = new Color(PALETTE.stoneCool)
   const gold = new Color(PALETTE.goldAccent)
+  const moss = new Color(PALETTE.moss)
   const scratch = new Color()
 
   const positions: number[] = []
@@ -67,11 +75,14 @@ function makeGroundGeometry(radius: number, rings: number, segments: number): Bu
     scratch.copy(base)
     if (n > 0.5) {
       // warm earth patches, tipping into sun-warmed gold at the brightest
-      scratch.lerp(warm, (n - 0.5) * 0.9)
-      if (n > 0.78) scratch.lerp(gold, (n - 0.78) * 0.8)
+      scratch.lerp(warm, (n - 0.5) * 1.1)
+      if (n > 0.76) scratch.lerp(gold, (n - 0.76) * 0.95)
     } else {
-      scratch.lerp(cool, (0.5 - n) * 0.45)
+      scratch.lerp(cool, (0.5 - n) * 0.6)
     }
+    // mossy grass takes the sheltered low patches — living ground, not mud
+    const m = mossNoise(x, z)
+    if (m > 0.35) scratch.lerp(moss, Math.min(0.55, (m - 0.35) * 1.1))
     colors.push(scratch.r, scratch.g, scratch.b)
   }
 
@@ -241,23 +252,48 @@ export function GroundField(): JSX.Element {
     }),
     [],
   )
-  const crystals = useMemo(
+  // crystals come in two registers — teal runes and violet shards — each a deep
+  // faceted body under a bright emissive glow that Bloom catches so they read as
+  // lit gems, not flat plastic cones. Slender and tall, a little sparkle field.
+  const crystalsTeal = useMemo(
     () => ({
-      placements: scatter(0x0c53, 20, {
-        minR: 5,
+      placements: scatter(0x0c53, 14, {
+        minR: 7,
         maxR: 21,
         pad: 1.1,
-        yBase: 0.18,
+        yBase: 0.2,
         scaleMin: 0.3,
-        scaleMax: 0.85,
-        scaleY: [0.9, 1.9],
-        tilt: 0.18,
+        scaleMax: 0.6,
+        scaleY: [1.1, 1.8],
+        tilt: 0.16,
       }),
       geometry: new OctahedronGeometry(0.5, 0),
       material: new MeshToonMaterial({
-        color: PALETTE.tealDeep,
+        color: '#136a66',
         emissive: PALETTE.teal,
-        emissiveIntensity: 0.9,
+        emissiveIntensity: 1.5,
+        gradientMap: TOON_RAMP,
+      }),
+    }),
+    [],
+  )
+  const crystalsViolet = useMemo(
+    () => ({
+      placements: scatter(0x0c9f, 9, {
+        minR: 7.5,
+        maxR: 20,
+        pad: 1.1,
+        yBase: 0.2,
+        scaleMin: 0.28,
+        scaleMax: 0.52,
+        scaleY: [1.0, 1.6],
+        tilt: 0.16,
+      }),
+      geometry: new OctahedronGeometry(0.5, 0),
+      material: new MeshToonMaterial({
+        color: PALETTE.violetDeep,
+        emissive: PALETTE.violet,
+        emissiveIntensity: 1.25,
         gradientMap: TOON_RAMP,
       }),
     }),
@@ -311,7 +347,8 @@ export function GroundField(): JSX.Element {
       <GroundDisk />
       <ScatterField {...rocks} />
       <ScatterField {...boulders} />
-      <ScatterField {...crystals} />
+      <ScatterField {...crystalsTeal} />
+      <ScatterField {...crystalsViolet} />
       <ScatterField {...grass} />
       <ScatterField {...motes} />
     </group>

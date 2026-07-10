@@ -5,7 +5,7 @@
 // and accents, teal-cyan rune glow, desaturated warm stone for ground/props.
 // Pure data + three; no React, no store, no network.
 
-import { DataTexture, NearestFilter, RedFormat } from 'three'
+import { DataTexture, LinearFilter, NearestFilter, RGBAFormat, RedFormat } from 'three'
 
 /** Named palette — every component pulls its colours from here so the world
  * reads as one painted scene (warm N64-era low-poly, NOT cold neon). World 1 is
@@ -26,6 +26,14 @@ export const PALETTE = {
   /** rune / crystal glow */
   teal: '#3fe0d8',
   tealDeep: '#1c8f89',
+  /** the incandescent core inside a crystal / rune — near-white, catches bloom */
+  crystalCore: '#eafffb',
+  /** the distant sun banked low in the nebula — the god-ray source */
+  sun: '#ffdca0',
+  sunCore: '#fff2d4',
+  /** floating-island grass caps: cool moss warmed at the lit edge */
+  moss: '#4c6a4e',
+  mossWarm: '#6f7e46',
   /** amber/gold light + seal + UI accents */
   amber: '#e8b34b',
   amberBright: '#ffcf6a',
@@ -81,6 +89,36 @@ export function makeToonRamp(steps: number, floor = 0): DataTexture {
   ramp.generateMipmaps = false
   ramp.needsUpdate = true
   return ramp
+}
+
+/**
+ * A soft round point sprite: white core fading to transparent, built as an
+ * RGBA DataTexture (no canvas — works headless in CI). Stars and gold-dust map
+ * this so they read as luminous points, NEVER the hard pixel squares a bare
+ * `pointsMaterial` draws (the single loudest "MS-Paint" tell in the old sky).
+ * `core` tightens the bright centre; the halo falls off smoothly for bloom.
+ */
+export function makeSoftSprite(size = 64, core = 2.4): DataTexture {
+  const data = new Uint8Array(size * size * 4)
+  const c = (size - 1) / 2
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const dx = (x - c) / c
+      const dy = (y - c) / c
+      const d = Math.min(1, Math.sqrt(dx * dx + dy * dy))
+      const a = Math.pow(1 - d, core)
+      const i = (y * size + x) * 4
+      data[i] = 255
+      data[i + 1] = 255
+      data[i + 2] = 255
+      data[i + 3] = Math.round(a * 255)
+    }
+  }
+  const tex = new DataTexture(data, size, size, RGBAFormat)
+  tex.minFilter = LinearFilter
+  tex.magFilter = LinearFilter
+  tex.needsUpdate = true
+  return tex
 }
 
 /** The shared 4-step ramp — one texture for the whole scene (draw-call friendly).

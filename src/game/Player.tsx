@@ -107,6 +107,46 @@ function Wanderer(): JSX.Element {
           gradientMap={TOON_RAMP}
         />
       </mesh>
+      {/* a faint rune-lit hem trim around the cloak base — a little glow the
+          bloom catches, so the silhouette reads lit from within */}
+      <mesh position={[0, -0.58, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.5, 0.03, 8, 20]} />
+        <meshToonMaterial
+          color={PALETTE.teal}
+          emissive={PALETTE.teal}
+          emissiveIntensity={0.55}
+          gradientMap={TOON_RAMP}
+        />
+      </mesh>
+      {/* the wanderer's staff, carried at the right hand — a weathered shaft
+          topped by a glowing shard. The strongest read of "adventurer" in the
+          silhouette; the shard catches bloom like the shrine runes. */}
+      <group position={[0.44, 0, 0.08]} rotation={[0, 0, -0.12]}>
+        <mesh position={[0, 0.55, 0]}>
+          <cylinderGeometry args={[0.035, 0.045, 1.9, 6]} />
+          <meshToonMaterial color="#6b5a44" gradientMap={TOON_RAMP} />
+        </mesh>
+        {/* the binding just below the shard */}
+        <mesh position={[0, 1.36, 0]}>
+          <torusGeometry args={[0.06, 0.02, 6, 12]} />
+          <meshToonMaterial color={PALETTE.amber} gradientMap={TOON_RAMP} />
+        </mesh>
+        {/* the crowning shard */}
+        <mesh position={[0, 1.56, 0]}>
+          <octahedronGeometry args={[0.12, 0]} />
+          <meshToonMaterial
+            color={PALETTE.crystalCore}
+            emissive={PALETTE.teal}
+            emissiveIntensity={1.4}
+            gradientMap={TOON_RAMP}
+          />
+        </mesh>
+        {/* a soft glow core around the shard */}
+        <mesh position={[0, 1.56, 0]}>
+          <sphereGeometry args={[0.2, 10, 10]} />
+          <meshBasicMaterial color={PALETTE.teal} transparent opacity={0.28} depthWrite={false} />
+        </mesh>
+      </group>
     </group>
   )
 }

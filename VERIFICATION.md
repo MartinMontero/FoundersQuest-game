@@ -2,6 +2,54 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
+## Round 6 — aesthetic overhaul: from "MS-Paint" to a cinematic low-poly look (2026-07-09)
+
+**Why:** the operator rejected the look three times as "MS Paint from Windows 95." The
+deep-research verdict (Round 5b doc `docs/research/premium-ui-direction.md`) proved procedural
+primitives have a hard ceiling — premium needs authored assets **+ a post-processing stack + juice,
+combined**. The reachable authored asset (a CC0 robot) would break canon (protagonist is the cloaked
+founder), so this pass took the two levers that DON'T need new geometry and don't break fiction — a
+cinematic post-fx stack and code-generated textures — and rebuilt the worst-offending primitives.
+
+**The discipline change that mattered:** I screenshotted the real game with Playwright and iterated
+against my own eyes across all three render tiers, instead of shipping visuals I'd never looked at
+(the root of the three prior rejections). Baseline → pass 1–4 captured each step.
+
+**What changed (all code, zero bundled binaries):**
+- **Stars** — the loudest MS-Paint tell (hard pixel squares) → soft round point sprites (code-built
+  RGBA `makeSoftSprite` DataTexture), scattered across the sky dome (not a hot spiral that bloomed
+  into a pale smear), additive blend, `fog:false`. The mystery "pale box" from the baseline was that
+  spiral's inner arm blooming — gone.
+- **A cinematic sun** — a warm disc + soft additive sprite halo, God-Rays keyed off it (full tier).
+  The halo is a sprite (not a translucent sphere) so it reads on EVERY tier — the old sphere only
+  looked right once full-tier Bloom blew it out; on a phone it was a fried-egg ring.
+- **Post-fx** (`PostFx.tsx`, full tier only) — God Rays + selective Bloom + warm HueSaturation/
+  BrightnessContrast grade + SMAA + Vignette + ACES ToneMapping. Constrained/automation still drop
+  the composer entirely (the mobile-crash budget is untouched).
+- **Floating islands** — brown dodecahedron blobs → grassy-capped floating islets over torn rocky
+  keels with a faint violet underglow, pushed out as background.
+- **Crystals** — flat pale cones → glowing teal + violet faceted gems (bloom-catching emissive).
+- **Ground** — added decorrelated mossy-grass patches + more colour contrast (less mud).
+- **Character** — the cloaked founder gains a glowing crystal staff + rune-lit hem (a real
+  "adventurer" silhouette, on-fiction), keeping the physics capsule and all animation.
+- **Mobile sky** — the cheap shader gained the golden-hour glow band (one smoothstep) so phones get
+  the warm "air" too, not a cold console gradient.
+
+**Tree:** committed this round (see git log). | **Checks:**
+
+| Check | Result | Evidence |
+|---|---|---|
+| `tsc --noEmit` / `eslint .` | PASS | zero errors |
+| `vitest run` | PASS | **273/273**, 11 files (no mechanic/testid/data-shape touched) |
+| e2e (pre-baked chromium-1194) | PASS | **13/13**: boot · CSP-boots + WASM regression guard · plateau rim · context-loss recover · reduced-motion cut + normal dolly · **all 3 render tiers boot clean (full Bloom/GodRays/SMAA path included)** · storage-degraded · **stage-1 self-play 1.6 min keyboard-only** |
+| Visual verification | PASS (my eyes) | full + constrained + automation tiers all render the new look; before/after screenshots captured; God Rays/Bloom don't blow out; no square stars on any tier |
+
+**UNTESTED (plainly):** real-hardware FPS with the heavier full-tier stack (God Rays adds one pass) —
+the operator's Windows-11 laptop previously ran Bloom+Vignette "smooth"; the added passes are modest
+but unmeasured on player hardware (queued for the operator). Live preview CSP under the new build
+(deploy pending). **Not a regression:** the constrained/automation composer-drop path is unchanged,
+so the mobile WASM-crash fix (Round 5) is unaffected.
+
 ## Round 5 — THE mobile crash, root-caused and fixed: CSP blocked WASM (2026-07-08)
 
 **Tree:** `a4fe8eb`. The on-device error readout (round 4's instrumentation) captured the exact cause — and it was mine:

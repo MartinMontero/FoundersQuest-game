@@ -6,16 +6,16 @@
 // Reduced motion: the star swirl is STATIC and the aurora stops drifting.
 // During a trance the world holds its breath — the swirl slows (§2 F1).
 
-import { useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useSafeFrame } from './useSafeFrame'
-import { BackSide, Color, type Points } from 'three'
+import { AdditiveBlending, BackSide, Color, type Mesh, type Points, Vector3 } from 'three'
 import { useUiStore } from '../state/ui'
-import { PALETTE, TOON_RAMP } from './materials'
+import { makeSoftSprite, PALETTE, TOON_RAMP } from './materials'
 import { LOW_POWER } from './perf'
 
 // fewer stars under automation / software-GL (overdraw is costly there)
-const PARTICLE_COUNT = LOW_POWER ? 400 : 1400
-const SWIRL_SPEED = 0.02 // rad/s — a slow drift, never a shake
+const PARTICLE_COUNT = LOW_POWER ? 520 : 1600
+const SWIRL_SPEED = 0.012 // rad/s — a slow drift, never a shake
 const TRANCE_BREATH = 0.15 // the world holds its breath in trance
 
 /** Tiny deterministic LCG so the nebula is identical every boot. */
@@ -27,35 +27,48 @@ function makeRng(seed: number): () => number {
   }
 }
 
+/** One shared soft-round sprite for every star (built once). */
+const STAR_SPRITE = makeSoftSprite(64, 2.6)
+/** A larger, softer sprite for the sun's warm halo (gentler falloff). */
+const SUN_SPRITE = makeSoftSprite(128, 1.5)
+
 interface StarField {
   positions: Float32Array
   colors: Float32Array
 }
 
-/** Star particles swept into a slow galactic spiral, tinted warm↔cool with a
- * few brighter embers that Bloom will catch. */
+/** Stars scattered across the upper sky dome (NOT a tight spiral — the old
+ * spiral packed a hot inner arm that bloomed into a pale smear). Density thins
+ * toward the horizon; a warm gold / teal / pale-blue mix with a handful of
+ * brighter beacons for Bloom to catch. Each point is drawn as a soft round
+ * sprite, never a hard square. */
 function buildStars(): StarField {
   const rng = makeRng(0x51ab1e)
   const positions = new Float32Array(PARTICLE_COUNT * 3)
   const colors = new Float32Array(PARTICLE_COUNT * 3)
   const warm = new Color(PALETTE.amberBright)
   const cool = new Color(PALETTE.teal)
-  const pale = new Color('#cdd0ff')
+  const pale = new Color('#c9ccff')
   const tint = new Color()
+  const dir = new Vector3()
   for (let i = 0; i < PARTICLE_COUNT; i += 1) {
-    const t = i / PARTICLE_COUNT
-    const angle = t * Math.PI * 10 + rng() * 0.8
-    const radius = 18 + t * 42 + rng() * 6
-    positions[i * 3] = Math.cos(angle) * radius
-    positions[i * 3 + 1] = (rng() - 0.5) * 16 + 4 - t * 6
-    positions[i * 3 + 2] = Math.sin(angle) * radius
-    // gold dust dominant, teal runes accented, the rest a cool pale — the
-    // World-1 warmed-violet register (art-direction pillar 1 + 4)
+    // scatter over a hemisphere shell, biased upward so few sit at the horizon
+    const y = Math.pow(rng(), 0.7) // thin near the horizon, dense overhead
+    dir
+      .set(rng() * 2 - 1, y * 1.15 + 0.04, rng() * 2 - 1)
+      .normalize()
+    const dist = 150 + rng() * 130
+    positions[i * 3] = dir.x * dist
+    positions[i * 3 + 1] = dir.y * dist
+    positions[i * 3 + 2] = dir.z * dist
+    // gold dust + teal runes accented over a cool pale field (pillars 1 + 4)
     const pick = rng()
     tint.copy(pale)
-    if (pick > 0.68) tint.copy(warm)
-    else if (pick > 0.5) tint.copy(cool)
-    const bright = 0.55 + rng() * 0.6
+    if (pick > 0.82) tint.copy(warm)
+    else if (pick > 0.68) tint.copy(cool)
+    // most stars are modest; ~10% are bright beacons that bloom
+    const beacon = rng() > 0.9
+    const bright = beacon ? 1.5 + rng() * 0.8 : 0.4 + rng() * 0.45
     colors[i * 3] = tint.r * bright
     colors[i * 3 + 1] = tint.g * bright
     colors[i * 3 + 2] = tint.b * bright
@@ -96,15 +109,21 @@ const SKY_FRAG = /* glsl */ `
   }
 `
 
-// low power: a plain two-stop gradient, no pow/exp/smoothstep/sin per pixel
+// low power: a two-stop gradient plus a single cheap golden-hour glow band —
+// one smoothstep, no pow/exp/sin per pixel, so phones still get the warm OoT
+// "air" instead of a flat, cold console gradient.
 const SKY_FRAG_CHEAP = /* glsl */ `
   precision mediump float;
   uniform vec3 uZenith;
   uniform vec3 uHorizon;
+  uniform vec3 uGlow;
   varying vec3 vDir;
   void main() {
     float t = clamp(vDir.y * 0.5 + 0.5, 0.0, 1.0);
-    gl_FragColor = vec4(mix(uHorizon, uZenith, t), 1.0);
+    vec3 col = mix(uHorizon, uZenith, t);
+    float glow = smoothstep(0.30, -0.12, vDir.y);
+    col = mix(col, uGlow, glow * 0.5);
+    gl_FragColor = vec4(col, 1.0);
   }
 `
 
@@ -141,48 +160,114 @@ function SkyDome({ reduced }: { reduced: boolean }): JSX.Element {
   )
 }
 
+// ---- the distant sun: a warm disc banked low in the nebula ----
+
+/** World direction of the sun, up-left over the far horizon. It anchors the
+ * god-ray shafts (full tier) and reads as the warm light source the whole
+ * plateau is lit by — the OoT golden-hour key made literal. */
+export const SUN_POSITION: [number, number, number] = [-58, 30, -140]
+
+export interface SunDiscProps {
+  /** hands the sun mesh up so <PostFx/> can key God Rays off it */
+  onReady?: (mesh: Mesh | null) => void
+}
+
+export function SunDisc({ onReady }: SunDiscProps): JSX.Element {
+  // a STABLE ref callback (onReady is a useState setter, stable across renders):
+  // attaches the sun mesh once on mount, detaches once on unmount. An inline
+  // arrow would change identity every render, thrashing the ref and rebuilding
+  // God Rays each frame.
+  const setSunRef = useCallback((m: Mesh | null) => onReady?.(m), [onReady])
+  return (
+    <group position={SUN_POSITION}>
+      {/* the incandescent core — the God-Rays occlusion source */}
+      <mesh ref={setSunRef} frustumCulled={false}>
+        <sphereGeometry args={[7, 28, 28]} />
+        <meshBasicMaterial color={PALETTE.sunCore} toneMapped={false} fog={false} />
+      </mesh>
+      {/* a soft warm halo as a billboarded additive sprite — a smooth glow that
+          reads on EVERY tier (the old translucent sphere only looked right once
+          full-tier Bloom blew it out; on a phone it was a hard fried-egg ring) */}
+      <sprite scale={[62, 62, 1]}>
+        <spriteMaterial
+          map={SUN_SPRITE}
+          color={PALETTE.sun}
+          transparent
+          opacity={0.9}
+          depthWrite={false}
+          blending={AdditiveBlending}
+          toneMapped={false}
+          fog={false}
+        />
+      </sprite>
+      {/* a tighter warm inner bloom to seat the core in the glow */}
+      <sprite scale={[26, 26, 1]}>
+        <spriteMaterial
+          map={SUN_SPRITE}
+          color={PALETTE.sunCore}
+          transparent
+          opacity={0.85}
+          depthWrite={false}
+          blending={AdditiveBlending}
+          toneMapped={false}
+          fog={false}
+        />
+      </sprite>
+    </group>
+  )
+}
+
 // ---- floating rock islands ----
 
 interface Island {
   position: [number, number, number]
-  size: [number, number, number]
+  radius: number
+  depth: number
   yaw: number
+  tilt: number
 }
 
-/** Grey-box floating islands, now toon-shaded rock chunks, drifting past the
- * plateau edge — static meshes with a little rotational irregularity. */
+/** Floating islets ringing the plateau: a grassy top cap over a torn rocky
+ * keel, lit warm and underlit faint violet so they read as land adrift in the
+ * nebula — not the dark dodecahedron blobs of the grey-box pass. Pushed out and
+ * up so they sit as background, never crowding the play space. */
 const ISLANDS: readonly Island[] = [
-  { position: [-30, 2, -12], size: [7, 2.5, 6], yaw: 0.4 },
-  { position: [31, -3, 4], size: [9, 3, 7], yaw: -0.7 },
-  { position: [-26, -5, 18], size: [6, 2, 5], yaw: 1.1 },
-  { position: [18, 6, -30], size: [5, 2, 5], yaw: -0.3 },
-  { position: [-8, 9, -34], size: [8, 2.5, 6], yaw: 0.8 },
-  { position: [26, 1, 26], size: [5, 2, 4], yaw: -1.2 },
+  { position: [-42, 7, -26], radius: 5.5, depth: 6, yaw: 0.4, tilt: 0.12 },
+  { position: [46, 3, -14], radius: 6.5, depth: 7, yaw: -0.7, tilt: -0.1 },
+  { position: [-38, -2, 30], radius: 4.8, depth: 5, yaw: 1.1, tilt: 0.14 },
+  { position: [30, 11, -44], radius: 4.2, depth: 5, yaw: -0.3, tilt: -0.08 },
+  { position: [-14, 15, -50], radius: 5.8, depth: 6.5, yaw: 0.8, tilt: 0.1 },
+  { position: [40, 8, 34], radius: 4.4, depth: 5, yaw: -1.2, tilt: -0.12 },
 ]
 
 function RockIsland({ island }: { island: Island }): JSX.Element {
-  const [w, h, d] = island.size
+  const { radius, depth } = island
   return (
-    <group position={island.position} rotation={[0, island.yaw, 0]}>
-      {/* main mass — a chunky faceted boulder */}
-      <mesh rotation={[0.12, 0.5, -0.08]}>
-        <dodecahedronGeometry args={[Math.max(w, d) * 0.55, 0]} />
+    <group position={island.position} rotation={[island.tilt, island.yaw, 0]}>
+      {/* the grassy top cap — a low mossy disc, warm at its lit rim */}
+      <mesh position={[0, 0.1, 0]}>
+        <cylinderGeometry args={[radius, radius * 0.92, 0.5, 12]} />
+        <meshToonMaterial color={PALETTE.moss} gradientMap={TOON_RAMP} />
+      </mesh>
+      {/* a soft grassy dome so the cap isn't a flat lid */}
+      <mesh position={[0, 0.36, 0]} scale={[1, 0.42, 1]}>
+        <sphereGeometry args={[radius * 0.86, 16, 12]} />
+        <meshToonMaterial color={PALETTE.mossWarm} gradientMap={TOON_RAMP} />
+      </mesh>
+      {/* the torn rocky keel — a faceted taper falling into the void */}
+      <mesh position={[0, -depth * 0.42, 0]} rotation={[Math.PI, island.yaw * 0.5, 0]}>
+        <coneGeometry args={[radius * 0.82, depth, 7, 2]} />
         <meshToonMaterial color={PALETTE.stone} gradientMap={TOON_RAMP} />
       </mesh>
-      {/* a tapered underside so it reads as a torn floating shard */}
-      <mesh position={[0, -h * 0.7, 0]} rotation={[Math.PI, island.yaw, 0]}>
-        <coneGeometry args={[Math.max(w, d) * 0.42, h * 1.6, 6, 1]} />
-        <meshToonMaterial color={PALETTE.violetDeep} gradientMap={TOON_RAMP} />
+      {/* a broken lower shard for silhouette irregularity */}
+      <mesh position={[radius * 0.28, -depth * 0.82, radius * 0.1]} rotation={[Math.PI, 0.6, 0.2]}>
+        <coneGeometry args={[radius * 0.36, depth * 0.55, 5, 1]} />
+        <meshToonMaterial color={PALETTE.stoneCool} gradientMap={TOON_RAMP} />
       </mesh>
-      {/* a smaller companion chunk for silhouette irregularity */}
-      <mesh position={[w * 0.45, h * 0.25, d * 0.2]}>
-        <dodecahedronGeometry args={[Math.max(w, d) * 0.22, 0]} />
-        <meshToonMaterial
-          color={PALETTE.stoneWarm}
-          emissive={PALETTE.violet}
-          emissiveIntensity={0.12}
-          gradientMap={TOON_RAMP}
-        />
+      {/* a faint violet underglow — the magic keeping it aloft */}
+      <mesh position={[0, -depth * 0.5, 0]}>
+        <sphereGeometry args={[radius * 0.5, 12, 12]} />
+        <meshBasicMaterial color={PALETTE.violet} transparent opacity={0.14} depthWrite={false} />
       </mesh>
     </group>
   )
@@ -223,12 +308,15 @@ export function Nebula({ reduced }: NebulaProps): JSX.Element {
           />
         </bufferGeometry>
         <pointsMaterial
-          size={0.6}
+          size={LOW_POWER ? 2.2 : 2.8}
+          map={STAR_SPRITE}
           sizeAttenuation
           vertexColors
           transparent
-          opacity={0.92}
+          opacity={0.95}
           depthWrite={false}
+          blending={AdditiveBlending}
+          fog={false}
         />
       </points>
       {ISLANDS.map((island, index) => (

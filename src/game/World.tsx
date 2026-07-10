@@ -5,10 +5,10 @@
 // DOM surface (trance/panel) owns the player's attention (§2 F1, §8).
 // This module makes ZERO network calls; fetch lives only in src/transport.
 
-import { Suspense, useRef } from 'react'
+import { Suspense, useRef, useState } from 'react'
 import { Canvas, type RootState } from '@react-three/fiber'
 import { CuboidCollider, CylinderCollider, Physics, RigidBody } from '@react-three/rapier'
-import { ACESFilmicToneMapping, NoToneMapping } from 'three'
+import { ACESFilmicToneMapping, type Mesh, NoToneMapping } from 'three'
 import { useUiStore } from '../state/ui'
 import { WORLD_COPY } from '../strings'
 import { CameraRig } from './CameraRig'
@@ -17,7 +17,7 @@ import { useWorldControls } from './controls'
 import { defaultWorldEvents } from './events'
 import { Interactables } from './Interactables'
 import { PALETTE, TOON_RAMP } from './materials'
-import { Nebula } from './Nebula'
+import { Nebula, SunDisc } from './Nebula'
 import { FULL_POWER, LOW_POWER, WORLD_DPR } from './perf'
 import { Player, PLAYER_SPAWN } from './Player'
 import { PostFx } from './PostFx'
@@ -67,15 +67,16 @@ function Ground(): JSX.Element {
           rotation={[0, wall.yaw, 0]}
         />
       ))}
-      {/* the plateau's drum — a warm-dark toon cliff below the dressed top disk */}
-      <mesh position={[0, -0.5, 0]}>
-        <cylinderGeometry args={[PLATEAU_RADIUS, PLATEAU_RADIUS + 2, 1, 48]} />
-        <meshToonMaterial color="#2b2138" gradientMap={TOON_RAMP} />
+      {/* the plateau's drum — a warm-dark toon cliff below the dressed top disk
+          (warmed off pure black so its edge reads as rock, not a void panel) */}
+      <mesh position={[0, -0.9, 0]}>
+        <cylinderGeometry args={[PLATEAU_RADIUS, PLATEAU_RADIUS + 2, 1.8, 48]} />
+        <meshToonMaterial color="#3a2b40" gradientMap={TOON_RAMP} />
       </mesh>
       {/* the ground's edge dissolves into the nebula — a faint rim glow */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
         <ringGeometry args={[PLATEAU_RADIUS - 1.5, PLATEAU_RADIUS + 0.5, 48]} />
-        <meshBasicMaterial color={PALETTE.violet} transparent opacity={0.3} depthWrite={false} />
+        <meshBasicMaterial color={PALETTE.violet} transparent opacity={0.22} depthWrite={false} />
       </mesh>
     </RigidBody>
   )
@@ -114,19 +115,25 @@ export interface WorldProps {
 /** Scene contents — everything inside the Canvas. */
 export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
   const paused = useUiStore((s) => s.mode !== 'roam')
+  // the sun mesh, lifted so <PostFx/> can key its God Rays off the same disc
+  // the sky draws (full tier only; null keeps God Rays out of the chain)
+  const [sun, setSun] = useState<Mesh | null>(null)
   return (
     <>
       <color attach="background" args={[PALETTE.space]} />
-      {/* warm indigo fog banked into the distance — depth + the OoT "air" */}
-      <fog attach="fog" args={[PALETTE.fog, 30, 88]} />
+      {/* warm indigo fog banked into the distance — depth + the OoT "air".
+          Pushed back a little so the redressed islands read before it swallows
+          them; the star dome and sun ignore fog (they are the far sky). */}
+      <fog attach="fog" args={[PALETTE.fog, 34, 104]} />
       {/* §8 light budget (no shadow maps, constant light count): a low warm
-          golden-hour KEY, a soft warm back-RIM so the cool Nebula still reads
-          inviting, a cool-violet hemisphere with a warm ground bounce, and a
-          gentle warm ambient lift. Monuments carry their own small accents. */}
-      <hemisphereLight args={[PALETTE.fillCool, PALETTE.groundBounce, 0.6]} />
-      <ambientLight color={PALETTE.keyWarm} intensity={0.18} />
-      <directionalLight color={PALETTE.keyWarm} position={[16, 7, 8]} intensity={1.35} />
-      <directionalLight color={PALETTE.rimWarm} position={[-12, 4, -11]} intensity={0.4} />
+          golden-hour KEY aimed FROM the sun disc, a soft warm back-RIM so the
+          cool Nebula still reads inviting, a cool-violet hemisphere with a warm
+          ground bounce, and a gentle warm ambient lift. */}
+      <hemisphereLight args={[PALETTE.fillCool, PALETTE.groundBounce, 0.55]} />
+      <ambientLight color={PALETTE.keyWarm} intensity={0.16} />
+      <directionalLight color={PALETTE.keyWarm} position={[-16, 9, -14]} intensity={1.5} />
+      <directionalLight color={PALETTE.rimWarm} position={[14, 4, 12]} intensity={0.45} />
+      <SunDisc onReady={setSun} />
       <Nebula reduced={reduced} />
       <GroundField />
       <Interactables reduced={reduced} />
@@ -138,7 +145,7 @@ export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
       </Physics>
       {onFirstFrame !== undefined ? <FirstFrameNotifier onFirstFrame={onFirstFrame} /> : null}
       {import.meta.env.DEV ? <FpsSampler /> : null}
-      <PostFx reduced={reduced} lowPower={LOW_POWER} />
+      <PostFx reduced={reduced} lowPower={LOW_POWER} sun={sun} />
     </>
   )
 }
