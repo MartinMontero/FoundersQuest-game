@@ -2,6 +2,27 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
+## Round 15 — staff no-clip lean + naming-card copy (2026-07-10)
+
+Operator live-check follow-ups. **(1) Staff clipped the hood.** Measured the grip bone at group-local
+(x≈−0.49, z≈0.11) — right at the wide chibi hood's edge, so the vertical shaft grazed it. Fix: the staff
+now leans its TOP outward (≈0.2 rad, along the hand's radial direction) while the foot stays planted (the
+pivot is the base), so it clears the hood from every angle and still reaches the ground. Verified from
+back/front/side at the constrained tier — the shaft sits clear to the founder's side, no hood intersection.
+**(2) Naming-card copy** per operator: title is now **"Name your founder"** in BOTH moods (first run and
+rename — the old "Rename your founder" is gone; the actions still differ, Save name / Cancel vs Begin /
+Stay), and the prompt is **"Make this quest your own! What shall we call you?"** Confirmed on-screen
+(card title + prompt read back verbatim). **(3)** The card not re-appearing on the branch alias is the
+per-origin persistence working as designed (the name "founder"/"Montero" was saved on that origin
+before) — not a bug; the clickable HUD name is the way to change it.
+
+**Tree:** committed this round. | `tsc`/`eslint` PASS · `vitest` **288/288** · e2e **18/18** serial
+(founder-naming ×3 incl. rename, render-tiers full+constrained boot with the leaning staff, all green).
+Staff no-clip + new card copy screenshotted at the constrained tier. Deploy + live-serve confirmed by
+curl (bundle hash + CSP), same as Round 14. **UNTESTED from this container:** live in-browser render —
+headless Chromium's tunnel through the agent proxy still resets (`ERR_CONNECTION_RESET`); operator
+eyes-on remains the final check.
+
 ## Round 14 — full-length staff + physical collision boundaries (2026-07-10)
 
 Two operator asks before the world build-out. **(1) Full-length staff.** It read as a baton floating at

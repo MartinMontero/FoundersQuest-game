@@ -43,7 +43,7 @@ export function FounderNaming(): ReactElement | null {
     else setName('')
   }
 
-  const title = renaming ? UI.founder.renameTitle : UI.founder.namingTitle
+  // one title for both moods (operator copy); only the actions differ by mood
   const commitLabel = renaming ? UI.founder.renameSave : UI.founder.namingBegin
   const dismissLabel = renaming ? UI.founder.renameCancel : UI.founder.namingSkip
 
@@ -60,7 +60,7 @@ export function FounderNaming(): ReactElement | null {
           id="founder-naming-title"
           className="quest-heading text-lg font-semibold text-amber-accent-200"
         >
-          {title}
+          {UI.founder.namingTitle}
         </h2>
         <p className="mt-2 text-sm text-parchment-300/85">{UI.founder.namingPrompt}</p>
         <input

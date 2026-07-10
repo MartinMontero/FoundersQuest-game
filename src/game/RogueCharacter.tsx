@@ -86,8 +86,18 @@ export function RogueCharacter({ gait, reduced }: RogueCharacterProps): JSX.Elem
     if (s === null || hand === null || g === null) return
     hand.getWorldPosition(HAND_WORLD)
     g.worldToLocal(HAND_WORLD)
+    const hx = HAND_WORLD.x
+    const hz = HAND_WORLD.z
     // foot planted on the ground, gripped where the hand is (X/Z only)
-    s.position.set(HAND_WORLD.x, 0, HAND_WORLD.z)
+    s.position.set(hx, 0, hz)
+    // lean the shaft's top OUTWARD (away from the body centre, along the hand's
+    // radial direction) so it clears the wide hood instead of grazing it — the
+    // foot stays planted (the pivot is the base), so it still reaches the ground.
+    const len = Math.hypot(hx, hz)
+    if (len > 1e-4) {
+      LEAN_AXIS.set(hz / len, 0, -hx / len)
+      s.quaternion.setFromAxisAngle(LEAN_AXIS, STAFF_LEAN)
+    }
   })
 
   // start on a calm idle
@@ -153,5 +163,11 @@ export function RogueCharacter({ gait, reduced }: RogueCharacterProps): JSX.Elem
   )
 }
 
+/** how far the staff's top tips outward from the body (radians ≈ 11°) — enough
+ * to clear the wide hood, gentle enough to still read as a planted traveller's staff */
+const STAFF_LEAN = 0.2
+
 /** scratch for the per-frame hand→group-local staff placement (no allocation) */
 const HAND_WORLD = new Vector3()
+/** scratch axis for the outward lean (perpendicular to the hand's radial dir) */
+const LEAN_AXIS = new Vector3()

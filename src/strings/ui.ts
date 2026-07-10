@@ -161,16 +161,15 @@ export const UI = {
   founder: {
     /** the canon default when the player names nothing (operator ruling, 2026-07-10) */
     defaultName: 'founder',
-    /** first-run naming card */
+    /** the naming card — one title for both first run and rename (operator copy, 2026-07-10) */
     namingTitle: 'Name your founder',
-    namingPrompt: 'Every quest is someone’s. What shall we call you?',
+    namingPrompt: 'Make this quest your own! What shall we call you?',
     namingPlaceholder: 'founder',
     namingBegin: 'Begin the quest',
     namingSkip: 'Stay “founder”',
     /** the HUD identity line under/over the world banner */
     hudTitle: 'Founder',
     /** rename flow — the same card, re-opened from the HUD name (operator ask, 2026-07-10) */
-    renameTitle: 'Rename your founder',
     renameSave: 'Save name',
     renameCancel: 'Cancel',
     /** tooltip/label on the clickable HUD name */
