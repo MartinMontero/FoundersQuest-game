@@ -20,6 +20,10 @@ const MIME: Record<string, string> = {
   '.wasm': 'application/wasm',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.glb': 'model/gltf-binary',
+  '.hdr': 'image/vnd.radiance',
 }
 
 /** Parse the `/*` header block out of public/_headers into a header map — the

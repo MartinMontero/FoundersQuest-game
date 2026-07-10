@@ -14,9 +14,14 @@ fetched at runtime — every asset ships in the static bundle, same-origin, so t
   the shrine monuments; the others are set dressing.
 
 ## Environment / lighting
-- **`public/hdr/venice_sunset_1k.hdr`**, **`quarry_01_1k.hdr`** — HDRIs from
-  **Poly Haven**. **CC0.** Image-based lighting: real reflections + ambient on
-  every PBR surface (the biggest realism lever per the premium-UI research).
+- **`public/hdr/venice_sunset_1k.hdr`** — HDRI from **Poly Haven**. **CC0.**
+  Image-based lighting: real reflections + ambient on every PBR surface (the
+  biggest realism lever per the premium-UI research).
+
+## Textures (PBR)
+- **`public/textures/ground/grassrock_*.jpg`** — "aerial_grass_rock" from
+  **Poly Haven** (albedo + OpenGL normal + packed AO/rough/metal). **CC0.** The
+  tiled plateau ground.
 
 ## Sourcing note (this build environment)
 The CC0 asset marketplaces (kaykit.itch.io, polyhaven.com, quaternius.com,

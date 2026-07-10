@@ -13,6 +13,11 @@ export default defineConfig({
   // whole rasteriser. Deterministic, at the cost of a few minutes' wall time.
   fullyParallel: false,
   workers: 1,
+  // the full-tier scene (HDR IBL, shadows, rigged character + textures, post-fx)
+  // can take ~30 s to boot on the CI's CPU software-GL renderer — well past the
+  // 30 s default. A generous global budget keeps real-GPU-fast paths honest while
+  // giving SwiftShader room (individual specs may still raise it further).
+  timeout: 90_000,
   // one retry still absorbs any residual contention (e.g. the CSP spec's extra
   // servers) without masking a real, repeatable failure.
   retries: process.env.CI ? 1 : 0,

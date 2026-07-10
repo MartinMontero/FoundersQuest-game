@@ -8,6 +8,7 @@
 // nothing lands on top of an interactable.
 
 import { useMemo } from 'react'
+import { useTexture } from '@react-three/drei'
 import {
   BufferAttribute,
   BufferGeometry,
@@ -18,11 +19,16 @@ import {
   MeshStandardMaterial,
   Object3D,
   OctahedronGeometry,
+  RepeatWrapping,
+  SRGBColorSpace,
+  type Texture,
 } from 'three'
 import { STAGE1_LAYOUT } from './contracts'
 import { PALETTE } from './materials'
 
 const PLATEAU_RADIUS = 24
+/** ground UV tiling: how many texture repeats per world unit (planar x/z) */
+const GROUND_UV_SCALE = 0.09
 
 /** Tiny deterministic LCG — the whole field is identical every boot. */
 function makeRng(seed: number): () => number {
@@ -64,6 +70,7 @@ function makeGroundGeometry(radius: number, rings: number, segments: number): Bu
   const positions: number[] = []
   const colors: number[] = []
   const normals: number[] = []
+  const uvs: number[] = []
   const indices: number[] = []
 
   const pushVertex = (x: number, z: number, edge: number): void => {
@@ -71,6 +78,8 @@ function makeGroundGeometry(radius: number, rings: number, segments: number): Bu
     const bump = (rng() - 0.5) * 0.06 * edge
     positions.push(x, bump, z)
     normals.push(0, 1, 0)
+    // planar UV for the tiled PBR ground texture
+    uvs.push(x * GROUND_UV_SCALE, z * GROUND_UV_SCALE)
     const n = 0.5 + 0.5 * groundNoise(x, z)
     scratch.copy(base)
     if (n > 0.5) {
@@ -117,24 +126,41 @@ function makeGroundGeometry(radius: number, rings: number, segments: number): Bu
   geometry.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3))
   geometry.setAttribute('normal', new BufferAttribute(new Float32Array(normals), 3))
   geometry.setAttribute('color', new BufferAttribute(new Float32Array(colors), 3))
+  geometry.setAttribute('uv', new BufferAttribute(new Float32Array(uvs), 2))
   geometry.setIndex(indices)
   return geometry
 }
 
 function GroundDisk(): JSX.Element {
   const geometry = useMemo(() => makeGroundGeometry(PLATEAU_RADIUS + 0.5, 14, 56), [])
-  // PBR ground: matte, non-metallic, vertex-coloured — it takes the HDR ambient
-  // and RECEIVES the character/prop shadows so they sit in the world.
-  const material = useMemo(
-    () =>
-      new MeshStandardMaterial({
-        vertexColors: true,
-        roughness: 0.95,
-        metalness: 0.0,
-      }),
-    [],
+  // real CC0 PBR ground (Poly Haven "aerial_grass_rock"): albedo + normal + an
+  // ARM map (AO/roughness/metalness packed). Tiled via the planar UVs above and
+  // RECEIVES shadows, so the plateau reads as real textured earth, not a plane.
+  const [map, normalMap, armMap] = useTexture([
+    '/textures/ground/grassrock_diff.jpg',
+    '/textures/ground/grassrock_nor.jpg',
+    '/textures/ground/grassrock_arm.jpg',
+  ]) as [Texture, Texture, Texture]
+  useMemo(() => {
+    for (const t of [map, normalMap, armMap]) {
+      t.wrapS = RepeatWrapping
+      t.wrapT = RepeatWrapping
+    }
+    map.colorSpace = SRGBColorSpace
+  }, [map, normalMap, armMap])
+  return (
+    <mesh geometry={geometry} position={[0, 0.02, 0]} receiveShadow>
+      <meshStandardMaterial
+        map={map}
+        normalMap={normalMap}
+        roughnessMap={armMap}
+        metalnessMap={armMap}
+        roughness={1.0}
+        metalness={0.0}
+        color="#c8b89c"
+      />
+    </mesh>
   )
-  return <mesh geometry={geometry} material={material} position={[0, 0.02, 0]} receiveShadow />
 }
 
 // ---- scattered instanced dressing ----

@@ -1,5 +1,4 @@
 import { execSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
 import { createServer, type Server } from 'node:http'
 import { readFileSync } from 'node:fs'
 import { extname, join } from 'node:path'
@@ -23,8 +22,10 @@ test.describe('production CSP', () => {
   let broken: Server
 
   test.beforeAll(() => {
-    // build once so the spec exercises current source under the real policy
-    if (!existsSync(join(DIST, 'index.html'))) execSync('npm run build', { stdio: 'ignore' })
+    // ALWAYS rebuild so the spec exercises CURRENT source under the real policy.
+    // A stale dist once masked a real CSP bug (glTF blob: textures blocked by
+    // connect-src) — a false green. The ~7 s rebuild is cheap insurance.
+    execSync('npm run build', { stdio: 'ignore' })
   })
 
   test.afterAll(async () => {

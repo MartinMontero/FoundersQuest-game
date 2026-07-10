@@ -8,6 +8,12 @@ import { expect, test } from '@playwright/test'
 // loss, so we induce one deterministically via WEBGL_lose_context.)
 
 test('a lost-then-restored WebGL context recovers instead of crashing', async ({ page }) => {
+  // forcing ?render=full puts the WHOLE stack (HDR IBL, shadows, the rigged
+  // character + its textures, god rays) on the CI's CPU software-GL renderer —
+  // a boot that can exceed the 30 s default test budget there (it is <5 s on a
+  // real GPU). This test asserts context-loss RECOVERY, not boot speed, so give
+  // it room like the CSP suite has.
+  test.setTimeout(120_000)
   const pageErrors: string[] = []
   page.on('pageerror', (e) => pageErrors.push(String(e)))
 

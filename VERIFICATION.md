@@ -2,6 +2,36 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
+## Round 8 — photoreal push I: founder's staff + PBR ground texture; a live CSP bug fixed (2026-07-09)
+
+Operator locked the direction ("match the benchmark — photoreal") and asked to give the character a
+proper staff (the Round-6 idea). This round: the staff, a real ground texture, and a **real CSP bug
+the stale-dist e2e had been masking**.
+
+- **Staff** — a glowing-crystal staff, world-scale, whose position tracks the rogue's right-hand
+  weapon bone (`handslotr` — GLTFLoader strips the `.`) every frame; held vertical. On-fiction.
+- **Ground** — the flat vertex-colour disk → a real CC0 PBR texture set (Poly Haven "aerial_grass_rock":
+  albedo + normal + packed ARM), tiled via new planar UVs, receiving shadows.
+
+**LIVE BUG FIXED (important):** GLTFLoader loads the KayKit models' embedded textures via `blob:`
+URLs and *fetches* them, but the shipped CSP `connect-src` lacked `blob:` — so on the real Cloudflare
+deploy the character and pillars would render **untextured** (blob fetch refused). Dev has no CSP, so
+my screenshots couldn't show it; the csp.spec's `beforeAll` only rebuilt when `dist` was missing, so
+it tested a stale (model-less) build and passed falsely. Fixes: (1) `connect-src … blob:` in
+`public/_headers` (blob: is app-created data, no exfiltration — BYOK posture intact); (2) csp.spec
+now ALWAYS rebuilds so it can never false-green on stale dist again; (3) added `.jpg/.glb/.hdr` MIME
+types to the test server.
+
+**Also:** the heavier full-tier scene boots ~30 s on the CI software-GL renderer (≈2–3 s on a real
+GPU), past Playwright's 30 s default — added a 90 s global test timeout + 120 s on the context-loss
+spec. Not a product regression; software-GL is CPU rasterisation.
+
+**Tree:** committed this round. | `tsc`/`eslint` PASS · `vitest` **273/273** · e2e **13/13** (serial).
+**UNTESTED:** real-hardware FPS — the CI software-GL number keeps dropping (~5.5 fps mean now) as the
+scene gets heavier; this is NOT player hardware, but I will not pile on more weight before the
+operator confirms it runs smooth on their laptop/phone. **Still primitive (next):** grass (benchmark
+savanna signature), trees, the Vault, reflective water.
+
 ## Round 7 — the real-asset pivot: authored CC0 geometry + HDR lighting (2026-07-09)
 
 **Why:** the operator rejected Round 6 too — "you polished your turd but left everything else
