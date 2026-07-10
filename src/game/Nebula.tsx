@@ -10,7 +10,7 @@ import { useCallback, useMemo, useRef } from 'react'
 import { useSafeFrame } from './useSafeFrame'
 import { AdditiveBlending, BackSide, Color, type Mesh, type Points, Vector3 } from 'three'
 import { useUiStore } from '../state/ui'
-import { makeSoftSprite, PALETTE, TOON_RAMP } from './materials'
+import { makeSoftSprite, PALETTE } from './materials'
 import { LOW_POWER } from './perf'
 
 // fewer stars under automation / software-GL (overdraw is costly there)
@@ -247,22 +247,22 @@ function RockIsland({ island }: { island: Island }): JSX.Element {
       {/* the grassy top cap — a low mossy disc, warm at its lit rim */}
       <mesh position={[0, 0.1, 0]}>
         <cylinderGeometry args={[radius, radius * 0.92, 0.5, 12]} />
-        <meshToonMaterial color={PALETTE.moss} gradientMap={TOON_RAMP} />
+        <meshStandardMaterial color={PALETTE.moss} roughness={0.85} metalness={0.05} />
       </mesh>
       {/* a soft grassy dome so the cap isn't a flat lid */}
       <mesh position={[0, 0.36, 0]} scale={[1, 0.42, 1]}>
         <sphereGeometry args={[radius * 0.86, 16, 12]} />
-        <meshToonMaterial color={PALETTE.mossWarm} gradientMap={TOON_RAMP} />
+        <meshStandardMaterial color={PALETTE.mossWarm} roughness={0.85} metalness={0.05} />
       </mesh>
       {/* the torn rocky keel — a faceted taper falling into the void */}
       <mesh position={[0, -depth * 0.42, 0]} rotation={[Math.PI, island.yaw * 0.5, 0]}>
         <coneGeometry args={[radius * 0.82, depth, 7, 2]} />
-        <meshToonMaterial color={PALETTE.stone} gradientMap={TOON_RAMP} />
+        <meshStandardMaterial color={PALETTE.stone} roughness={0.85} metalness={0.05} />
       </mesh>
       {/* a broken lower shard for silhouette irregularity */}
       <mesh position={[radius * 0.28, -depth * 0.82, radius * 0.1]} rotation={[Math.PI, 0.6, 0.2]}>
         <coneGeometry args={[radius * 0.36, depth * 0.55, 5, 1]} />
-        <meshToonMaterial color={PALETTE.stoneCool} gradientMap={TOON_RAMP} />
+        <meshStandardMaterial color={PALETTE.stoneCool} roughness={0.85} metalness={0.05} />
       </mesh>
       {/* a faint violet underglow — the magic keeping it aloft */}
       <mesh position={[0, -depth * 0.5, 0]}>

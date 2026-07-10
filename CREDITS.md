@@ -1,25 +1,28 @@
 # Credits — third-party assets
 
-**This build bundles no third-party binary assets.** Every visual is generated
-in code: cel-shaded toon materials over primitive geometry, a code-built stepped
-gradient ramp, code-built soft-round point sprites (stars, sun halo, glow
-cores), and a vertex-coloured ground. Nothing is fetched at runtime; the game
-ships as a static bundle and makes no network calls except the player's own
-browser→`api.anthropic.com` Council requests (BYOK).
+All bundled assets are **CC0 / public-domain** (commercial use, no attribution
+required); credited here by choice, per the constitution's spirit. Nothing is
+fetched at runtime — every asset ships in the static bundle, same-origin, so the
+`default-src 'self'` CSP holds and no third-party service sits in any path.
 
-## Why procedural (and how to add authored art later)
-The CC0 asset marketplaces (Quaternius, Kenney, Poly Haven, poly.pizza,
-jsDelivr) are **egress-blocked in the build container**; `raw.githubusercontent.com`
-is reachable. So richer authored geometry can be added one of two ways, both
-constitution-safe (sanctioned services only, CC0 = commercial use / no
-attribution required — we credit here by choice):
+## 3D models (glTF)
+- **`public/models/rogue.glb`** — "Rogue (Hooded)" from **KayKit Adventurers**
+  by Kay Lousberg. **CC0.** The player character (the hooded founder): rigged,
+  with a full baked animation set (Idle, Walking, Running, Interact, …).
+- **`public/models/pillar.glb`**, **`torch.glb`**, **`floor_tile.glb`** — from
+  **KayKit Dungeon Remastered** by Kay Lousberg. **CC0.** Stone pillars serve as
+  the shrine monuments; the others are set dressing.
 
-1. The operator drops a CC0 low-poly pack (KayKit / Kenney / Quaternius glTF)
-   into `public/models/`, loaded via drei `useGLTF`.
-2. A CC0 model is vendored from a GitHub-mirrored repo (three.js examples,
-   Khronos glTF-Sample-Assets).
+## Environment / lighting
+- **`public/hdr/venice_sunset_1k.hdr`**, **`quarry_01_1k.hdr`** — HDRIs from
+  **Poly Haven**. **CC0.** Image-based lighting: real reflections + ambient on
+  every PBR surface (the biggest realism lever per the premium-UI research).
 
-Any such addition must fit the canon fiction — the protagonist is the **cloaked
-founder** (hood + scarf + staff, faceless-mysterious), never a stock humanoid
-that breaks the world's register. Credit every vendored asset here with its
-source and CC0 / public-domain / permissive-commercial license.
+## Sourcing note (this build environment)
+The CC0 asset marketplaces (kaykit.itch.io, polyhaven.com, quaternius.com,
+poly.pizza, jsDelivr) are **egress-blocked in the build container**;
+`raw.githubusercontent.com` is reachable, so these CC0 assets are vendored from
+GitHub-mirrored repositories (KayKit packs mirrored in open-source game repos;
+Poly Haven HDRIs mirrored in the three.js examples). Only assets with a clear
+CC0 / public-domain license are committed. Stars, the sun halo, glow cores, and
+the toon gradient are still generated in code (no texture files needed).

@@ -2,6 +2,56 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
+## Round 7 — the real-asset pivot: authored CC0 geometry + HDR lighting (2026-07-09)
+
+**Why:** the operator rejected Round 6 too — "you polished your turd but left everything else
+the same, ignoring your own research and the screenshots I gave you" — and supplied five
+exploreone.games benchmark shots showing **real rigged characters, PBR textures, reflective water,
+HDR-lit atmosphere**. Round 6 did the post-fx + juice but kept primitive geometry. The research
+verdict (`docs/research/premium-ui-direction.md`) was explicit that authored assets are required
+and I'd dodged it. This round stops polishing primitives and swaps in real geometry.
+
+**Assets can be sourced here (proven this round):** `raw.githubusercontent.com` reaches CC0 packs —
+KayKit (Kay Lousberg, CC0) and Poly Haven HDRIs (CC0). Vendored, self-contained, same-origin (CSP
+`default-src 'self'` holds): `public/models/rogue.glb` (KayKit hooded rogue — rigged, Idle/Walk/Run
+baked), `public/models/pillar.glb` (KayKit dungeon pillar), `public/hdr/venice_sunset_1k.hdr`.
+
+**What changed:**
+- **Player** — primitive cloak → the real rigged KayKit rogue (drei useGLTF/useAnimations); gait
+  (idle/walk/run) driven from the physics frame via a ref, crossfaded, no per-frame re-render.
+- **Lighting** — drei `<Environment>` HDR image-based lighting (real reflections + ambient) on every
+  PBR surface; a shadow-casting key light. **Real shadows** (full tier).
+- **Materials** — every `meshToonMaterial` → `meshStandardMaterial` (props, monuments, islands,
+  ground drum, ground disk); glows kept as emissive; crystals now low-roughness gems.
+- **Shrines** — primitive cone-stacks → the real KayKit stone pillar model (`<Clone>` × 8), with the
+  glowing rune band + floating glyph kept for gameplay state.
+- Ground disk + props now `receiveShadow`/`castShadow`.
+
+**Tree:** committed this round. | **Checks:**
+
+| Check | Result | Evidence |
+|---|---|---|
+| `tsc` / `eslint` | PASS | zero errors |
+| `vitest run` | PASS | **273/273** (no mechanic/testid/data-shape/canon touched) |
+| e2e | PASS | **13/13** — full serial run |
+| Visual verification | PASS (my eyes) | full + constrained tiers render a cohesive real-asset world; character animates, casts shadow; pillars/rocks are real geometry under HDR |
+
+**Two real regressions found and fixed this round (not contention hand-waving — diagnosed):**
+1. e2e flaked 4/13 under the heavier scene. Root cause proven: **each failing test passes when run
+   ALONE** (full-tier boot 19 s alone; the induced context-loss cycles with 0 errors alone). Two
+   heavy full-tier WebGL contexts on the CI's CPU software-GL (SwiftShader) starve each other. Fix:
+   `workers: 1` (serial WebGL) in `playwright.config.ts` — all 13 green.
+2. The HDR PMREM prefilter is the one boot step SwiftShader chokes on. Fix: the **automation tier
+   skips the HDR** (its stated job is the cheapest, most deterministic path) and leans on brighter
+   direct lights; real devices (full/constrained) keep IBL.
+
+**UNTESTED / honest gaps (plainly):** real-hardware FPS with HDR + shadows + a skinned character —
+the CI software-GL number (~8 fps mean) is NOT player hardware, but the full stack is heavier than
+Round 6 and unmeasured on the operator's laptop/phone (queued). Live preview CSP under the new
+same-origin assets (deploy this round; asserted only by the local csp.spec against the built dist).
+**Still primitive (next pass if the direction lands):** the Vault (boxy), the little grass/tree
+cones, and the ground has no PBR texture yet.
+
 ## Round 6 — aesthetic overhaul: from "MS-Paint" to a cinematic low-poly look (2026-07-09)
 
 **Why:** the operator rejected the look three times as "MS Paint from Windows 95." The

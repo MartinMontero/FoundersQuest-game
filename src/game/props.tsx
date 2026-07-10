@@ -15,12 +15,12 @@ import {
   ConeGeometry,
   DodecahedronGeometry,
   type Material,
-  MeshToonMaterial,
+  MeshStandardMaterial,
   Object3D,
   OctahedronGeometry,
 } from 'three'
 import { STAGE1_LAYOUT } from './contracts'
-import { PALETTE, TOON_RAMP, TOON_RAMP_SOFT } from './materials'
+import { PALETTE } from './materials'
 
 const PLATEAU_RADIUS = 24
 
@@ -123,15 +123,18 @@ function makeGroundGeometry(radius: number, rings: number, segments: number): Bu
 
 function GroundDisk(): JSX.Element {
   const geometry = useMemo(() => makeGroundGeometry(PLATEAU_RADIUS + 0.5, 14, 56), [])
+  // PBR ground: matte, non-metallic, vertex-coloured — it takes the HDR ambient
+  // and RECEIVES the character/prop shadows so they sit in the world.
   const material = useMemo(
     () =>
-      new MeshToonMaterial({
+      new MeshStandardMaterial({
         vertexColors: true,
-        gradientMap: TOON_RAMP_SOFT,
+        roughness: 0.95,
+        metalness: 0.0,
       }),
     [],
   )
-  return <mesh geometry={geometry} material={material} position={[0, 0.02, 0]} receiveShadow={false} />
+  return <mesh geometry={geometry} material={material} position={[0, 0.02, 0]} receiveShadow />
 }
 
 // ---- scattered instanced dressing ----
@@ -214,7 +217,15 @@ function ScatterField({
     mesh.instanceMatrix.needsUpdate = true
     mesh.computeBoundingSphere()
   }
-  return <instancedMesh ref={ref} args={[geometry, material, placements.length]} frustumCulled={false} />
+  return (
+    <instancedMesh
+      ref={ref}
+      args={[geometry, material, placements.length]}
+      frustumCulled={false}
+      castShadow
+      receiveShadow
+    />
+  )
 }
 
 /** The dressed plateau: vertex-coloured ground + instanced rock, crystal, grass.
@@ -232,7 +243,7 @@ export function GroundField(): JSX.Element {
         tilt: 0.5,
       }),
       geometry: new DodecahedronGeometry(1, 0),
-      material: new MeshToonMaterial({ color: PALETTE.stone, gradientMap: TOON_RAMP }),
+      material: new MeshStandardMaterial({ color: PALETTE.stone, roughness: 0.82, metalness: 0.04 }),
     }),
     [],
   )
@@ -248,7 +259,7 @@ export function GroundField(): JSX.Element {
         tilt: 0.35,
       }),
       geometry: new DodecahedronGeometry(1, 0),
-      material: new MeshToonMaterial({ color: PALETTE.stoneWarm, gradientMap: TOON_RAMP }),
+      material: new MeshStandardMaterial({ color: PALETTE.stoneWarm, roughness: 0.82, metalness: 0.04 }),
     }),
     [],
   )
@@ -268,11 +279,12 @@ export function GroundField(): JSX.Element {
         tilt: 0.16,
       }),
       geometry: new OctahedronGeometry(0.5, 0),
-      material: new MeshToonMaterial({
-        color: '#136a66',
+      material: new MeshStandardMaterial({
+        color: '#0f5f5b',
         emissive: PALETTE.teal,
-        emissiveIntensity: 1.5,
-        gradientMap: TOON_RAMP,
+        emissiveIntensity: 1.6,
+        roughness: 0.12,
+        metalness: 0.0,
       }),
     }),
     [],
@@ -290,11 +302,12 @@ export function GroundField(): JSX.Element {
         tilt: 0.16,
       }),
       geometry: new OctahedronGeometry(0.5, 0),
-      material: new MeshToonMaterial({
+      material: new MeshStandardMaterial({
         color: PALETTE.violetDeep,
         emissive: PALETTE.violet,
-        emissiveIntensity: 1.25,
-        gradientMap: TOON_RAMP,
+        emissiveIntensity: 1.35,
+        roughness: 0.12,
+        metalness: 0.0,
       }),
     }),
     [],
@@ -312,7 +325,7 @@ export function GroundField(): JSX.Element {
         tilt: 0.22,
       }),
       geometry: new ConeGeometry(0.11, 0.5, 4, 1),
-      material: new MeshToonMaterial({ color: PALETTE.grass, gradientMap: TOON_RAMP }),
+      material: new MeshStandardMaterial({ color: PALETTE.grass, roughness: 0.82, metalness: 0.04 }),
     }),
     [],
   )
@@ -332,11 +345,11 @@ export function GroundField(): JSX.Element {
         tilt: 0.4,
       }),
       geometry: new OctahedronGeometry(0.5, 0),
-      material: new MeshToonMaterial({
+      material: new MeshStandardMaterial({
         color: PALETTE.dust,
         emissive: PALETTE.dust,
         emissiveIntensity: 1.1,
-        gradientMap: TOON_RAMP,
+        roughness: 0.82, metalness: 0.04,
       }),
     }),
     [],

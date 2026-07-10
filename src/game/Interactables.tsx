@@ -33,7 +33,8 @@ import {
   type InteractableSpec,
 } from './contracts'
 import { SPEC_BY_ID, activeTargetId, useInteractionStore } from './interaction'
-import { PALETTE, TOON_RAMP } from './materials'
+import { PALETTE } from './materials'
+import { Pillar } from './models'
 import { LOW_POWER } from './perf'
 import { useSafeFrame } from './useSafeFrame'
 
@@ -125,49 +126,33 @@ function ShrineStone({ spec, reduced }: ShrineProps): JSX.Element {
     const g = glyph.current
     if (g === null) return
     if (reduced) {
-      g.position.y = 2.6
+      g.position.y = 2.9
       g.rotation.y = 0
       return
     }
-    g.position.y = 2.6 + Math.sin(clock.elapsedTime * 1.6 + yaw) * 0.09
+    g.position.y = 2.9 + Math.sin(clock.elapsedTime * 1.6 + yaw) * 0.09
     g.rotation.y += 0.006
   })
 
   return (
     <group position={[x, y, z]} rotation={[0, yaw, 0]}>
-      {/* base slab */}
-      <mesh position={[0, 0.15, 0]}>
-        <cylinderGeometry args={[1.0, 1.25, 0.3, 8]} />
-        <meshToonMaterial color={PALETTE.stone} gradientMap={TOON_RAMP} />
-      </mesh>
-      {/* a rune ring cut into the slab, lit by the shrine's state */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.32, 0]}>
-        <torusGeometry args={[0.52, 0.05, 8, 24]} />
-        <meshToonMaterial
+      {/* the shrine monument — a real CC0 KayKit stone pillar (~2.7 u), lit by
+          the HDR and casting a real shadow. Replaces the old primitive stack. */}
+      <Pillar scale={[0.68, 0.68, 0.68]} />
+      {/* a glowing rune band around the pillar's throat, lit by shrine state */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 2.05, 0]}>
+        <torusGeometry args={[0.42, 0.055, 8, 24]} />
+        <meshStandardMaterial
           color={glow}
           emissive={glow}
-          emissiveIntensity={answered ? 1.0 : 0.5}
-          gradientMap={TOON_RAMP}
+          emissiveIntensity={answered ? 1.5 : 0.7}
+          roughness={0.35}
+          metalness={0.1}
         />
-      </mesh>
-      {/* the standing stone: a faceted six-sided pillar */}
-      <mesh position={[0, 1.15, 0]}>
-        <cylinderGeometry args={[0.24, 0.4, 1.7, 6]} />
-        <meshToonMaterial
-          color={answered ? '#4d4370' : PALETTE.violetDeep}
-          emissive={glow}
-          emissiveIntensity={answered ? 0.5 : 0.16}
-          gradientMap={TOON_RAMP}
-        />
-      </mesh>
-      {/* the capstone */}
-      <mesh position={[0, 2.2, 0]}>
-        <coneGeometry args={[0.42, 0.5, 6, 1]} />
-        <meshToonMaterial color={PALETTE.stoneWarm} gradientMap={TOON_RAMP} />
       </mesh>
       {/* the floating glyph, wrapped in a soft glow core that catches bloom
           (full) / reads as a bright emissive point (constrained) */}
-      <group ref={glyph} position={[0, 2.6, 0]}>
+      <group ref={glyph} position={[0, 2.9, 0]}>
         <mesh scale={answered ? 0.62 : 0.5}>
           <sphereGeometry args={[0.34, 12, 12]} />
           <meshBasicMaterial
@@ -179,11 +164,12 @@ function ShrineStone({ spec, reduced }: ShrineProps): JSX.Element {
         </mesh>
         <mesh>
           <GlyphGeometry kind={kind} />
-          <meshToonMaterial
+          <meshStandardMaterial
             color={glow}
             emissive={glow}
-            emissiveIntensity={answered ? 1.3 : 0.9}
-            gradientMap={TOON_RAMP}
+            emissiveIntensity={answered ? 1.6 : 1.0}
+            roughness={0.3}
+            metalness={0.2}
           />
         </mesh>
       </group>
@@ -212,27 +198,27 @@ function Flagpole({ spec, reduced }: ShrineProps): JSX.Element {
       {/* the pole — a warm weathered timber, not cold steel */}
       <mesh position={[0, 1.6, 0]}>
         <cylinderGeometry args={[0.06, 0.08, 3.2, 8]} />
-        <meshToonMaterial color="#9a8a86" gradientMap={TOON_RAMP} />
+        <meshStandardMaterial color="#9a8a86" roughness={0.72} metalness={0.05} />
       </mesh>
       {/* the finial */}
       <mesh position={[0, 3.25, 0]}>
         <sphereGeometry args={[0.13, 10, 10]} />
-        <meshToonMaterial
+        <meshStandardMaterial
           color={PALETTE.amber}
           emissive={PALETTE.amber}
           emissiveIntensity={0.7}
-          gradientMap={TOON_RAMP}
+          roughness={0.72} metalness={0.05}
         />
       </mesh>
       {/* the banner — a bent cloth plane, hoisted or furled by the milestone */}
       <group ref={banner} position={[0.04, flagY, 0]}>
         <mesh position={[0.46, 0, 0]} rotation={[0, 0, -0.06]}>
           <planeGeometry args={[0.9, 0.55, 4, 1]} />
-          <meshToonMaterial
+          <meshStandardMaterial
             color={raised ? PALETTE.amber : '#4b4670'}
             emissive={raised ? PALETTE.amber : '#000000'}
             emissiveIntensity={raised ? 0.45 : 0}
-            gradientMap={TOON_RAMP}
+            roughness={0.72} metalness={0.05}
             side={DoubleSide}
           />
         </mesh>
@@ -265,28 +251,28 @@ function VaultMonument({ spec, reduced }: VaultProps): JSX.Element {
       {/* the reliquary core */}
       <mesh>
         <boxGeometry args={[1.3, 0.9, 0.85]} />
-        <meshToonMaterial
+        <meshStandardMaterial
           color={PALETTE.violetDeep}
           emissive={PALETTE.violet}
           emissiveIntensity={0.28}
-          gradientMap={TOON_RAMP}
+          roughness={0.72} metalness={0.05}
         />
       </mesh>
       {/* ornate corner posts */}
       {VAULT_POSTS.map(([px, pz], i) => (
         <mesh key={i} position={[px, 0, pz]}>
           <cylinderGeometry args={[0.08, 0.1, 1.02, 6]} />
-          <meshToonMaterial color={PALETTE.stoneWarm} gradientMap={TOON_RAMP} />
+          <meshStandardMaterial color={PALETTE.stoneWarm} roughness={0.72} metalness={0.05} />
         </mesh>
       ))}
       {/* a crowning finial */}
       <mesh position={[0, 0.62, 0]}>
         <octahedronGeometry args={[0.17, 0]} />
-        <meshToonMaterial
+        <meshStandardMaterial
           color={PALETTE.amber}
           emissive={PALETTE.amber}
           emissiveIntensity={locked ? 0.9 : 0.4}
-          gradientMap={TOON_RAMP}
+          roughness={0.72} metalness={0.05}
         />
       </mesh>
       {locked ? (
@@ -294,29 +280,29 @@ function VaultMonument({ spec, reduced }: VaultProps): JSX.Element {
           {/* chains: crossed bands over the lid (01: captured, visible, sealed) */}
           <mesh rotation={[0, 0, Math.PI / 2]}>
             <torusGeometry args={[0.72, 0.05, 8, 24]} />
-            <meshToonMaterial color="#8b88a8" gradientMap={TOON_RAMP} />
+            <meshStandardMaterial color="#8b88a8" roughness={0.72} metalness={0.05} />
           </mesh>
           <mesh rotation={[Math.PI / 2, 0, 0]} position={[0.3, 0, 0]}>
             <torusGeometry args={[0.6, 0.05, 8, 24]} />
-            <meshToonMaterial color="#8b88a8" gradientMap={TOON_RAMP} />
+            <meshStandardMaterial color="#8b88a8" roughness={0.72} metalness={0.05} />
           </mesh>
           {/* the amber wax seal on the face */}
           <mesh position={[0, -0.05, 0.46]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.2, 0.2, 0.06, 16]} />
-            <meshToonMaterial
+            <meshStandardMaterial
               color={PALETTE.amberBright}
               emissive={PALETTE.amber}
               emissiveIntensity={1.1}
-              gradientMap={TOON_RAMP}
+              roughness={0.72} metalness={0.05}
             />
           </mesh>
           <mesh position={[0, -0.05, 0.5]}>
             <octahedronGeometry args={[0.1, 0]} />
-            <meshToonMaterial
+            <meshStandardMaterial
               color={PALETTE.amberBright}
               emissive={PALETTE.amberBright}
               emissiveIntensity={1.2}
-              gradientMap={TOON_RAMP}
+              roughness={0.72} metalness={0.05}
             />
           </mesh>
         </>
@@ -392,21 +378,21 @@ function GuardianFigure({
         {/* the menhir body — a tapered, hooded standing stone */}
         <mesh position={[0, 0.75, 0]}>
           <cylinderGeometry args={[0.16, 0.34, 1.5, 5]} />
-          <meshToonMaterial
+          <meshStandardMaterial
             color={tint}
             emissive={crowned ? PALETTE.ember : tint}
             emissiveIntensity={crowned ? 0.6 : 0.1}
-            gradientMap={TOON_RAMP}
+            roughness={0.72} metalness={0.05}
           />
         </mesh>
         {/* the hood */}
         <mesh position={[0, 1.55, 0]}>
           <sphereGeometry args={[0.24, 12, 12]} />
-          <meshToonMaterial
+          <meshStandardMaterial
             color={tint}
             emissive={crowned ? PALETTE.emberDeep : '#000000'}
             emissiveIntensity={crowned ? 0.4 : 0}
-            gradientMap={TOON_RAMP}
+            roughness={0.72} metalness={0.05}
           />
         </mesh>
         {crowned ? (
@@ -414,21 +400,21 @@ function GuardianFigure({
             {/* the warning crown */}
             <mesh position={[0, 1.98, 0]}>
               <coneGeometry args={[0.2, 0.32, 6, 1]} />
-              <meshToonMaterial
+              <meshStandardMaterial
                 color={PALETTE.ember}
                 emissive={PALETTE.ember}
                 emissiveIntensity={1.1}
-                gradientMap={TOON_RAMP}
+                roughness={0.72} metalness={0.05}
               />
             </mesh>
             {/* a floating warning ember */}
             <mesh position={[0, 2.45, 0]}>
               <octahedronGeometry args={[0.12, 0]} />
-              <meshToonMaterial
+              <meshStandardMaterial
                 color={PALETTE.ember}
                 emissive={PALETTE.ember}
                 emissiveIntensity={1.3}
-                gradientMap={TOON_RAMP}
+                roughness={0.72} metalness={0.05}
               />
             </mesh>
           </>
@@ -481,11 +467,11 @@ function RegistryCircle({ reduced }: { reduced: boolean }): JSX.Element {
       {/* the central altar */}
       <mesh position={[0, 0.1, 0]}>
         <cylinderGeometry args={[0.5, 0.62, 0.2, 12]} />
-        <meshToonMaterial
+        <meshStandardMaterial
           color={PALETTE.stone}
           emissive={PALETTE.teal}
           emissiveIntensity={0.35}
-          gradientMap={TOON_RAMP}
+          roughness={0.72} metalness={0.05}
         />
       </mesh>
       {/* a teal pool of light over the circle (constant) + a warning ember that
@@ -510,7 +496,7 @@ function RegistryCircle({ reduced }: { reduced: boolean }): JSX.Element {
           rotation={[0.04, stone.angle, ((i % 3) - 1) * 0.05]}
         >
           <cylinderGeometry args={[0.18, 0.28, stone.height, 5]} />
-          <meshToonMaterial color={PALETTE.stoneCool} gradientMap={TOON_RAMP} />
+          <meshStandardMaterial color={PALETTE.stoneCool} roughness={0.72} metalness={0.05} />
         </mesh>
       ))}
       {standing.map((assumption, index) => {

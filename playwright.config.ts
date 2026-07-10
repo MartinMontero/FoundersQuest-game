@@ -5,10 +5,16 @@ import { defineConfig, devices } from '@playwright/test'
 // in the remote container — browser CDNs are egress-blocked. CI installs its own.
 export default defineConfig({
   testDir: 'e2e',
-  fullyParallel: true,
-  // browser e2e under load (heavy WebGL + the CSP spec's extra servers) can flake
-  // a strict "zero console errors" assertion; one retry absorbs contention in CI
-  // without masking a real, repeatable failure.
+  // Real 3D assets (HDR image-based lighting, shadows, a rigged glTF character,
+  // the full post-fx stack) make each world instance heavy, and the headless CI
+  // renderer is CPU software-GL (SwiftShader). Two heavy WebGL contexts at once
+  // starve each other into spurious timeouts — proven: every failing test passes
+  // when run alone. So the WebGL specs run SERIALLY (workers: 1); each gets the
+  // whole rasteriser. Deterministic, at the cost of a few minutes' wall time.
+  fullyParallel: false,
+  workers: 1,
+  // one retry still absorbs any residual contention (e.g. the CSP spec's extra
+  // servers) without masking a real, repeatable failure.
   retries: process.env.CI ? 1 : 0,
   reporter: [['list']],
   use: {

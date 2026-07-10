@@ -16,9 +16,10 @@ import type { Group } from 'three'
 import { STAGE1_LAYOUT } from './contracts'
 import { getMoveInput } from './controls'
 import { INTERACT_RADIUS, useInteractionStore } from './interaction'
-import { PALETTE, TOON_RAMP } from './materials'
+import { PALETTE } from './materials'
 import { LOW_POWER } from './perf'
 import { cameraYaw, playerWorldPos } from './refs'
+import { RogueCharacter, type Gait } from './RogueCharacter'
 import { useSafeFrame } from './useSafeFrame'
 import { useUiStore } from '../state/ui'
 
@@ -51,106 +52,6 @@ function updateNearest(x: number, z: number): void {
   useInteractionStore.getState().setNearest(best)
 }
 
-/** The cloaked wanderer — a chunky, rounded N64 silhouette (big-hood charm,
- * hood + scarf, faceless-mysterious). A soft cowl, never a pointed hat; never a
- * bare capsule. */
-function Wanderer(): JSX.Element {
-  return (
-    <group>
-      {/* the cloak: a chunky rounded bell, wide at the hem */}
-      <mesh position={[0, -0.02, 0]}>
-        <coneGeometry args={[0.54, 1.34, 12, 1]} />
-        <meshToonMaterial color={PALETTE.cloak} gradientMap={TOON_RAMP} />
-      </mesh>
-      {/* an inner fold for a little silhouette irregularity */}
-      <mesh position={[0.05, -0.08, 0.03]} rotation={[0.04, 0.4, 0.06]}>
-        <coneGeometry args={[0.4, 1.14, 10, 1]} />
-        <meshToonMaterial color={PALETTE.cloakDeep} gradientMap={TOON_RAMP} />
-      </mesh>
-      {/* rounded shoulders — a squashed dome that fattens the N64 silhouette */}
-      <mesh position={[0, 0.44, 0]} scale={[1, 0.62, 1]}>
-        <sphereGeometry args={[0.33, 14, 12]} />
-        <meshToonMaterial color={PALETTE.cloak} gradientMap={TOON_RAMP} />
-      </mesh>
-      {/* the scarf ring at the neck — chunky, warm and faintly lit */}
-      <mesh position={[0, 0.5, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.22, 0.08, 10, 18]} />
-        <meshToonMaterial
-          color={PALETTE.scarf}
-          emissive={PALETTE.scarf}
-          emissiveIntensity={0.3}
-          gradientMap={TOON_RAMP}
-        />
-      </mesh>
-      {/* a trailing scarf end, tossed behind (local -z) */}
-      <mesh position={[0.13, 0.44, -0.26]} rotation={[0.55, 0, -0.4]}>
-        <boxGeometry args={[0.12, 0.4, 0.03]} />
-        <meshToonMaterial color={PALETTE.scarf} gradientMap={TOON_RAMP} />
-      </mesh>
-      {/* the hood — a big rounded head, N64 charm */}
-      <mesh position={[0, 0.82, -0.02]}>
-        <sphereGeometry args={[0.34, 16, 16]} />
-        <meshToonMaterial color={PALETTE.cloak} gradientMap={TOON_RAMP} />
-      </mesh>
-      {/* the hood's rounded back-fold — a soft cowl, deliberately NOT a peak */}
-      <mesh position={[0, 0.9, -0.2]} rotation={[0.6, 0, 0]} scale={[1, 1.2, 1]}>
-        <sphereGeometry args={[0.2, 12, 12]} />
-        <meshToonMaterial color={PALETTE.cloakDeep} gradientMap={TOON_RAMP} />
-      </mesh>
-      {/* the shadowed face, set into the hood and looking forward (local +z) */}
-      <mesh position={[0, 0.8, 0.23]}>
-        <sphereGeometry args={[0.21, 12, 12]} />
-        <meshToonMaterial
-          color="#160f28"
-          emissive={PALETTE.teal}
-          emissiveIntensity={0.16}
-          gradientMap={TOON_RAMP}
-        />
-      </mesh>
-      {/* a faint rune-lit hem trim around the cloak base — a little glow the
-          bloom catches, so the silhouette reads lit from within */}
-      <mesh position={[0, -0.58, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.5, 0.03, 8, 20]} />
-        <meshToonMaterial
-          color={PALETTE.teal}
-          emissive={PALETTE.teal}
-          emissiveIntensity={0.55}
-          gradientMap={TOON_RAMP}
-        />
-      </mesh>
-      {/* the wanderer's staff, carried at the right hand — a weathered shaft
-          topped by a glowing shard. The strongest read of "adventurer" in the
-          silhouette; the shard catches bloom like the shrine runes. */}
-      <group position={[0.44, 0, 0.08]} rotation={[0, 0, -0.12]}>
-        <mesh position={[0, 0.55, 0]}>
-          <cylinderGeometry args={[0.035, 0.045, 1.9, 6]} />
-          <meshToonMaterial color="#6b5a44" gradientMap={TOON_RAMP} />
-        </mesh>
-        {/* the binding just below the shard */}
-        <mesh position={[0, 1.36, 0]}>
-          <torusGeometry args={[0.06, 0.02, 6, 12]} />
-          <meshToonMaterial color={PALETTE.amber} gradientMap={TOON_RAMP} />
-        </mesh>
-        {/* the crowning shard */}
-        <mesh position={[0, 1.56, 0]}>
-          <octahedronGeometry args={[0.12, 0]} />
-          <meshToonMaterial
-            color={PALETTE.crystalCore}
-            emissive={PALETTE.teal}
-            emissiveIntensity={1.4}
-            gradientMap={TOON_RAMP}
-          />
-        </mesh>
-        {/* a soft glow core around the shard */}
-        <mesh position={[0, 1.56, 0]}>
-          <sphereGeometry args={[0.2, 10, 10]} />
-          <meshBasicMaterial color={PALETTE.teal} transparent opacity={0.28} depthWrite={false} />
-        </mesh>
-      </group>
-    </group>
-  )
-}
-
 export interface PlayerProps {
   reduced: boolean
 }
@@ -158,8 +59,11 @@ export interface PlayerProps {
 export function Player({ reduced }: PlayerProps): JSX.Element {
   const body = useRef<RapierRigidBody>(null)
   const visual = useRef<Group>(null)
+  // live gait for the rigged character's animation state machine (idle/walk/run);
+  // written here in the physics frame, read inside <RogueCharacter/> — no re-render
+  const gait = useRef<Gait>('idle')
 
-  useSafeFrame(({ clock }, delta) => {
+  useSafeFrame((_, delta) => {
     const rb = body.current
     if (rb === null) return
 
@@ -183,6 +87,7 @@ export function Player({ reduced }: PlayerProps): JSX.Element {
 
     let vx = 0
     let vz = 0
+    let walking = false
     if (useUiStore.getState().mode === 'roam') {
       const move = getMoveInput()
       const forward = (move.forward ? 1 : 0) - (move.back ? 1 : 0)
@@ -199,7 +104,8 @@ export function Player({ reduced }: PlayerProps): JSX.Element {
         const length = Math.hypot(dx, dz)
         dx /= length
         dz /= length
-        const speed = move.walk ? WALK_SPEED : RUN_SPEED
+        walking = move.walk
+        const speed = walking ? WALK_SPEED : RUN_SPEED
         vx = dx * speed
         vz = dz * speed
       }
@@ -207,31 +113,20 @@ export function Player({ reduced }: PlayerProps): JSX.Element {
     const velocity = rb.linvel()
     rb.setLinvel({ x: vx, y: velocity.y, z: vz }, true)
 
-    // wanderer idle bob / walk lean / heading — all still under reduced motion
+    // heading + gait for the rigged character. The baked clips own the body
+    // motion (bob, stride); here we only turn the avatar toward its heading and
+    // pick idle / walk / run from the ground speed.
+    const speed = Math.hypot(vx, vz)
+    const moving = speed > 0.05
+    gait.current = !moving ? 'idle' : walking ? 'walk' : 'run'
     const vis = visual.current
-    if (vis !== null) {
-      const speed = Math.hypot(vx, vz)
-      const moving = speed > 0.05
+    if (vis !== null && moving) {
+      const desired = Math.atan2(vx, vz)
       if (reduced) {
-        vis.position.y = 0
-        vis.rotation.x = 0
-        vis.rotation.z = 0
-        if (moving) vis.rotation.y = Math.atan2(vx, vz)
+        vis.rotation.y = desired
       } else {
-        const time = clock.elapsedTime
-        const bounce = moving ? Math.sin(time * 9) * 0.055 : 0
-        vis.position.y = Math.sin(time * 1.8) * 0.035 + bounce
-        const lean = moving ? 0.15 : 0
-        vis.rotation.x += (lean - vis.rotation.x) * Math.min(1, delta * 6)
-        // a gentle waddle: a wider side-to-side roll on the march, a soft
-        // breathing tilt at rest — the little N64 life, still under reduced motion
-        const sway = moving ? Math.sin(time * 4.5) * 0.06 : Math.sin(time * 1.2) * 0.015
-        vis.rotation.z += (sway - vis.rotation.z) * Math.min(1, delta * 6)
-        if (moving) {
-          const desired = Math.atan2(vx, vz)
-          const d = Math.atan2(Math.sin(desired - vis.rotation.y), Math.cos(desired - vis.rotation.y))
-          vis.rotation.y += d * Math.min(1, delta * 8)
-        }
+        const d = Math.atan2(Math.sin(desired - vis.rotation.y), Math.cos(desired - vis.rotation.y))
+        vis.rotation.y += d * Math.min(1, delta * 10)
       }
     }
   })
@@ -246,7 +141,7 @@ export function Player({ reduced }: PlayerProps): JSX.Element {
     >
       <CapsuleCollider args={[0.55, 0.4]} />
       <group ref={visual}>
-        <Wanderer />
+        <RogueCharacter gait={gait} reduced={reduced} />
       </group>
       {/* a soft cool rim so the silhouette lifts off the warm ground */}
       {!LOW_POWER ? (

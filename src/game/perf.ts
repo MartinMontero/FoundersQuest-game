@@ -61,6 +61,13 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
  * ships ONLY on the full tier. Constrained and automation get the cheap path. */
 export const FULL_POWER: boolean = RENDER_TIER === 'full'
 
+/** The Playwright / CI software-GL path. The HDR prefilter (PMREM) is the one
+ * heavy boot step SwiftShader chokes on under parallel load, so we skip it here
+ * and lean on direct lights instead — keeping CI fast and deterministic (this
+ * tier exists precisely to be the cheapest, most stable path). Real devices
+ * (full / constrained) still get image-based lighting. */
+export const IS_AUTOMATION: boolean = RENDER_TIER === 'automation'
+
 /** Kept name for existing call sites: true whenever we take the cheap path
  * (cheap sky shader, fewer stars, static aurora, no composer, no accent lights). */
 export const LOW_POWER: boolean = !FULL_POWER

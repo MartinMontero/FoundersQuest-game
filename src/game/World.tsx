@@ -7,6 +7,7 @@
 
 import { Suspense, useRef, useState } from 'react'
 import { Canvas, type RootState } from '@react-three/fiber'
+import { Environment } from '@react-three/drei'
 import { CuboidCollider, CylinderCollider, Physics, RigidBody } from '@react-three/rapier'
 import { ACESFilmicToneMapping, type Mesh, NoToneMapping } from 'three'
 import { useUiStore } from '../state/ui'
@@ -16,9 +17,9 @@ import type { WorldEvents } from './contracts'
 import { useWorldControls } from './controls'
 import { defaultWorldEvents } from './events'
 import { Interactables } from './Interactables'
-import { PALETTE, TOON_RAMP } from './materials'
+import { PALETTE } from './materials'
 import { Nebula, SunDisc } from './Nebula'
-import { FULL_POWER, LOW_POWER, WORLD_DPR } from './perf'
+import { FULL_POWER, IS_AUTOMATION, LOW_POWER, WORLD_DPR } from './perf'
 import { Player, PLAYER_SPAWN } from './Player'
 import { PostFx } from './PostFx'
 import { GroundField } from './props'
@@ -67,11 +68,11 @@ function Ground(): JSX.Element {
           rotation={[0, wall.yaw, 0]}
         />
       ))}
-      {/* the plateau's drum — a warm-dark toon cliff below the dressed top disk
+      {/* the plateau's drum — a warm-dark PBR cliff below the dressed top disk
           (warmed off pure black so its edge reads as rock, not a void panel) */}
-      <mesh position={[0, -0.9, 0]}>
+      <mesh position={[0, -0.9, 0]} receiveShadow>
         <cylinderGeometry args={[PLATEAU_RADIUS, PLATEAU_RADIUS + 2, 1.8, 48]} />
-        <meshToonMaterial color="#3a2b40" gradientMap={TOON_RAMP} />
+        <meshStandardMaterial color="#3a2b40" roughness={0.92} metalness={0.05} />
       </mesh>
       {/* the ground's edge dissolves into the nebula — a faint rim glow */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
@@ -125,14 +126,33 @@ export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
           Pushed back a little so the redressed islands read before it swallows
           them; the star dome and sun ignore fog (they are the far sky). */}
       <fog attach="fog" args={[PALETTE.fog, 34, 104]} />
-      {/* §8 light budget (no shadow maps, constant light count): a low warm
-          golden-hour KEY aimed FROM the sun disc, a soft warm back-RIM so the
-          cool Nebula still reads inviting, a cool-violet hemisphere with a warm
-          ground bounce, and a gentle warm ambient lift. */}
-      <hemisphereLight args={[PALETTE.fillCool, PALETTE.groundBounce, 0.55]} />
-      <ambientLight color={PALETTE.keyWarm} intensity={0.16} />
-      <directionalLight color={PALETTE.keyWarm} position={[-16, 9, -14]} intensity={1.5} />
-      <directionalLight color={PALETTE.rimWarm} position={[14, 4, 12]} intensity={0.45} />
+      {/* image-based lighting: a real CC0 HDR (Poly Haven "venice_sunset") drives
+          reflections + ambient on the PBR surfaces (character, ground, monuments)
+          — the single biggest realism lever per the premium-UI research. Lighting
+          only, no background: our nebula sky stays. Skipped on the software-GL
+          automation tier (its PMREM prefilter is the one step SwiftShader chokes
+          on under parallel CI load); brighter direct lights stand in there. */}
+      {!IS_AUTOMATION ? <Environment files="/hdr/venice_sunset_1k.hdr" /> : null}
+      {/* a warm golden-hour KEY that also casts the world's real shadows (full
+          tier), a soft warm back-RIM, a cool-violet hemisphere with a warm ground
+          bounce, and an ambient lift (stronger when there is no IBL to fill). */}
+      <hemisphereLight args={[PALETTE.fillCool, PALETTE.groundBounce, IS_AUTOMATION ? 0.8 : 0.35]} />
+      <ambientLight color={PALETTE.keyWarm} intensity={IS_AUTOMATION ? 0.5 : 0.1} />
+      <directionalLight
+        color={PALETTE.keyWarm}
+        position={[-18, 22, -14]}
+        intensity={2.0}
+        castShadow={FULL_POWER}
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-near={1}
+        shadow-camera-far={90}
+        shadow-camera-left={-32}
+        shadow-camera-right={32}
+        shadow-camera-top={32}
+        shadow-camera-bottom={-32}
+        shadow-bias={-0.0004}
+      />
+      <directionalLight color={PALETTE.rimWarm} position={[14, 5, 12]} intensity={0.4} />
       <SunDisc onReady={setSun} />
       <Nebula reduced={reduced} />
       <GroundField />
@@ -176,6 +196,7 @@ export function GameRoot({ events = defaultWorldEvents, onFirstFrame }: GameRoot
     <div className="absolute inset-0" role="application" aria-label={WORLD_COPY.worldName}>
       <Canvas
         dpr={WORLD_DPR}
+        shadows={FULL_POWER}
         camera={{
           fov: 50,
           near: 0.1,
