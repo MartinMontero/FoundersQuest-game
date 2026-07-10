@@ -435,6 +435,71 @@ describe('invalidateAssumption holds the funeral (s5-l5)', () => {
   })
 })
 
+describe('sequence-lock actions (unlockVault / passGate / overrideGate / recordLoop)', () => {
+  it('unlockVault flips the one-way flag; idempotent', () => {
+    const { spy, deps } = makeDeps()
+    const store = createQuestStore(deps)
+    expect(store.getState().data.vaultUnlocked).toBe(false)
+    store.getState().unlockVault()
+    expect(store.getState().data.vaultUnlocked).toBe(true)
+    const setsAfter = spy.sets.length
+    store.getState().unlockVault() // no-op the second time
+    expect(spy.sets.length).toBe(setsAfter) // idempotent — no redundant write
+  })
+
+  it('passGate records gates[id]=passed + a gate-pass trail entry', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().passGate('act1', '⛩ Act I Gate — The First Threshold')
+    const { data } = store.getState()
+    expect(data.gates.act1).toEqual({ status: 'passed', date: FIXED_NOW })
+    expect(data.trail).toEqual([
+      { type: 'gate-pass', name: '⛩ Act I Gate — The First Threshold', date: FIXED_NOW },
+    ])
+  })
+
+  it('overrideGate records the written reason to gates[id] AND the trail (logged, exported)', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().overrideGate('act2', "⛩ Act II Gate — The Mirror's Verdict", 'shipping the demo; will backfill citations')
+    const { data } = store.getState()
+    expect(data.gates.act2).toEqual({
+      status: 'overridden',
+      reason: 'shipping the demo; will backfill citations',
+      date: FIXED_NOW,
+    })
+    expect(data.trail[0]).toEqual({
+      type: 'gate-override',
+      name: "⛩ Act II Gate — The Mirror's Verdict",
+      reason: 'shipping the demo; will backfill citations',
+      date: FIXED_NOW,
+    })
+  })
+
+  it('recordLoop appends a loop trail entry with the learning line and sets lastLoop', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().recordLoop('The Reality Check', 5, 1, 'my sample was all friends — the yeses were politeness')
+    const { data } = store.getState()
+    expect(data.lastLoop).toBe('The Reality Check')
+    expect(data.trail).toEqual([
+      {
+        type: 'loop',
+        name: 'The Reality Check',
+        fromId: 's5',
+        toId: 's1',
+        learning: 'my sample was all friends — the yeses were politeness',
+        date: FIXED_NOW,
+      },
+    ])
+  })
+
+  it('gate/loop writes persist through core save and never touch the key store', () => {
+    const { spy, deps } = makeDeps()
+    const store = createQuestStore(deps)
+    store.getState().passGate('act3', '⛩ Act III Gate — The Far Bank')
+    expect(spy.sets.some((s) => s.key === STORAGE_KEY)).toBe(true)
+    expect(spy.sets.some((s) => s.key === KEY_STORAGE_KEY)).toBe(false)
+  })
+})
+
 describe('captureVault / addGuardian / addEvidence write exact 02 shapes', () => {
   it('captureVault appends { id, text, date } — nothing else, no justification field', () => {
     const store = createQuestStore(makeDeps().deps)

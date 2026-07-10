@@ -172,3 +172,50 @@ export function actionFraction(data: QuestData, milestoneIds: readonly string[])
   }
   return raised / milestoneIds.length
 }
+
+// ---- Sequence locks (03; gates WARN, never block — canon 01) ----
+
+/** The verdict recorded at the Mirror (s5-th) — the key to the W5 sequence lock. */
+export function verdictRecorded(data: QuestData): boolean {
+  const v = data.answers['s5']?.['s5-th']?.verdict
+  return v === 'yes' || v === 'no'
+}
+
+/** The pivot/persevere decision cast with ≥1 citation (s5-dec) — part of Act II. */
+function decisionCited(data: QuestData): boolean {
+  const a = data.answers['s5']?.['s5-dec']
+  const decided = a?.decision === 'pivot' || a?.decision === 'persevere'
+  return decided && (a?.citedEvidenceIds?.length ?? 0) >= 1
+}
+
+export type ActGateId = 'act1' | 'act2' | 'act3'
+
+/**
+ * Whether an Act Gate's canon bar (03) is met — ALL derived, never stored.
+ * This only REPORTS met/unmet; the crossing is always allowed (gates warn, never
+ * block — canon 01). Unmet just means the override path (a written reason) is used.
+ * - act1 (after W2): s1 threshold answered · ≥5 E2+ · ≥1 E3+ · a written kill criterion.
+ * - act2 (after W5): verdict recorded · pivot/persevere decided with ≥1 citation.
+ * - act3 (after W7): unit walk-through (s7-th) answered · SPOF (s7-l2) answered.
+ */
+export function gateMet(data: QuestData, gateId: ActGateId): boolean {
+  switch (gateId) {
+    case 'act1': {
+      const thresholdAnswered = data.answers['s1']?.['s1-th'] !== undefined
+      let e2 = 0
+      let e3 = 0
+      for (const e of data.evidence) {
+        if (e.tier >= 2) e2 += 1
+        if (e.tier >= 3) e3 += 1
+      }
+      const hasKillCriterion = data.assumptions.some((a) => a.killCriterion.trim() !== '')
+      return thresholdAnswered && e2 >= 5 && e3 >= 1 && hasKillCriterion
+    }
+    case 'act2':
+      return verdictRecorded(data) && decisionCited(data)
+    case 'act3':
+      return (
+        data.answers['s7']?.['s7-th'] !== undefined && data.answers['s7']?.['s7-l2'] !== undefined
+      )
+  }
+}

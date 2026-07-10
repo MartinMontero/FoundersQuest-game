@@ -9,11 +9,13 @@ import {
   XP_VALIDATED,
   actionFraction,
   fieldAttemptTally,
+  gateMet,
   importanceWeight,
   riskiest,
   tierOf,
   trough,
   truth,
+  verdictRecorded,
   xp,
 } from '../src/core/metrics'
 import { withDefaults } from '../src/core/schema'
@@ -492,5 +494,83 @@ describe('actionFraction', () => {
     // with none: still null even at full Action
     expect(truth(data({ milestones: allRaised }))).toBeNull()
     expect(actionFraction(data({ milestones: allRaised }), ids)).toBe(1)
+  })
+})
+
+describe('verdictRecorded (the W5 sequence-lock key)', () => {
+  it('true only for a yes/no verdict at s5-th', () => {
+    expect(verdictRecorded(data({ answers: { s5: { 's5-th': { verdict: 'yes' } } } }))).toBe(true)
+    expect(verdictRecorded(data({ answers: { s5: { 's5-th': { verdict: 'no' } } } }))).toBe(true)
+    expect(verdictRecorded(data({ answers: { s5: { 's5-th': { verdict: 'maybe' } } } }))).toBe(false)
+    expect(verdictRecorded(data())).toBe(false)
+  })
+})
+
+describe('gateMet (Act-Gate criteria; derived, warn-not-block)', () => {
+  it('act1: s1 threshold · ≥5 E2+ · ≥1 E3+ · a written kill criterion', () => {
+    const met = data({
+      answers: { s1: { 's1-th': { text: 'the story' } } },
+      evidence: [evidence(), evidence(), evidence(), evidence(), evidence({ tier: 3 })],
+      assumptions: [assumption()], // helper gives a non-empty killCriterion
+    })
+    expect(gateMet(met, 'act1')).toBe(true)
+    // one short on E2 count → unmet
+    expect(
+      gateMet(
+        data({
+          answers: { s1: { 's1-th': { text: 'x' } } },
+          evidence: [evidence(), evidence(), evidence(), evidence({ tier: 3 })],
+          assumptions: [assumption()],
+        }),
+        'act1',
+      ),
+    ).toBe(false)
+    // five E2 but no E3 → unmet
+    expect(
+      gateMet(
+        data({
+          answers: { s1: { 's1-th': { text: 'x' } } },
+          evidence: [evidence(), evidence(), evidence(), evidence(), evidence()],
+          assumptions: [assumption()],
+        }),
+        'act1',
+      ),
+    ).toBe(false)
+    // no written kill criterion → unmet
+    expect(
+      gateMet(
+        data({
+          answers: { s1: { 's1-th': { text: 'x' } } },
+          evidence: [evidence(), evidence(), evidence(), evidence(), evidence({ tier: 3 })],
+          assumptions: [assumption({ killCriterion: '   ' })],
+        }),
+        'act1',
+      ),
+    ).toBe(false)
+  })
+
+  it('act2: verdict recorded · decision cited', () => {
+    const met = data({
+      answers: { s5: { 's5-th': { verdict: 'no' }, 's5-dec': { decision: 'pivot', citedEvidenceIds: ['e-1'] } } },
+    })
+    expect(gateMet(met, 'act2')).toBe(true)
+    // decision with no citation → unmet (the s5-dec lock)
+    expect(
+      gateMet(
+        data({ answers: { s5: { 's5-th': { verdict: 'no' }, 's5-dec': { decision: 'pivot', citedEvidenceIds: [] } } } }),
+        'act2',
+      ),
+    ).toBe(false)
+    // verdict missing → unmet
+    expect(
+      gateMet(data({ answers: { s5: { 's5-dec': { decision: 'pivot', citedEvidenceIds: ['e-1'] } } } }), 'act2'),
+    ).toBe(false)
+  })
+
+  it('act3: unit walk-through (s7-th) · SPOF (s7-l2)', () => {
+    expect(
+      gateMet(data({ answers: { s7: { 's7-th': { text: 'unit walk' }, 's7-l2': { text: 'spof' } } } }), 'act3'),
+    ).toBe(true)
+    expect(gateMet(data({ answers: { s7: { 's7-th': { text: 'unit walk' } } } }), 'act3')).toBe(false)
   })
 })

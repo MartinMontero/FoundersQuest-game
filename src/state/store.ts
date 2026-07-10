@@ -9,7 +9,7 @@
 import { useStore } from 'zustand'
 import { useShallow } from 'zustand/react/shallow'
 import { createStore, type StoreApi } from 'zustand/vanilla'
-import { actionFraction, riskiest, tierOf, trough, truth } from '../core/metrics'
+import { actionFraction, riskiest, tierOf, trough, truth, type ActGateId } from '../core/metrics'
 import { migrateV2IfNeeded } from '../core/migration'
 import type {
   Answer,
@@ -69,6 +69,25 @@ export interface QuestState {
    * DERIVED by metrics (xp: invalidated +15 when linked tier ≥ 2), never here.
    */
   invalidateAssumption(id: string): void
+  /** The Vault unseals at Stage 3 (01) — a one-way progression flag. Idempotent. */
+  unlockVault(): void
+  /**
+   * Cross an Act Gate cleanly: record `gates[id] = passed` + a `gate-pass` trail
+   * entry. `name` is the canon gate name (03), passed from the UI so the store
+   * stays decoupled from src/strings.
+   */
+  passGate(gateId: ActGateId, name: string): void
+  /**
+   * Cross an Act Gate with the bar unmet: a written `reason` (never blocks —
+   * canon 01), recorded as `gates[id] = overridden` + a `gate-override` trail
+   * entry. The reason is logged and exported (03).
+   */
+  overrideGate(gateId: ActGateId, name: string, reason: string): void
+  /**
+   * A named loop (03): a toll-portal back to an earlier world demands one
+   * learning line, appended to the `trail` (type `loop`) and set as `lastLoop`.
+   */
+  recordLoop(name: string, fromStage: number, toStage: number, learning: string): void
 }
 
 export interface QuestStoreDeps {
@@ -211,6 +230,45 @@ export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState
               ? { ...a, status: 'invalidated', resolvedAt }
               : a,
           ),
+        })
+      },
+
+      unlockVault(): void {
+        const { data } = get()
+        if (data.vaultUnlocked) return
+        commit({ ...data, vaultUnlocked: true })
+      },
+
+      passGate(gateId: ActGateId, name: string): void {
+        const { data } = get()
+        const date = now()
+        commit({
+          ...data,
+          gates: { ...data.gates, [gateId]: { status: 'passed', date } },
+          trail: [...data.trail, { type: 'gate-pass', name, date }],
+        })
+      },
+
+      overrideGate(gateId: ActGateId, name: string, reason: string): void {
+        const { data } = get()
+        const date = now()
+        commit({
+          ...data,
+          gates: { ...data.gates, [gateId]: { status: 'overridden', reason, date } },
+          trail: [...data.trail, { type: 'gate-override', name, reason, date }],
+        })
+      },
+
+      recordLoop(name: string, fromStage: number, toStage: number, learning: string): void {
+        const { data } = get()
+        const date = now()
+        commit({
+          ...data,
+          lastLoop: name,
+          trail: [
+            ...data.trail,
+            { type: 'loop', name, fromId: `s${fromStage}`, toId: `s${toStage}`, learning, date },
+          ],
         })
       },
     }
