@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { truth } from '../src/core/metrics'
+import { truth, xp } from '../src/core/metrics'
 import {
   LEGACY_V2_KEY,
   STORAGE_KEY,
@@ -330,6 +330,108 @@ describe('inscribeAnswer writes exact 02 fields', () => {
       s1: { 's1-th': { text: 'a' }, 's1-l1': { text: 'b' } },
       s2: { 's2-th': { text: 'c' } },
     })
+  })
+})
+
+describe('sealThread stamps text + sealedAt in one write (Ariadne, s4-th)', () => {
+  it('writes { text, sealedAt } with the timestamp from the injected clock', () => {
+    const { spy, deps } = makeDeps()
+    const store = createQuestStore(deps)
+    const before = spy.sets.length
+    store.getState().sealThread('s4', 's4-th', 'stop if <2 sign-ups')
+    expect(store.getState().data.answers['s4']?.['s4-th']).toEqual({
+      text: 'stop if <2 sign-ups',
+      sealedAt: FIXED_NOW,
+    })
+    // persists through core save in the same call (state of record = founders-quest:v3)
+    expect(spy.sets.length).toBe(before + 1)
+  })
+
+  it('merges onto an existing answer without dropping earlier fields', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().inscribeAnswer('s4', 's4-th', { verdict: 'no' })
+    store.getState().sealThread('s4', 's4-th', 'the thread')
+    expect(store.getState().data.answers['s4']?.['s4-th']).toEqual({
+      verdict: 'no',
+      text: 'the thread',
+      sealedAt: FIXED_NOW,
+    })
+  })
+})
+
+describe('invalidateAssumption holds the funeral (s5-l5)', () => {
+  it('flips status to invalidated and stamps resolvedAt from the clock', () => {
+    const { spy, deps } = makeDeps()
+    spy.map.set(STORAGE_KEY, JSON.stringify(dataWith({ assumptions: [guardian('g-1', 'dies')] })))
+    const store = createQuestStore(deps)
+    store.getState().invalidateAssumption('g-1')
+    const a = store.getState().data.assumptions[0]
+    expect(a?.status).toBe('invalidated')
+    expect(a?.resolvedAt).toBe(FIXED_NOW)
+  })
+
+  it('is idempotent — an already-buried belief keeps its original resolvedAt', () => {
+    const { spy, deps } = makeDeps()
+    spy.map.set(
+      STORAGE_KEY,
+      JSON.stringify(
+        dataWith({
+          assumptions: [
+            { ...guardian('g-1', 'dies', 'invalidated'), resolvedAt: '2020-01-01T00:00:00.000Z' },
+          ],
+        }),
+      ),
+    )
+    const store = createQuestStore(deps)
+    store.getState().invalidateAssumption('g-1')
+    expect(store.getState().data.assumptions[0]?.resolvedAt).toBe('2020-01-01T00:00:00.000Z')
+  })
+
+  it('does not mutate the prior array and leaves other guardians untouched', () => {
+    const { spy, deps } = makeDeps()
+    spy.map.set(
+      STORAGE_KEY,
+      JSON.stringify(dataWith({ assumptions: [guardian('g-1'), guardian('g-2')] })),
+    )
+    const store = createQuestStore(deps)
+    const prior = store.getState().data.assumptions
+    store.getState().invalidateAssumption('g-1')
+    const next = store.getState().data.assumptions
+    expect(next).not.toBe(prior) // a new array — immutable update
+    expect(prior[0]?.status).toBe('untested') // the prior snapshot is untouched
+    expect(next[0]?.status).toBe('invalidated')
+    expect(next[1]?.status).toBe('untested')
+  })
+
+  it('an unknown id is a no-op', () => {
+    const { spy, deps } = makeDeps()
+    spy.map.set(STORAGE_KEY, JSON.stringify(dataWith({ assumptions: [guardian('g-1')] })))
+    const store = createQuestStore(deps)
+    store.getState().invalidateAssumption('nope')
+    expect(store.getState().data.assumptions[0]?.status).toBe('untested')
+  })
+
+  it('a proven funeral (linked E2) pays 1.5x XP (15) and moves Truth', () => {
+    const { spy, deps } = makeDeps()
+    spy.map.set(
+      STORAGE_KEY,
+      JSON.stringify(
+        dataWith({ assumptions: [guardian('g-1', 'dies')], evidence: [e2Linked('e-1', 'g-1')] }),
+      ),
+    )
+    const store = createQuestStore(deps)
+    store.getState().invalidateAssumption('g-1')
+    expect(xp(store.getState().data)).toBe(15) // invalidation pays 1.5x (15 vs 10)
+    expect(truth(store.getState().data)).toBe(1) // the lone assumption, resolved with tier≥2
+  })
+
+  it('an unproven funeral (no E2 evidence) earns no XP and does not move Truth', () => {
+    const { spy, deps } = makeDeps()
+    spy.map.set(STORAGE_KEY, JSON.stringify(dataWith({ assumptions: [guardian('g-1', 'dies')] })))
+    const store = createQuestStore(deps)
+    store.getState().invalidateAssumption('g-1')
+    expect(xp(store.getState().data)).toBe(0) // tier<2 resolution earns nothing
+    expect(truth(store.getState().data)).toBe(0) // resolved, but tier<2 → numerator 0
   })
 })
 

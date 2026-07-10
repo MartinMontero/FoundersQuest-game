@@ -118,6 +118,93 @@ export const UI = {
     registerGuardian: 'Register as guardian',
     guardianRegistered: 'guardian registered',
   },
+  // ---- per-world trance controls (§2.1) — authored chrome, never canon text ----
+  /** s2-th verbatim: paste five quotes, word for word; log a quote as E2 (04/02). */
+  verbatim: {
+    quoteLabel: (n: number): string => `Quote ${n}`,
+    quoteAdd: 'Add another quote',
+    logAsE2: 'Log as E2',
+    sourceLabel: 'Who said it',
+    logConfirm: 'Log the quote',
+    logged: 'logged as E2 Word',
+  },
+  /** s3-l1 vault: open the Vault (unsealed at Stage 3), pick the idea that hits the root. */
+  vaultPick: {
+    prompt: 'Which captured idea attacks the root — not a symptom of it?',
+    empty: 'The Vault holds nothing yet. Write the idea here instead.',
+    fallbackLabel: 'Your answer',
+    chooseLabel: (n: number): string => `Vault idea ${n}`,
+  },
+  /** s3-l2 ifthen: state the logic before building; register the IF as a guardian. */
+  ifthen: {
+    ifLabel: 'IF',
+    thenLabel: 'THEN — when they meet it, we will observe',
+    withinLabel: 'WITHIN (days)',
+    importanceLabel: 'Importance',
+    registerIf: 'Register the IF as a guardian',
+    registered: 'the IF stands as a guardian',
+  },
+  /** s4-th seal: Ariadne's Thread — timestamped, locked, two-step confirm. */
+  seal: {
+    label: 'The result that makes you stop or pivot',
+    seal: 'Seal it',
+    confirm: 'Confirm — this locks',
+    sealedCaption: "Sealed — Ariadne's Thread",
+    sealedAt: (iso: string): string => `Sealed ${iso.slice(0, 10)}`,
+    locked: 'Sealed and locked. It opens at the Mirror.',
+  },
+  /** s5-th verdict: open the seal, read it, rule yes/no before interpreting. */
+  verdict: {
+    sealedCaption: 'The thread you sealed:',
+    noSeal: 'No thread was sealed at the Labyrinth.',
+    question: 'Did the thread trigger?',
+    yes: 'Yes — it triggered',
+    no: 'No — it held',
+  },
+  /** s5-l5 registry: the funeral — mark a Stage-1 belief invalidated, take the XP. */
+  funeral: {
+    prompt: 'Which Stage-1 belief is now dead?',
+    empty: 'No Stage-1 guardians stand to bury.',
+    hold: 'Hold the funeral',
+    confirm: 'Confirm the funeral',
+    proven: 'Proven — this funeral pays full honors (1.5×).',
+    unproven: 'Unproven funeral — no E2+ evidence stands behind it yet.',
+    buried: 'buried',
+  },
+  /** s5-dec decision: pivot or persevere — locked until ≥1 evidence citation. */
+  decision: {
+    pivot: 'Pivot',
+    persevere: 'Persevere',
+    citePrompt: 'Cite the evidence that decides it:',
+    noEvidence: 'No evidence to cite yet — log evidence, then decide.',
+    cited: (n: number): string => (n === 1 ? '1 citation' : `${n} citations`),
+    locked: 'Locked until you cite at least one piece of evidence.',
+  },
+  /** s8-th spine: the StoryBrand cast; an uncited beat renders [unproven] (A4 interim). */
+  spine: {
+    beatLabels: [
+      'Once there was',
+      'Every day',
+      'Until one day',
+      'Because of that',
+      'Until finally',
+    ] as const,
+    beatPlaceholders: [
+      'named customer',
+      'struggle',
+      'your work',
+      'observed outcome',
+      'transformation',
+    ] as const,
+    citePrompt: 'Cite the evidence your spine rests on:',
+    noEvidence: 'No evidence cited — every beat casts as [unproven].',
+    unproven: '[unproven]',
+  },
+  /** s3-joy / s8-l3 joy: name the one moment that makes them smile and tell a friend. */
+  joy: {
+    label: 'Name the moment',
+    prompt: 'Design it on purpose.',
+  },
   vault: {
     /** gentle, dismissible, never blocks saving (03 Stage 1 rule; law 10) */
     nudgeText: 'That reads like a solution. The Vault can hold it while you stay with the problem.',

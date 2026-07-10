@@ -99,6 +99,21 @@ export async function tabToChip(page: Page, label: string): Promise<void> {
   throw new Error(`tabToChip: never reached "${label}" in ${TAB_CYCLE_LIMIT} tabs`)
 }
 
+/** Tab-cycle interactable focus until the EXACT interactable `id` is active,
+ * reading the dev-only window mirror (src/game/interaction.ts). Deterministic:
+ * focusedId advances exactly one step per Tab keydown, so this is immune to the
+ * drei <Html> focus-chip render lag that makes label-matching (tabToChip) flaky
+ * when the founder starts near a shrine. Use this to reach a precise shrine. */
+export async function tabToTarget(page: Page, id: string, maxTabs = 24): Promise<void> {
+  const active = (): Promise<string | null> =>
+    page.evaluate(() => (window as unknown as { __fq_target?: string | null }).__fq_target ?? null)
+  for (let i = 0; i <= maxTabs; i += 1) {
+    if ((await active()) === id) return
+    await page.keyboard.press('Tab')
+  }
+  throw new Error(`tabToTarget: never reached "${id}" in ${maxTabs} tabs`)
+}
+
 /** WASD walk-up: hold `key` in short bursts until the walk-up proximity chip
  * labelled `label` appears. Bursts (≈1.5 m each at run speed) cannot jump the
  * 2.75 m interact radius, so the highlight is never skipped over. */

@@ -56,6 +56,19 @@ export interface QuestState {
   addEvidence(input: EvidenceInput): EvidenceEntry
   /** Flagpole self-report: milestones[id] flips. Action only — never Truth, never XP. */
   toggleMilestone(id: string): void
+  /**
+   * Ariadne's Thread (s4-th): inscribe `text` AND stamp `sealedAt` in one write,
+   * so the sealed timestamp comes from the store's injected clock (like vault /
+   * guardian / evidence), never a component's own Date. The panel renders the
+   * seal read-only once `sealedAt` is set (the thread opens at the Mirror).
+   */
+  sealThread(stageId: string, qid: string, text: string): void
+  /**
+   * The funeral (s5-l5): flip a guardian to `invalidated` and stamp `resolvedAt`.
+   * Idempotent — a belief already buried is left untouched. The 1.5× honors are
+   * DERIVED by metrics (xp: invalidated +15 when linked tier ≥ 2), never here.
+   */
+  invalidateAssumption(id: string): void
 }
 
 export interface QuestStoreDeps {
@@ -175,6 +188,29 @@ export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState
         commit({
           ...data,
           milestones: { ...data.milestones, [id]: data.milestones[id] !== true },
+        })
+      },
+
+      sealThread(stageId: string, qid: string, text: string): void {
+        const { data } = get()
+        const stageAnswers = data.answers[stageId] ?? {}
+        const merged = mergeAnswer(stageAnswers[qid] ?? {}, { text, sealedAt: now() })
+        commit({
+          ...data,
+          answers: { ...data.answers, [stageId]: { ...stageAnswers, [qid]: merged } },
+        })
+      },
+
+      invalidateAssumption(id: string): void {
+        const { data } = get()
+        const resolvedAt = now()
+        commit({
+          ...data,
+          assumptions: data.assumptions.map((a) =>
+            a.id === id && a.status !== 'invalidated'
+              ? { ...a, status: 'invalidated', resolvedAt }
+              : a,
+          ),
         })
       },
     }

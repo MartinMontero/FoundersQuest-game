@@ -62,3 +62,26 @@ export const useInteractionStore = create<InteractionState>()((set) => ({
     set((s) => (s.focusedId === null ? s : { focusedId: null }))
   },
 }))
+
+declare global {
+  interface Window {
+    /** dev/e2e builds only — the active interactable id (Tab focus ?? proximity).
+     * e2e reads this to Tab to an EXACT interactable, immune to the drei <Html>
+     * focus-chip render lag: the store value is exact; only the label lags a frame. */
+    __fq_target?: string | null
+  }
+}
+
+// dev/e2e only: mirror the active target onto window so e2e can navigate to an
+// exact interactable by id. Stripped from production (import.meta.env.DEV), and
+// never runs where there is no window — vitest's node env AND the Playwright
+// test runner (which imports this module transitively via CameraRig; there
+// `import.meta.env` is undefined, so `window` MUST be tested first to short-
+// circuit before touching it). Measurement only — no telemetry.
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+  const publish = (s: InteractionState): void => {
+    window.__fq_target = activeTargetId(s)
+  }
+  publish(useInteractionStore.getState())
+  useInteractionStore.subscribe(publish)
+}

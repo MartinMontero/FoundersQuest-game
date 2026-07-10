@@ -45,7 +45,7 @@ World-1 slice without regressing it.
 - **J1 — World 1 regression.** Boot → W1 plays exactly as before (existing `stage1.spec` green). ✅ `npx playwright test e2e/stage1.spec.ts e2e/reduced-motion.spec.ts` → 3 passed (2.0m).
 - **J2 — Traversal.** Walk W1→W2→…→W8 via onward paths; HUD banner tracks the world; back portal; reload resumes. ✅ `npx playwright test e2e/traversal.spec.ts` → 1 passed (1.7m): W1→8 onward, banner lands on each world; W8→W7 back; reload resumes W7; zero console/Anthropic. (Act-Gate doors replace onward portals at act boundaries in a later cycle.)
 - **J3..J10 — Each world W1–W8 playable.** Every shrine kneelable; each answers with its canon input control writing exact 02 keys; all 3 flagpoles raise (Action only). ◐ shrines answerable in every world (unbuilt input tags fall back to prose; verified s8-l4 wrote `answers.s8` in traversal.spec). Designed controls (verbatim/vault/ifthen/seal/verdict/registry/decision/spine/joy) + per-world set-pieces are the next cycles. (W1 ✅ full.)
-- **J11 — Input controls.** verbatim(→E2), vault(reads vault[]), ifthen(+register guardian), seal(two-step, read-only after), verdict(shows sealed text→yes/no→unlock), registry(funeral→invalidated), decision(citation-locked), spine(per-beat [unproven]), joy. Each executed with representative + empty + invalid input. ⬜
+- **J11 — Input controls.** verbatim(→E2), vault(reads vault[]), ifthen(+register guardian), seal(two-step, read-only after), verdict(shows sealed text→yes/no→unlock), registry(funeral→invalidated), decision(citation-locked), spine(per-beat [unproven]), joy. Each executed with representative + empty + invalid input. ◐ All 9 built + wired to exact 02 keys; two new store actions (`sealThread`, `invalidateAssumption`). **Logic executed** in `tests/trance-controls.spec.ts` (24) + `tests/state.spec.ts` (8: seal/funeral incl. 1.5× XP + Truth). **Live DOM+store executed** in `e2e/controls.spec.ts` (World 5: verdict reads the s4-th seal → decision citation-lock holds then releases → funeral buries a W1 guardian; keyboard-only, zero-Anthropic). Adversarially reviewed (6 dimensions × verify): 2 confirmed defects fixed (ifthen focus-strand + guardian-dedup). Remaining for ✅: e2e for the W2–4/W8 controls (logic proven; navigation via new deterministic `tabToTarget`).
 - **J12 — Sequence locks.** Vault sealed till W3 & unseals on W3 entry; W5 shrines locked until verdict; `s5-dec` locked until a citation. ⬜
 - **J13 — Act Gates.** Walk W2/W5/W7 exit door met (pass) and unmet (override + written reason); `gates` + `trail` written; export shows it. ⬜
 - **J14 — Funerals.** W5 graveyard: invalidate a W1 guardian; headstone stands; 1.5× XP only when derived tier≥2 else "unproven funeral". ⬜
@@ -62,6 +62,36 @@ World-1 slice without regressing it.
 - Fresh-eyes final pass: re-walk W1→W8 as a first-time player; anything demo-embarrassing is a defect.
 
 ## Progress log (evidence: command → salient output)
+- **Cycle 2 — the 9 per-world trance controls (2026-07-10).** Every shrine in Worlds 2–8 now
+  answers with its canon mechanism, each writing the EXACT 02 Answer keys (J11). New components
+  in `src/ui/inputs/`: `VerbatimInput` (5 quotes → `text`; per-quote "Log as E2" → `addEvidence`),
+  `VaultPickInput` (pick a captured idea → `text`; free-text fallback if the Vault is empty),
+  `IfThenInput` (`ifPart`/`thenPart`/`withinDays`; "Register the IF as a guardian"), `SealInput`
+  (Ariadne's Thread — self-committing two-step confirm → `text`+`sealedAt`, read-only after),
+  `VerdictInput` (reads the s4-th seal → `verdict`), `FuneralInput` (self-committing; invalidates a
+  W1 guardian → 1.5× honors), `DecisionInput` (`decision`+`citedEvidenceIds`, **locked until ≥1
+  citation**), `SpineInput` (5 beats → `text`+`citedEvidenceIds`; uncited beat renders `[unproven]`),
+  `JoyInput` (`text`). Wired through `TrancePanel.tsx` (extended `TranceDraft` union + `initialDraft`/
+  `answerFields`/`isComplete`/`draftToText` + a `ControlContext` threading store data & side effects;
+  self-commit tags hide the generic Inscribe). Two new store actions (`store.ts`): `sealThread`
+  (store-clock `sealedAt`) and `invalidateAssumption` (idempotent, immutable). Strings in `ui.ts`
+  (9 authored groups, zero literals in components — parity still green). Dev-only `window.__fq_target`
+  mirror (`interaction.ts`, stripped from prod) so e2e navigates to an EXACT shrine, immune to the
+  drei `<Html>` focus-chip lag (new `tabToTarget` helper).
+  - **Gates:** `typecheck` 0 · `lint` 0 · `vitest` **320 passed** (+32: 24 control round-trips proving
+    exact-key fidelity + the citation lock + spine warn-not-block; 8 store-action incl. the funeral's
+    1.5× XP / Truth math). `e2e/controls.spec.ts` → **1 passed (14.5s)**: World 5 verdict reads the
+    sealed thread → decision citation-lock holds then releases → funeral buries a W1 guardian
+    (keyboard-only, zero console/Anthropic).
+  - **Adversarially reviewed** (Workflow: 6 dimensions × verify — canon-fidelity, correctness-edge,
+    store-integrity, warn-not-block, no-literals/a11y, self-commit). 2 confirmed defects, both fixed:
+    (1) ifthen register stranded keyboard focus on `<body>` (no `focusAfterCommit`) → added focus
+    restoration to the WITHIN field; (2) editing the IF after registering could mint a duplicate
+    guardian (inflating Truth's denominator) → dedup guard (`ctx.hasGuardian`) + `registered` retracts
+    on IF edit. Canon-fidelity / store-integrity / warn-not-block dimensions found nothing.
+  - **OQ3 (spine per-beat citations) — interim SHIPPED, still needs operator ruling before ✅.** Per
+    A4: beats stored newline-joined in `.text`; `[unproven]` renders spine-wide while `citedEvidenceIds`
+    is empty (the flat 02 schema has no per-beat map). Warn-never-block: an uncited spine still inscribes.
 - **Cycle 1e — crash resilience (2026-07-10).** Operator hit "the world failed to hold together": `Could not load /models/rogue.glb: The operation was aborted` on a weak device (Radeon HD 3200 / Firefox, constrained tier) — a single aborted 3.6 MB model download collapsed the whole world into the app error boundary. Fix: new `AssetBoundary` (render-error boundary) + `<Suspense>` around every heavy network asset so a failed/aborted load DEGRADES instead of crashing: character → capsule (`Player.tsx`), shrine pillar → primitive (`models.tsx`), HDR/trees → dropped (`World.tsx`), ground textures → vertex-coloured disk (`props.tsx`). **Verified directly**: routing `**/models/rogue.glb` to `abort()` → app-crashed boundary NOT shown, canvas + HUD render with the capsule stand-in (screenshot `abort-fallback.png`). `typecheck`/`lint` 0 · `vitest` 288 · e2e boot + render-tiers + context-loss + traversal green (stage1 flaky→passes, known jitter). **Follow-up noted:** draco/meshopt-compress rogue.glb (3.6 MB) to shrink the download and cut abort odds on slow links.
 - **Cycle 1d — gate collision + staff grasp (2026-07-10).** Operator eyeball: gates accessible + working; two fixes:
   1. **Gate walked-through.** `WorldColliders.tsx`: added solid colliders per portal — two `CylinderCollider` columns (x±1.15, same mechanism proven at shrines) + a low `CuboidCollider` base. The base footprint (x±1.8) doesn't block the normal approach (the founder reaches within the 2.75 u interact radius from the front/side, so the travel prompt still lights); head-on walking is now blocked. Off the automation tier like the ornate gate + other colliders.
