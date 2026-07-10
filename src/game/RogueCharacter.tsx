@@ -88,11 +88,13 @@ export function RogueCharacter({ gait, reduced }: RogueCharacterProps): JSX.Elem
     g.worldToLocal(HAND_WORLD)
     const hx = HAND_WORLD.x
     const hz = HAND_WORLD.z
-    // foot planted on the ground, gripped where the hand is (X/Z only)
-    s.position.set(hx, 0, hz)
-    // lean the shaft's top OUTWARD (away from the body centre, along the hand's
-    // radial direction) so it clears the wide hood instead of grazing it — the
-    // foot stays planted (the pivot is the base), so it still reaches the ground.
+    // GRIP the staff IN the hand: the group origin sits exactly at the hand (full
+    // 3D), so the shaft passes THROUGH the grip like the blade does — not beside
+    // it. The shaft geometry extends below the grip to the ground and above it to
+    // the crown, so it still reads as a full-length staff.
+    s.position.copy(HAND_WORLD)
+    // lean the top outward (pivot = the grip) so the shaft clears the wide hood
+    // while the grip stays fixed at the hand.
     const len = Math.hypot(hx, hz)
     if (len > 1e-4) {
       LEAN_AXIS.set(hz / len, 0, -hx / len)
@@ -126,24 +128,23 @@ export function RogueCharacter({ gait, reduced }: RogueCharacterProps): JSX.Elem
   return (
     <group ref={group} position={[0, -0.92, 0]} rotation={[0, Math.PI, 0]} dispose={null}>
       <primitive object={scene} />
-      {/* the founder's staff — a world-scale group planted on the ground, its
-          X/Z tracking the gripping hand each frame (effect above). The shaft runs
-          the FULL height from the earth up past the hand, and a glowing crystal
-          shard crowns it above the head (Bloom catches it) — the mystical-founder
-          read the operator asked to keep, now a true staff, not a baton. */}
+      {/* the founder's staff — a world-scale group whose ORIGIN is the grip, set to
+          the hand's world position each frame (effect above) so the shaft runs
+          THROUGH the hand like a held blade. It extends below the grip to the earth
+          and above it to a glowing crystal crown over the head (Bloom catches it). */}
       <group ref={staff}>
-        {/* the shaft — from the ground (y≈0) to just under the crown */}
-        <mesh position={[0, 1.05, 0]} castShadow>
-          <cylinderGeometry args={[0.035, 0.05, 2.1, 6]} />
+        {/* the shaft — from the ground (~0.64 below the grip) up past the head */}
+        <mesh position={[0, 0.46, 0]} castShadow>
+          <cylinderGeometry args={[0.035, 0.05, 2.2, 6]} />
           <meshStandardMaterial color="#6b5236" roughness={0.85} metalness={0.05} />
         </mesh>
         {/* the amber binding just beneath the crown */}
-        <mesh position={[0, 1.98, 0]}>
+        <mesh position={[0, 1.42, 0]}>
           <torusGeometry args={[0.06, 0.02, 6, 12]} />
           <meshStandardMaterial color={PALETTE.amber} roughness={0.4} metalness={0.5} />
         </mesh>
         {/* the crystal crown, above the founder's head */}
-        <mesh position={[0, 2.16, 0]}>
+        <mesh position={[0, 1.58, 0]}>
           <octahedronGeometry args={[0.12, 0]} />
           <meshStandardMaterial
             color={PALETTE.crystalCore}
@@ -153,11 +154,11 @@ export function RogueCharacter({ gait, reduced }: RogueCharacterProps): JSX.Elem
             metalness={0}
           />
         </mesh>
-        <mesh position={[0, 2.16, 0]}>
+        <mesh position={[0, 1.58, 0]}>
           <sphereGeometry args={[0.22, 10, 10]} />
           <meshBasicMaterial color={PALETTE.teal} transparent opacity={0.3} depthWrite={false} />
         </mesh>
-        <pointLight position={[0, 2.16, 0]} color={PALETTE.teal} intensity={0.5} distance={3} decay={2} />
+        <pointLight position={[0, 1.58, 0]} color={PALETTE.teal} intensity={0.5} distance={3} decay={2} />
       </group>
     </group>
   )

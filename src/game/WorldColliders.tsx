@@ -43,6 +43,7 @@ export function WorldColliders(): JSX.Element {
   const layout = layoutForStage(stage)
   const shrines = layout.filter((s) => s.kind === 'shrine')
   const flagpoles = layout.filter((s) => s.kind === 'flagpole')
+  const portals = layout.filter((s) => s.kind === 'portal')
   const hasVault = layout.some((s) => s.kind === 'vault')
   const hasRegistry = layout.some((s) => s.kind === 'registry')
 
@@ -92,6 +93,28 @@ export function WorldColliders(): JSX.Element {
           position={[s.position[0], 1.6, s.position[2]]}
         />
       ))}
+      {/* portal gates — the two stone columns and the low base are solid (the
+          founder walks around the columns and stops at / steps onto the base,
+          staying inside the 2.75 u interact radius so the travel prompt lights).
+          The shimmering veil in the opening stays walkable. Columns sit at x±1.15,
+          matching PortalArch. */}
+      {portals.flatMap((p) => [
+        <CylinderCollider
+          key={`gate-col-l-${p.id}`}
+          args={[1.75, 0.32]}
+          position={[p.position[0] - 1.15, 1.75, p.position[2]]}
+        />,
+        <CylinderCollider
+          key={`gate-col-r-${p.id}`}
+          args={[1.75, 0.32]}
+          position={[p.position[0] + 1.15, 1.75, p.position[2]]}
+        />,
+        <CuboidCollider
+          key={`gate-base-${p.id}`}
+          args={[1.8, 0.16, 0.85]}
+          position={[p.position[0], 0.16, p.position[2]]}
+        />,
+      ])}
       {/* the Vault — its floating sanctum is solid; the founder stops at its edge */}
       {hasVault ? <CuboidCollider args={[0.7, 0.5, 0.55]} position={VAULT_POSITION} /> : null}
       {/* the Registry's outer standing stones */}
