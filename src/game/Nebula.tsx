@@ -9,9 +9,11 @@
 import { useCallback, useMemo, useRef } from 'react'
 import { useSafeFrame } from './useSafeFrame'
 import { AdditiveBlending, BackSide, Color, type Mesh, type Points, Vector3 } from 'three'
+import { useJourneyStore } from '../state/journey'
 import { useUiStore } from '../state/ui'
 import { makeSoftSprite, PALETTE } from './materials'
 import { LOW_POWER } from './perf'
+import { skyForStage, type WorldSky } from './worldPalette'
 
 // fewer stars under automation / software-GL (overdraw is costly there)
 const PARTICLE_COUNT = LOW_POWER ? 520 : 1600
@@ -127,18 +129,19 @@ const SKY_FRAG_CHEAP = /* glsl */ `
   }
 `
 
-function SkyDome({ reduced }: { reduced: boolean }): JSX.Element {
+function SkyDome({ reduced, sky }: { reduced: boolean; sky: WorldSky }): JSX.Element {
   // the same object the material holds by reference — mutating uTime.value here
-  // drives the aurora without a per-frame setState
+  // drives the aurora without a per-frame setState. Rebuilt when the world's sky
+  // changes (the SkyDome is keyed by stage in <Nebula>, so this is a clean remount).
   const uniforms = useMemo(
     () => ({
-      uZenith: { value: new Color(PALETTE.skyZenith) },
-      uHorizon: { value: new Color(PALETTE.skyHorizon) },
-      uGlow: { value: new Color(PALETTE.skyGlow) },
-      uAurora: { value: new Color(PALETTE.aurora) },
+      uZenith: { value: new Color(sky.zenith) },
+      uHorizon: { value: new Color(sky.horizon) },
+      uGlow: { value: new Color(sky.glow) },
+      uAurora: { value: new Color(sky.aurora) },
       uTime: { value: 0 },
     }),
-    [],
+    [sky],
   )
 
   useSafeFrame((_, delta) => {
@@ -280,6 +283,9 @@ export interface NebulaProps {
 export function Nebula({ reduced }: NebulaProps): JSX.Element {
   const swirl = useRef<Points>(null)
   const stars = useMemo(buildStars, [])
+  // each world wears its own sky (LOOP cycle 4); keyed remount swaps it cleanly
+  const stage = useJourneyStore((s) => s.currentStage)
+  const sky = skyForStage(stage)
 
   useSafeFrame((_, delta) => {
     if (reduced) return // static particles under prefers-reduced-motion
@@ -291,7 +297,7 @@ export function Nebula({ reduced }: NebulaProps): JSX.Element {
 
   return (
     <group>
-      <SkyDome reduced={reduced} />
+      <SkyDome key={stage} reduced={reduced} sky={sky} />
       <points ref={swirl} frustumCulled={false}>
         <bufferGeometry>
           <bufferAttribute

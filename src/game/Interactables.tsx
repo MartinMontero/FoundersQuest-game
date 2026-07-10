@@ -35,6 +35,7 @@ import {
 import { useJourneyStore } from '../state/journey'
 import { SPEC_BY_ID, activeTargetId, useInteractionStore } from './interaction'
 import { PALETTE } from './materials'
+import { skyForStage } from './worldPalette'
 import { Pillar } from './models'
 import { IS_AUTOMATION, LOW_POWER } from './perf'
 import { useSafeFrame } from './useSafeFrame'
@@ -123,7 +124,10 @@ function ShrineStone({ spec, reduced }: ShrineProps): JSX.Element {
   const glyph = useRef<Group>(null)
   const yaw = hashUnit(qid) * Math.PI * 2
   const kind = GLYPH_BY_QID[qid] ?? 'diamond'
-  const glow = answered ? PALETTE.amber : PALETTE.teal
+  // an unanswered shrine glows in its world's signature accent (cycle 4); an
+  // answered one is always gold — "inked" reads the same in every world.
+  const accent = skyForStage(Number(stageId.slice(1))).accent
+  const glow = answered ? PALETTE.amber : accent
   const [x, y, z] = spec.position
 
   // the glyph hovers and turns slowly; dead still under reduced motion (§2 F0)

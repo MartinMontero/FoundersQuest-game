@@ -62,6 +62,19 @@ World-1 slice without regressing it.
 - Fresh-eyes final pass: re-walk W1→W8 as a first-time player; anything demo-embarrassing is a defect.
 
 ## Progress log (evidence: command → salient output)
+- **Cycle 4 — per-world visual identity: sky/fog/background + shrine accent (2026-07-10).** Each of the
+  8 worlds now wears its own sky so it reads as its own place (A5), reusing the World-1 SkyDome+fog
+  pipeline — NOT 8 bespoke scenes. New `src/game/worldPalette.ts`: `WORLD_SKIES` (zenith/horizon/glow/
+  aurora/fog/background/accent) with 8 moods (2 Raven cold corvid dusk · 3 Phoenix forge ember · 4
+  Labyrinth cold stone-teal · 5 Mirror pale silver · 6 Sculptor warm clay · 7 Bridge hopeful dawn · 8
+  Rocket bright launch). **World 1 pinned to the exact PALETTE values (sky + accent = teal) → byte-
+  unchanged.** `Nebula`/`SkyDome` keyed by stage swap the sky cleanly on travel; `World` background+fog
+  track the world; an unanswered shrine glows its world's `accent` (answered stays gold — "inked" reads
+  the same everywhere). **Verified**: `typecheck`/`lint` 0 · `vitest` 329 · e2e `boot` + `render-tiers`
+  (full/constrained/auto) + `controls` (W5's new sky) → **6 passed**, zero console errors, W1 regression
+  intact. **Deferred (a per-world art pass, best with eyeball feedback — A5 "not 8 bespoke"):** the
+  bespoke central set-pieces (Raven fellowship circle, forge pyre, Labyrinth maze, Mirror causeway,
+  graveyard, Bridge span, launch gantry). Sky+accent is the reliable identity core; set-pieces layer on.
 - **Cycle 3 — sequence locks: Vault unseal · verdict-first · Act Gates · loop toll-portals (2026-07-10).**
   The canon rules of WHEN/IN WHAT ORDER the controls may be used, on top of the 9 shrines.
   - **3a foundation** (`core/metrics.ts` + `state/store.ts`): `gateMet(act1|2|3)` (derived Act-Gate

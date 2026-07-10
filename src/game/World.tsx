@@ -10,6 +10,7 @@ import { Canvas, type RootState } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import { CuboidCollider, CylinderCollider, Physics, RigidBody } from '@react-three/rapier'
 import { ACESFilmicToneMapping, type Mesh, NoToneMapping } from 'three'
+import { useJourneyStore } from '../state/journey'
 import { useUiStore } from '../state/ui'
 import { WORLD_COPY } from '../strings'
 import { AssetBoundary } from './AssetBoundary'
@@ -32,6 +33,7 @@ import { WorldColliders } from './WorldColliders'
 import { FpsSampler } from './useFps'
 import { useReducedMotion } from './useReducedMotion'
 import { useSafeFrame } from './useSafeFrame'
+import { skyForStage } from './worldPalette'
 
 const PLATEAU_RADIUS = 24
 /** rim wall radius — just inside the disk so the capsule can never step off it */
@@ -124,13 +126,15 @@ export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
   // the sun mesh, lifted so <PostFx/> can key its God Rays off the same disc
   // the sky draws (full tier only; null keeps God Rays out of the chain)
   const [sun, setSun] = useState<Mesh | null>(null)
+  // each world's own air: background + fog colour track the current world (cycle 4)
+  const sky = skyForStage(useJourneyStore((s) => s.currentStage))
   return (
     <>
-      <color attach="background" args={[PALETTE.space]} />
-      {/* warm indigo fog banked into the distance — depth + the OoT "air".
+      <color attach="background" args={[sky.background]} />
+      {/* distance fog banked in — depth + the OoT "air", per world (cycle 4).
           Pushed back a little so the redressed islands read before it swallows
           them; the star dome and sun ignore fog (they are the far sky). */}
-      <fog attach="fog" args={[PALETTE.fog, 34, 104]} />
+      <fog attach="fog" args={[sky.fog, 34, 104]} />
       {/* image-based lighting: a real CC0 HDR (Poly Haven "venice_sunset") drives
           reflections + ambient on the PBR surfaces (character, ground, monuments)
           — the single biggest realism lever per the premium-UI research. Lighting
