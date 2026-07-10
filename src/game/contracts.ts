@@ -99,8 +99,12 @@ function flagpoleSpec(milestone: MilestoneSpec, index: number): InteractableSpec
 // portal near spawn → the previous world. (Act-Gate doors and loop toll-portals are
 // layered on in later cycles; these plain portals carry the spine's traversal now.)
 
-const ONWARD_POSITION: [number, number, number] = [0, 0, -21]
-const BACK_POSITION: [number, number, number] = [-19, 0, 18]
+// Both portals sit comfortably INSIDE the rim wall (radius 23.5) so the founder can
+// actually walk up to them: onward at the far −z end of the field, back near the
+// campfire spawn on the left. (The old back position [-19,18] was radius 26.2 —
+// beyond the plateau edge, unreachable. Operator bug report 2026-07-10.)
+export const ONWARD_POSITION: [number, number, number] = [0, 0, -18]
+export const BACK_POSITION: [number, number, number] = [-8, 0, 16]
 
 function onwardPortal(fromStage: number): InteractableSpec {
   return {
