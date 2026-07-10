@@ -2,10 +2,11 @@
 // s8-th). Five StoryBrand beats (customer → struggle → work → outcome →
 // transformation) each carry the connective as a label. "Every beat cites
 // evidence, or it does not cast": until at least one evidence coin is cited,
-// every inked beat renders an [unproven] warning. This is the A4 interim within
+// every inked beat renders an [unproven] warning. This is the flat interim within
 // the flat 02 citedEvidenceIds[] — there is no per-beat citation map in the
-// schema, so the warning is spine-wide, not beat-by-beat (OQ3, flagged for the
-// operator). Warn, never block (canon 01): an uncited spine still inscribes.
+// schema, so the warning is spine-wide, not beat-by-beat (OQ3 RULED R-S,
+// 2026-07-10: keep the flat interim; a per-beat map is a later 02 diff). Warn,
+// never block (canon 01): an uncited spine still inscribes.
 
 import type { ReactElement } from 'react'
 import type { EvidenceTier } from '../../core/schema'
