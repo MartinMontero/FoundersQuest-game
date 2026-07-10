@@ -17,6 +17,7 @@ import {
   questionText,
   readQuestData,
   recordRun,
+  seedFounderName,
   shot,
   tabToChip,
   waitForWorldReady,
@@ -70,7 +71,8 @@ test.describe.configure({ timeout: 600_000 })
 test('stage 1 self-play, keyboard only: boot → shrines → guardian → evidence → flagpole → vault → reload', async ({ page }, testInfo) => {
   const log = recordRun(page)
 
-  // ---- boot ----
+  // ---- boot ---- (name pre-seeded so the first-run naming card stays closed)
+  await seedFounderName(page)
   await page.goto('/')
   await waitForWorldReady(page)
   await expect(page.getByRole('heading', { name: WORLD_COPY.appTitle })).toBeAttached()

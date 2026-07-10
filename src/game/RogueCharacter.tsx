@@ -17,6 +17,11 @@ import { useSafeFrame } from './useSafeFrame'
 const MODEL_URL = '/models/rogue.glb'
 useGLTF.preload(MODEL_URL)
 
+/** KayKit weapon nodes to hide — the crossbows, the throwable, and the
+ * right-hand knife (the staff occupies that hand). The left-hand `Knife_Offhand`
+ * stays: the founder's one sword. */
+const HIDDEN_EQUIPMENT = new Set(['Knife', '1H_Crossbow', '2H_Crossbow', 'Throwable'])
+
 export type Gait = 'idle' | 'walk' | 'run'
 
 /** map the movement gait to a baked clip name in rogue.glb */
@@ -45,9 +50,14 @@ export function RogueCharacter({ gait, reduced }: RogueCharacterProps): JSX.Elem
   const { actions } = useAnimations(animations, group)
   const active = useRef<string>('Idle')
 
-  // real geometry casts and receives shadows so it sits IN the world, not on it
+  // real geometry casts and receives shadows so it sits IN the world, not on it;
+  // and hide the KayKit weapons the founder shouldn't carry — the model ships
+  // with a knife + two crossbows + a throwable in the RIGHT hand (where the staff
+  // goes) and a knife in the LEFT. We keep only the left-hand blade (the one
+  // sword) so the founder holds a sword in one hand and the staff in the other.
   useEffect(() => {
     scene.traverse((o) => {
+      if (HIDDEN_EQUIPMENT.has(o.name)) o.visible = false
       const mesh = o as { isMesh?: boolean; castShadow?: boolean; receiveShadow?: boolean }
       if (mesh.isMesh === true) {
         mesh.castShadow = true

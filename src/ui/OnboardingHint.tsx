@@ -3,6 +3,7 @@
 // Movement keys plus the walk-to-a-shrine line, all from src/strings.
 
 import type { ReactElement } from 'react'
+import { useFounderStore } from '../state/founder'
 import { useQuestStore } from '../state/store'
 import { useUiStore } from '../state/ui'
 import { UI } from '../strings'
@@ -10,7 +11,9 @@ import { UI } from '../strings'
 export function OnboardingHint(): ReactElement | null {
   const firstRun = useQuestStore((s) => Object.keys(s.data.answers).length === 0)
   const mode = useUiStore((s) => s.mode)
-  if (!firstRun || mode !== 'roam') return null
+  // hold the keys hint back while the naming card still owns the screen
+  const unnamed = useFounderStore((s) => s.name === '')
+  if (!firstRun || mode !== 'roam' || unnamed) return null
 
   return (
     <div

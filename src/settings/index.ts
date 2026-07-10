@@ -24,13 +24,18 @@ export interface Settings {
   acceptFallback(): void
   /** Back to the pinned model: persist the acceptance away. */
   resetFallback(): void
+  /** The founder's chosen name; '' means unnamed (the UI shows the default). */
+  getFounderName(): string
+  /** Persist the founder's name (device-local; never serialized, never sent). */
+  setFounderName(name: string): void
 }
 
 interface SettingsShape {
   fallbackAccepted: boolean
+  founderName: string
 }
 
-const DEFAULTS: SettingsShape = { fallbackAccepted: false }
+const DEFAULTS: SettingsShape = { fallbackAccepted: false, founderName: '' }
 
 /** Guarded read: missing key, corrupt JSON, or a foreign shape → defaults. */
 function load(store: SettingsStore): SettingsShape {
@@ -46,9 +51,12 @@ function load(store: SettingsStore): SettingsShape {
     return { ...DEFAULTS }
   }
   const rec = parsed as Record<string, unknown>
-  // Whitelist-read: only the known key, only its exact type — foreign keys
+  // Whitelist-read: only the known keys, only their exact types — foreign keys
   // and mistyped values never round-trip.
-  return { fallbackAccepted: rec['fallbackAccepted'] === true }
+  return {
+    fallbackAccepted: rec['fallbackAccepted'] === true,
+    founderName: typeof rec['founderName'] === 'string' ? rec['founderName'] : '',
+  }
 }
 
 function save(store: SettingsStore, settings: SettingsShape): void {
@@ -65,6 +73,12 @@ export function createSettings(store: SettingsStore): Settings {
     },
     resetFallback(): void {
       save(store, { ...load(store), fallbackAccepted: false })
+    },
+    getFounderName(): string {
+      return load(store).founderName
+    },
+    setFounderName(name: string): void {
+      save(store, { ...load(store), founderName: name })
     },
   }
 }

@@ -5,7 +5,7 @@
 // capsule to spawn. Keyboard only.
 
 import { expect, test } from '@playwright/test'
-import { recordRun, waitForWorldReady } from './helpers'
+import { recordRun, seedFounderName, waitForWorldReady } from './helpers'
 
 interface Vec3 {
   x: number
@@ -25,6 +25,8 @@ test.describe.configure({ timeout: 120_000 })
 
 test('strafing outward ~5 s never leaves the plateau — the rim holds on the diagonal', async ({ page }) => {
   const log = recordRun(page)
+  // seed the name so the naming card can't capture the WASD keys under test
+  await seedFounderName(page)
   await page.goto('/')
   await waitForWorldReady(page)
 

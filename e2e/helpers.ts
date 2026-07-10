@@ -6,9 +6,28 @@
 
 import { expect, type Page } from '@playwright/test'
 import { STORAGE_KEY, type QuestData } from '../src/core/schema'
+import { SETTINGS_STORAGE_KEY } from '../src/settings'
 import { STAGES } from '../src/strings'
 
 export const SCREENSHOT_DIR = 'e2e/screenshots'
+
+/** Pre-seed the founder's name so the first-run naming card never opens over a
+ * gameplay spec (the card is exercised on its own in founder-naming.spec). The
+ * name lives under the settings' own key, so it never touches founders-quest:v3.
+ * Best-effort under a storage shim: setItem throws there and is swallowed (that
+ * spec dismisses the card in-test instead). Call BEFORE page.goto. */
+export async function seedFounderName(page: Page, name = 'Tester'): Promise<void> {
+  await page.addInitScript(
+    ([key, value]) => {
+      try {
+        window.localStorage.setItem(key as string, value as string)
+      } catch {
+        // storage blocked (degraded-mode spec) — handled in that spec directly
+      }
+    },
+    [SETTINGS_STORAGE_KEY, JSON.stringify({ fallbackAccepted: false, founderName: name })],
+  )
+}
 
 const stage1 = STAGES.find((s) => s.stage === 1)
 if (stage1 === undefined) throw new Error('e2e helpers: stage 1 missing from src/strings')

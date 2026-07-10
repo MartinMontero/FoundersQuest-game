@@ -158,6 +158,18 @@ export const UI = {
     degraded:
       'Storage is unavailable on this device — this session lives in memory only, and nothing will survive a reload.',
   },
+  founder: {
+    /** the canon default when the player names nothing (operator ruling, 2026-07-10) */
+    defaultName: 'founder',
+    /** first-run naming card */
+    namingTitle: 'Name your founder',
+    namingPrompt: 'Every quest is someone’s. What shall we call you?',
+    namingPlaceholder: 'founder',
+    namingBegin: 'Begin the quest',
+    namingSkip: 'Stay “founder”',
+    /** the HUD identity line under/over the world banner */
+    hudTitle: 'Founder',
+  },
   onboarding: {
     movement: 'Move — WASD or arrow keys · Tab — cycle what is near · E or Enter — interact',
     interact: 'Walk to a shrine, press E.',

@@ -9,7 +9,14 @@ import { expect, test, type Page } from '@playwright/test'
 import { TRANCE_BACKOFF, TRANCE_HEIGHT } from '../src/game/CameraRig'
 import { STAGE1_LAYOUT } from '../src/game/contracts'
 import { UI, WORLD_COPY } from '../src/strings'
-import { questionText, recordRun, shot, tabToChip, waitForWorldReady } from './helpers'
+import {
+  questionText,
+  recordRun,
+  seedFounderName,
+  shot,
+  tabToChip,
+  waitForWorldReady,
+} from './helpers'
 
 interface Vec3 {
   x: number
@@ -102,6 +109,7 @@ test.describe.configure({ timeout: 120_000 })
 test('reduced motion: boot, enter and exit a trance — instant cut, instant panel, no exceptions', async ({ page }, testInfo) => {
   const log = recordRun(page)
   await page.emulateMedia({ reducedMotion: 'reduce' })
+  await seedFounderName(page)
 
   await page.goto('/')
   await waitForWorldReady(page)
@@ -153,6 +161,7 @@ test('reduced motion: boot, enter and exit a trance — instant cut, instant pan
 
 test('normal motion: the trance camera DOLLIES — it is not at the framing right after kneel', async ({ page }) => {
   const log = recordRun(page)
+  await seedFounderName(page)
   await page.goto('/')
   await waitForWorldReady(page)
   expect(

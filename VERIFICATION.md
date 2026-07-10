@@ -2,6 +2,33 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
+## Round 12 — founder naming + character equipment fix (2026-07-10)
+
+Two operator asks. **(1) Name your founder** — a first-run naming card (`FounderNaming.tsx`) opens
+once over the roaming world, keyboard-first (autofocus field, Enter begins, Escape/"Stay founder"
+adopts the canon default `founder`). The name persists device-locally under the settings' OWN key
+(`founders-quest:settings` → new `founderName` field), NEVER inside `founders-quest:v3`, never sent —
+a thin zustand store (`state/founder.ts`) re-renders the HUD, which now shows `FOUNDER · <name>` above
+the world banner. Empty/whitespace choices adopt the default so the card never nags. The first-run
+movement hint holds back behind the card while the founder is unnamed. **(2) One sword + staff** — the
+KayKit rogue ships a knife + two crossbows + a throwable in the RIGHT hand (where the staff goes) and a
+knife in the LEFT; `RogueCharacter.tsx` now hides the right-hand knife, both crossbows, and the
+throwable, keeping only the left-hand blade — so the founder holds one sword in one hand and the
+glowing staff in the other. Screenshot-confirmed.
+
+**e2e note (honest):** the naming card is a first-run modal, so it would block the fresh-start gameplay
+specs. Added a `seedFounderName` helper (pre-seeds the settings key via `addInitScript`) applied to
+stage1 / plateau / reduced-motion, and dismissed the card in-test in storage-degraded (its shim throws
+on `localStorage`, so a seed can't apply — a legit memory-mode exercise of the card). One new spec
+(`founder-naming.spec.ts`, 2 tests) covers the name + skip paths, HUD display, persistence-across-reload,
+the settings-key/v3 separation, and zero-Anthropic.
+
+**Tree:** committed this round. | `tsc`/`eslint` PASS · `vitest` **286/286** (+13: settings founderName
+×5, founder store/helpers ×8) · e2e **17/17** serial (boot · plateau · reduced-motion ×2 · storage-
+degraded · stage-1 self-play 1.3 min · render-tiers ×4 · context-loss · csp ×2 · **founder-naming ×2**).
+Naming card + named HUD captured at the constrained tier. **UNTESTED:** live preview CSP (deploy still
+blocked on the operator's Pages:Edit token, per Round 1 tail); real-hardware FPS (re-flagged).
+
 ## Round 11 — photoreal push IV: soft cloud banks / atmosphere (2026-07-09)
 
 The atmosphere half of "push realism". `Clouds.tsx` rings the plateau at the islands' distance with

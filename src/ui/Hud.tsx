@@ -16,6 +16,7 @@
 import type { ReactElement } from 'react'
 import type { EvidenceTier } from '../core/schema'
 import { STAGE1_MILESTONE_IDS } from '../game/contracts'
+import { founderDisplayName, useFounderStore } from '../state/founder'
 import { useAction, useEvidenceBanked, useTierCounts, useTruth } from '../state/store'
 import { STAGES, TIER_CODES, TIER_METALS, UI, coinCount, formatPercent, stageBanner } from '../strings'
 
@@ -26,6 +27,7 @@ export function Hud(): ReactElement | null {
   const actionValue = useAction(STAGE1_MILESTONE_IDS)
   const banked = useEvidenceBanked()
   const coins = useTierCounts()
+  const founderName = useFounderStore((s) => s.name)
   const stage = STAGES.find((s) => s.stage === 1)
   if (stage === undefined) return null
 
@@ -41,8 +43,19 @@ export function Hud(): ReactElement | null {
       data-testid="hud"
       className="pointer-events-none fixed inset-0 z-hud select-none motion-safe:animate-quest-fade"
     >
-      {/* Top-left: the world banner, Truth (lead), and Action beneath it */}
+      {/* Top-left: the founder's name, the world banner, Truth (lead), Action */}
       <div className="quest-hud-cluster absolute left-4 top-4 flex w-72 flex-col gap-3 p-4">
+        <div className="flex items-baseline justify-between gap-2 border-b border-amber-accent-300/15 pb-2">
+          <span className="text-2xs uppercase tracking-[0.2em] text-parchment-300/60">
+            {UI.founder.hudTitle}
+          </span>
+          <span
+            data-testid="hud-founder-name"
+            className="quest-heading truncate font-display text-sm font-semibold text-amber-accent-200"
+          >
+            {founderDisplayName(founderName)}
+          </span>
+        </div>
         <p
           data-testid="stage-banner"
           className="quest-hud-title text-sm font-semibold leading-snug"

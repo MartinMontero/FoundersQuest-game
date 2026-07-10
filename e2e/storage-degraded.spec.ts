@@ -54,6 +54,11 @@ test('storage degraded: throwing localStorage → honest banner, still playable 
   expect(await banner.textContent()).toBe(UI.banner.degraded)
   await shot(page, 'degraded-banner')
 
+  // the naming card also works in memory mode: skip it (seed can't apply here —
+  // localStorage throws), adopting the default name, then the card closes
+  await page.getByTestId('founder-name-skip').press('Enter')
+  await expect(page.getByTestId('founder-naming')).toBeHidden()
+
   // still playable: kneel at the threshold shrine and inscribe one answer
   await tabToChip(page, questionText('s1-th'))
   await kneel(page)

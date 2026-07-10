@@ -17,6 +17,7 @@ import { shouldSummonShadow } from '../state/tunables'
 import { useUiStore } from '../state/ui'
 import { STAGES, UI } from '../strings'
 import { DegradedBanner } from './DegradedBanner'
+import { FounderNaming } from './FounderNaming'
 import { Hud } from './Hud'
 import { OnboardingHint } from './OnboardingHint'
 import { RegistryPanel } from './RegistryPanel'
@@ -101,6 +102,7 @@ export function UiRoot(): ReactElement {
   return (
     <>
       <Hud />
+      <FounderNaming />
       <OnboardingHint />
       {mode === 'trance' && activeQid !== null ? (
         // key: each shrine gets its own draft state (drafts are per-question)
