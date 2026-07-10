@@ -2,6 +2,24 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
+## Round 10 — photoreal push III: real CC0 trees (2026-07-09)
+
+Operator confirmed the preview runs smooth on both devices and chose "push realism further". First
+lever: real trees. `Trees.tsx` loads two Quaternius "Ultimate Nature" CC0 trees (external `.gltf` +
+`.bin` + PBR bark/leaf textures, all same-origin so the CSP holds and no `blob:` fetch) and `<Clone>`s
+16 (full) / 10 (constrained) across a deterministic scatter that dodges the interactable footprints;
+shadow-casting, static. **Mounted only off the CI tier** (`{IS_AUTOMATION ? null : <Trees/>}`) so the
+software-GL automation path never loads the ~4 MB of bark textures — automation behaviour is
+byte-identical to Round 9, so the whole e2e suite is unaffected.
+
+**Tree:** committed this round. | `tsc`/`eslint` PASS · `vitest` **273/273** · e2e **13/13**.
+**Tooling note (not a product issue):** the headless screenshot harness (SwiftShader software-GL) is
+now too slow to stabilise a full-viewport full-tier frame — it hangs on Playwright's font/stability
+wait. A smaller viewport captures fine, and the boot probe confirms the full tier boots with 0 errors.
+Real GPUs render this instantly. **UNTESTED:** real-hardware FPS *with trees* — 16 static models +
+4 MB textures are cheap on a GPU but I re-flagged perf to the operator. **Next:** reflective water +
+richer atmosphere/clouds (the rest of "push realism").
+
 ## Round 9 — photoreal push II: instanced wind-swept grass + an automation-tier FPS fix (2026-07-09)
 
 - **Grass** (`Grass.tsx`) — one InstancedMesh of a tapered curved blade, 9000 (full) / 3500

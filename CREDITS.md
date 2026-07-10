@@ -9,9 +9,11 @@ fetched at runtime — every asset ships in the static bundle, same-origin, so t
 - **`public/models/rogue.glb`** — "Rogue (Hooded)" from **KayKit Adventurers**
   by Kay Lousberg. **CC0.** The player character (the hooded founder): rigged,
   with a full baked animation set (Idle, Walking, Running, Interact, …).
-- **`public/models/pillar.glb`**, **`torch.glb`**, **`floor_tile.glb`** — from
-  **KayKit Dungeon Remastered** by Kay Lousberg. **CC0.** Stone pillars serve as
-  the shrine monuments; the others are set dressing.
+- **`public/models/pillar.glb`** — from **KayKit Dungeon Remastered** by Kay
+  Lousberg. **CC0.** Stone pillars serve as the shrine monuments.
+- **`public/models/trees/CommonTree_*.gltf`** (+ `.bin` + `Bark_*`/`Leaves_*`
+  textures) — from the **Quaternius "Ultimate Nature Pack"**. **CC0.** Scattered
+  trees. External-file glTF (buffer + textures load same-origin — no `blob:`).
 
 ## Environment / lighting
 - **`public/hdr/venice_sunset_1k.hdr`** — HDRI from **Poly Haven**. **CC0.**

@@ -20,6 +20,7 @@ import { Grass } from './Grass'
 import { Interactables } from './Interactables'
 import { PALETTE } from './materials'
 import { Nebula, SunDisc } from './Nebula'
+import { Trees } from './Trees'
 import { FULL_POWER, IS_AUTOMATION, LOW_POWER, WORLD_DPR } from './perf'
 import { Player, PLAYER_SPAWN } from './Player'
 import { PostFx } from './PostFx'
@@ -158,6 +159,9 @@ export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
       <Nebula reduced={reduced} />
       <GroundField />
       <Grass reduced={reduced} />
+      {/* real trees off the CI tier (keeps the ~4 MB of bark textures out of
+          the software-GL automation path) */}
+      {IS_AUTOMATION ? null : <Trees />}
       <Interactables reduced={reduced} />
       <ShadowTwin reduced={reduced} />
       <CameraRig reduced={reduced} />
