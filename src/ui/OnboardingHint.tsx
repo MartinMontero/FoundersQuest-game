@@ -11,9 +11,11 @@ import { UI } from '../strings'
 export function OnboardingHint(): ReactElement | null {
   const firstRun = useQuestStore((s) => Object.keys(s.data.answers).length === 0)
   const mode = useUiStore((s) => s.mode)
-  // hold the keys hint back while the naming card still owns the screen
+  // hold the keys hint back while the naming card still owns the screen — either
+  // the first-run card (unnamed) or the rename card re-opened from the HUD
   const unnamed = useFounderStore((s) => s.name === '')
-  if (!firstRun || mode !== 'roam' || unnamed) return null
+  const renaming = useFounderStore((s) => s.renaming)
+  if (!firstRun || mode !== 'roam' || unnamed || renaming) return null
 
   return (
     <div

@@ -169,6 +169,12 @@ export const UI = {
     namingSkip: 'Stay “founder”',
     /** the HUD identity line under/over the world banner */
     hudTitle: 'Founder',
+    /** rename flow — the same card, re-opened from the HUD name (operator ask, 2026-07-10) */
+    renameTitle: 'Rename your founder',
+    renameSave: 'Save name',
+    renameCancel: 'Cancel',
+    /** tooltip/label on the clickable HUD name */
+    renameHint: 'Rename your founder',
   },
   onboarding: {
     movement: 'Move — WASD or arrow keys · Tab — cycle what is near · E or Enter — interact',

@@ -56,6 +56,49 @@ test('first run: name the founder → HUD shows it, card never returns, name nev
   expect(log.pageErrors).toEqual([])
 })
 
+test('rename: click the HUD name → card reopens pre-filled → Save changes it; Cancel leaves it', async ({ page }) => {
+  const log = recordRun(page)
+  await page.goto('/')
+  await waitForWorldReady(page)
+
+  // first-run naming: set an initial name
+  const input = page.getByTestId('founder-name-input')
+  await input.fill('Ada')
+  await input.press('Enter')
+  await expect(page.getByTestId('founder-naming')).toBeHidden()
+  await expect(page.getByTestId('hud-founder-name')).toHaveText('Ada')
+
+  // click the HUD name to re-open the card — it is pre-filled with the current name
+  await page.getByTestId('hud-founder-name').click()
+  const card = page.getByTestId('founder-naming')
+  await expect(card).toBeVisible()
+  await expect(input).toHaveValue('Ada')
+
+  // Save a new name
+  await input.fill('Grace Hopper')
+  await page.getByTestId('founder-name-begin').press('Enter')
+  await expect(card).toBeHidden()
+  await expect(page.getByTestId('hud-founder-name')).toHaveText('Grace Hopper')
+
+  // re-open, type something, then Cancel — the name must be unchanged
+  await page.getByTestId('hud-founder-name').click()
+  await expect(card).toBeVisible()
+  await expect(input).toHaveValue('Grace Hopper')
+  await input.fill('Discarded')
+  await page.getByTestId('founder-name-skip').press('Enter')
+  await expect(card).toBeHidden()
+  await expect(page.getByTestId('hud-founder-name')).toHaveText('Grace Hopper')
+
+  // the rename persists across reload
+  await page.reload()
+  await waitForWorldReady(page)
+  await expect(page.getByTestId('hud-founder-name')).toHaveText('Grace Hopper')
+
+  expect(log.anthropicRequests).toEqual([])
+  expect(log.consoleErrors).toEqual([])
+  expect(log.pageErrors).toEqual([])
+})
+
 test('first run: skip naming → the founder keeps the default name, card does not return', async ({ page }) => {
   const log = recordRun(page)
   await page.goto('/')

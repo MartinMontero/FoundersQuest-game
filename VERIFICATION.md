@@ -2,6 +2,26 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
+## Round 13 — founder rename affordance (2026-07-10)
+
+Operator saw the naming card behave correctly (per-origin localStorage: named "Montero" on the branch
+alias so the card stayed closed; fresh on the immutable URL) and asked for a way to **rename after the
+first choice**. Chose "click the HUD name to rename." The HUD founder name is now a `<button>`
+(`pointer-events-auto`, keyboard-focusable, `title` = "Rename your founder") that re-opens the same
+naming card in a RENAME mood: title "Rename your founder", field pre-filled with the current name,
+"Save name" / "Cancel". A transient `renaming` flag on the founder store (NEVER persisted) drives it;
+first-run naming stays derived (unnamed + untouched quest). Save persists via the same settings path
+(own key, never v3, never sent); Cancel leaves the name untouched. The onboarding hint also holds back
+while the rename card is open.
+
+**Tree:** committed this round. | `tsc`/`eslint` PASS · `vitest` **288/288** (+2 rename-flag store
+tests) · e2e **18/18** serial (adds a rename spec: first-run name → click HUD → pre-filled → Save
+changes it → Cancel leaves it → persists across reload). Rename card screenshot captured at the
+constrained tier ("Rename your founder", field pre-filled "Montero", Save name / Cancel). Fresh build
+deployed — see the deploy line under Round 12 for the alias; this round redeploys the same branch alias.
+**UNTESTED from this container:** live in-browser render (egress still 403s `*.pages.dev`); operator
+eyes-on the URL remains the final check.
+
 ## Round 12 — founder naming + character equipment fix (2026-07-10)
 
 Two operator asks. **(1) Name your founder** — a first-run naming card (`FounderNaming.tsx`) opens

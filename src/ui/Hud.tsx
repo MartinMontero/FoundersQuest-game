@@ -28,6 +28,7 @@ export function Hud(): ReactElement | null {
   const banked = useEvidenceBanked()
   const coins = useTierCounts()
   const founderName = useFounderStore((s) => s.name)
+  const openRename = useFounderStore((s) => s.openRename)
   const stage = STAGES.find((s) => s.stage === 1)
   if (stage === undefined) return null
 
@@ -49,12 +50,15 @@ export function Hud(): ReactElement | null {
           <span className="text-2xs uppercase tracking-[0.2em] text-parchment-300/60">
             {UI.founder.hudTitle}
           </span>
-          <span
+          <button
+            type="button"
             data-testid="hud-founder-name"
-            className="quest-heading truncate font-display text-sm font-semibold text-amber-accent-200"
+            onClick={openRename}
+            title={UI.founder.renameHint}
+            className="quest-heading pointer-events-auto max-w-[60%] truncate rounded font-display text-sm font-semibold text-amber-accent-200 transition hover:text-amber-accent-100 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-accent-300/60"
           >
             {founderDisplayName(founderName)}
-          </span>
+          </button>
         </div>
         <p
           data-testid="stage-banner"

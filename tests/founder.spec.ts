@@ -56,3 +56,19 @@ describe('useFounderStore.setName — a name sticks; empty adopts the default', 
     expect(useFounderStore.getState().name).toHaveLength(FOUNDER_NAME_MAX)
   })
 })
+
+describe('useFounderStore — rename flag (transient, never persisted)', () => {
+  it('defaults closed', () => {
+    expect(useFounderStore.getState().renaming).toBe(false)
+  })
+
+  it('openRename / closeRename toggle the flag without touching the name', () => {
+    useFounderStore.getState().setName('Grace')
+    useFounderStore.getState().openRename()
+    expect(useFounderStore.getState().renaming).toBe(true)
+    expect(useFounderStore.getState().name).toBe('Grace')
+    useFounderStore.getState().closeRename()
+    expect(useFounderStore.getState().renaming).toBe(false)
+    expect(useFounderStore.getState().name).toBe('Grace')
+  })
+})

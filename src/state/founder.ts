@@ -28,17 +28,32 @@ export function normaliseFounderName(raw: string): string {
 export interface FounderState {
   /** the persisted name; '' = unnamed (naming card shows, HUD falls back) */
   name: string
+  /** transient (NEVER persisted): the naming card was re-opened from the HUD to
+   *  rename an already-named founder. Distinct from first-run naming, which is
+   *  derived (unnamed + untouched quest) and needs no flag. */
+  renaming: boolean
   /** set the name; an empty/whitespace choice adopts the default so it persists
    *  as "named" and the first-run card does not reappear */
   setName(raw: string): void
+  /** re-open the naming card to rename (invoked by the HUD name) */
+  openRename(): void
+  /** close the rename card, leaving the name unchanged */
+  closeRename(): void
 }
 
 export const useFounderStore = create<FounderState>((set) => ({
   name: settings.getFounderName(),
+  renaming: false,
   setName(raw: string): void {
     const cleaned = normaliseFounderName(raw)
     const name = cleaned === '' ? UI.founder.defaultName : cleaned
     settings.setFounderName(name)
     set({ name })
+  },
+  openRename(): void {
+    set({ renaming: true })
+  },
+  closeRename(): void {
+    set({ renaming: false })
   },
 }))
