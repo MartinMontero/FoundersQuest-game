@@ -83,6 +83,9 @@ function activate(events: WorldEvents): void {
         events.onPortal(spec.targetStage)
       }
       break
+    case 'campfire':
+      events.onCampfire()
+      break
   }
 }
 

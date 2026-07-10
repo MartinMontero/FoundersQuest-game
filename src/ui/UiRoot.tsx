@@ -17,6 +17,7 @@ import { questStore, useQuestData } from '../state/store'
 import { shouldSummonShadow } from '../state/tunables'
 import { useUiStore } from '../state/ui'
 import { STAGES, UI } from '../strings'
+import { CampfirePanel } from './CampfirePanel'
 import { DegradedBanner } from './DegradedBanner'
 import { FounderNaming } from './FounderNaming'
 import { GatePanel } from './GatePanel'
@@ -124,6 +125,7 @@ export function UiRoot(): ReactElement {
       ) : null}
       {mode === 'panel:vault' ? <VaultPanel /> : null}
       {mode === 'panel:registry' ? <RegistryPanel focusRiskiest={focusRiskiest} /> : null}
+      {mode === 'panel:campfire' ? <CampfirePanel /> : null}
       {mode === 'gate' ? <GatePanel /> : null}
       {mode === 'loop' ? <LoopPanel /> : null}
       {shadowVisible ? (

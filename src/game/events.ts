@@ -21,6 +21,9 @@ export const defaultWorldEvents: WorldEvents = {
   onRegistryApproach(): void {
     useUiStore.getState().openPanel('panel:registry')
   },
+  onCampfire(): void {
+    useUiStore.getState().openPanel('panel:campfire')
+  },
   onFlagpole(id: string): void {
     // self-report: milestones[id] flips — Action only, never Truth (02/04 map)
     questStore.getState().toggleMilestone(id)

@@ -21,6 +21,7 @@ export const WORLD_COPY = {
   vaultName: 'The Vault',
   vaultSealedLine: 'Sealed until Stage 3',
   registryName: 'The Assumption Registry',
+  campfireName: 'The Campfire',
 
   /** interaction prompt chips ("E — kneel" is the game-design §2 F0 chip) */
   prompts: {
@@ -30,6 +31,7 @@ export const WORLD_COPY = {
     flagpoleRaise: 'E — raise the flag',
     flagpoleLower: 'E — lower the flag',
     portal: 'E — travel',
+    campfire: 'E — rest at the campfire',
   },
 
   /** path-portal chip labels — composed with the destination world name */

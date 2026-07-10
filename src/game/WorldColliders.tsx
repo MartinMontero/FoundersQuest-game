@@ -115,6 +115,17 @@ export function WorldColliders(): JSX.Element {
           position={[p.position[0], 0.16, p.position[2]]}
         />,
       ])}
+      {/* the campfire — a small solid hearth the founder stops at (well within
+          the 2.75 u interact radius, so the "rest" prompt lights) */}
+      {layout
+        .filter((s) => s.kind === 'campfire')
+        .map((s) => (
+          <CylinderCollider
+            key={`campfire-${s.id}`}
+            args={[0.6, 0.9]}
+            position={[s.position[0], 0.6, s.position[2]]}
+          />
+        ))}
       {/* the Vault — its floating sanctum is solid; the founder stops at its edge */}
       {hasVault ? <CuboidCollider args={[0.7, 0.5, 0.55]} position={VAULT_POSITION} /> : null}
       {/* the Registry's outer standing stones */}

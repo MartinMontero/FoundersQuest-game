@@ -696,6 +696,8 @@ function chipHeight(spec: InteractableSpec): number {
       return 2.5
     case 'portal':
       return 3.8
+    case 'campfire':
+      return 2.2
   }
 }
 
@@ -718,6 +720,8 @@ function chipLabel(spec: InteractableSpec): string {
       const name = spec.targetStage !== undefined ? WORLD_NAME.get(spec.targetStage) : undefined
       return name !== undefined ? `${dir} · ${name}` : dir
     }
+    case 'campfire':
+      return WORLD_COPY.campfireName
   }
 }
 
@@ -811,6 +815,65 @@ function HighlightRing({ reduced }: { reduced: boolean }): JSX.Element | null {
   )
 }
 
+/** The campfire: a hearth-stone ring, crossed logs, a flickering flame, and its
+ *  warm light — the rest hub (weather / notes / quests / export / dinner). Minimal
+ *  box on the software-GL CI tier (the flame + light are real-tier chrome). */
+function Campfire({ spec, reduced }: ShrineProps): JSX.Element {
+  const [x, y, z] = spec.position
+  const flame = useRef<Mesh>(null)
+  useSafeFrame(({ clock }) => {
+    const f = flame.current
+    if (f === null || reduced) return
+    f.scale.setY(1 + Math.sin(clock.elapsedTime * 6) * 0.1)
+  })
+
+  if (IS_AUTOMATION) {
+    return (
+      <group position={[x, y, z]}>
+        <mesh position={[0, 0.3, 0]}>
+          <boxGeometry args={[1, 0.6, 1]} />
+          <meshStandardMaterial color={PALETTE.stoneWarm} roughness={0.9} />
+        </mesh>
+      </group>
+    )
+  }
+
+  return (
+    <group position={[x, y, z]}>
+      {/* ring of hearth stones */}
+      {Array.from({ length: 7 }).map((_, i) => {
+        const a = (i / 7) * Math.PI * 2
+        return (
+          <mesh key={i} position={[Math.cos(a) * 0.9, 0.12, Math.sin(a) * 0.9]} castShadow>
+            <dodecahedronGeometry args={[0.22]} />
+            <meshStandardMaterial color={PALETTE.stone} roughness={0.9} metalness={0.04} />
+          </mesh>
+        )
+      })}
+      {/* crossed logs */}
+      <mesh position={[0, 0.2, 0]} rotation={[0, 0.4, Math.PI / 2.2]} castShadow>
+        <cylinderGeometry args={[0.1, 0.1, 1.3, 6]} />
+        <meshStandardMaterial color={PALETTE.stoneWarm} roughness={0.85} />
+      </mesh>
+      <mesh position={[0, 0.2, 0]} rotation={[0, -0.5, Math.PI / 2.2]} castShadow>
+        <cylinderGeometry args={[0.1, 0.1, 1.3, 6]} />
+        <meshStandardMaterial color={PALETTE.stoneWarm} roughness={0.85} />
+      </mesh>
+      {/* the flame — a warm emissive cone that catches bloom */}
+      <mesh ref={flame} position={[0, 0.55, 0]}>
+        <coneGeometry args={[0.3, 0.9, 8]} />
+        <meshStandardMaterial
+          color={PALETTE.amberBright}
+          emissive={PALETTE.ember}
+          emissiveIntensity={1.6}
+          toneMapped={false}
+        />
+      </mesh>
+      <pointLight position={[0, 0.7, 0]} color={PALETTE.amber} intensity={1.4} distance={7} decay={2} />
+    </group>
+  )
+}
+
 // ---- assembly ----
 
 export interface InteractablesProps {
@@ -833,6 +896,8 @@ export function Interactables({ reduced }: InteractablesProps): JSX.Element {
             return <RegistryCircle key={spec.id} reduced={reduced} />
           case 'portal':
             return <PortalArch key={spec.id} spec={spec} reduced={reduced} />
+          case 'campfire':
+            return <Campfire key={spec.id} spec={spec} reduced={reduced} />
         }
       })}
       {!LOW_POWER ? <ProximityLight reduced={reduced} /> : null}

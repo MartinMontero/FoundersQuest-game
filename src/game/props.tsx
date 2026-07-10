@@ -23,7 +23,13 @@ import {
   type Texture,
 } from 'three'
 import { AssetBoundary } from './AssetBoundary'
-import { BACK_POSITION, LOOP_POSITION, ONWARD_POSITION, STAGE1_LAYOUT } from './contracts'
+import {
+  BACK_POSITION,
+  CAMPFIRE_POSITION,
+  LOOP_POSITION,
+  ONWARD_POSITION,
+  STAGE1_LAYOUT,
+} from './contracts'
 import { PALETTE } from './materials'
 import { IS_AUTOMATION } from './perf'
 
@@ -195,6 +201,7 @@ const KEEPOUT: readonly [number, number, number][] = [
   [ONWARD_POSITION[0], 1.7, ONWARD_POSITION[2]],
   [BACK_POSITION[0], 1.7, BACK_POSITION[2]],
   [LOOP_POSITION[0], 1.7, LOOP_POSITION[2]],
+  [CAMPFIRE_POSITION[0], 1.7, CAMPFIRE_POSITION[2]],
 ]
 
 function clearOf(x: number, z: number, pad: number): boolean {

@@ -9,7 +9,13 @@
 import { useEffect, useMemo } from 'react'
 import { Clone, useGLTF } from '@react-three/drei'
 import type { Object3D } from 'three'
-import { BACK_POSITION, LOOP_POSITION, ONWARD_POSITION, STAGE1_LAYOUT } from './contracts'
+import {
+  BACK_POSITION,
+  CAMPFIRE_POSITION,
+  LOOP_POSITION,
+  ONWARD_POSITION,
+  STAGE1_LAYOUT,
+} from './contracts'
 import { RENDER_TIER } from './perf'
 
 const TREE_A = '/models/trees/CommonTree_1.gltf'
@@ -40,6 +46,7 @@ const KEEPOUT: readonly [number, number][] = [
   [ONWARD_POSITION[0], ONWARD_POSITION[2]],
   [BACK_POSITION[0], BACK_POSITION[2]],
   [LOOP_POSITION[0], LOOP_POSITION[2]],
+  [CAMPFIRE_POSITION[0], CAMPFIRE_POSITION[2]],
 ]
 function clearOf(x: number, z: number): boolean {
   for (const [kx, kz] of KEEPOUT) if (Math.hypot(x - kx, z - kz) < 4) return false

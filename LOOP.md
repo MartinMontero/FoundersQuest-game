@@ -50,7 +50,7 @@ World-1 slice without regressing it.
 - **J13 — Act Gates.** Walk W2/W5/W7 exit door met (pass) and unmet (override + written reason); `gates` + `trail` written; export shows it. ✅ `GatePanel` (met→clean pass, unmet→written override, Esc/"Not yet"→back out); `onPortal` opens it once per act boundary. Executed: `e2e/gate.spec.ts` → 2 passed (met-pass records `gate-pass`; unmet backs out with no record, then overrides → `gates.act1=overridden` + `gate-override` in `trail`); `traversal.spec` crosses all three gates. (Export badge = J16.)
 - **J14 — Funerals.** W5 graveyard: invalidate a W1 guardian; headstone stands; 1.5× XP only when derived tier≥2 else "unproven funeral". ✅ `FuneralInput` (s5-l5) + `invalidateAssumption`; proven/unproven labelled from `tierOf≥2`; 1.5× (15 XP) derived by metrics. Executed: `tests/state.spec.ts` (proven→15 XP + Truth moves; unproven→0) + `e2e/controls.spec.ts` (buries a W1 guardian live). (Graveyard headstone visuals = a later visual pass.)
 - **J15 — Loops.** Toll portals W5→W1, W7→W3, W8→W1: learning line → `trail`; The Reset adds retro + critique. ◐ All three loop toll-portals built (`loopPortalsForStage` from `NAMED_LOOPS`); `LoopPanel` demands one learning line → `trail` (type `loop`) + `lastLoop`; "Stay"/Esc backs out. Executed: `e2e/loop.spec.ts` (Reality Check W5→W1 records the learning line; "Stay" backs out). **Deferred:** The Reset's extra cycle-retro + undefended Critique the Quest (a polish add on the existing `trail.critique` field).
-- **J16 — Campfire furniture.** Weather totem sets sky; field notes save; side-quest accept/complete; exports download real journal md; Dinner Card edits → leads the Brief. ⬜
+- **J16 — Campfire furniture.** Weather totem sets sky; field notes save; side-quest accept/complete; exports download real journal md; Dinner Card edits → leads the Brief. ◐ One campfire hub (every world, near spawn) gathers all five: weather totem (`logWeather`, R-W append), field-notes lectern (`saveFieldNote` for the current world), side-quest board (`startSideQuest`/`completeSideQuest` over the 4 canon quests, +5 XP derived), journal export desk (`buildJournalMd` → local Markdown download, no network), Dinner **Card** editor (`setDinnerCard`; the session/log Dinner UI stays schema-only per D-scope). Executed: `e2e/campfire.spec.ts` (weather appends [1,4]; note→`fieldNotes.s2`; The 404 accept→complete; Dinner Card saved) → 1 passed. **Deferred:** the weather→literal-sky tint (a bonus visual coupling).
 - **J17 — Launch (W8).** Spine cast → rocket engraves; raise final flag → launch sequence; world continues (Reset remains). ⬜
 - **J18 — Cross-cutting.** Keyboard-only full traversal; reduced-motion honored; zero console errors; zero api.anthropic.com calls anywhere in the spine. ⬜
 
@@ -62,6 +62,17 @@ World-1 slice without regressing it.
 - Fresh-eyes final pass: re-walk W1→W8 as a first-time player; anything demo-embarrassing is a defect.
 
 ## Progress log (evidence: command → salient output)
+- **Cycle 5 — campfire furniture (2026-07-10).** One campfire hub interactable (new `'campfire'` kind +
+  `CAMPFIRE_POSITION` near spawn, every world; collider + KEEPOUT; grey-box hearth with a flickering
+  flame, gated to a box on CI) opens a single `CampfirePanel` gathering all five furniture: **weather
+  totem** (5 faces → `logWeather`, R-W append), **field-notes lectern** (this world's `fieldNotes`),
+  **side-quest board** (the 4 canon `SIDE_QUESTS`, accept→`startSideQuest`/complete→`completeSideQuest`,
+  +5 XP derived), **journal export desk** (`buildJournalMd` → a LOCAL Markdown download — nothing leaves
+  the device), and the **Dinner Card** editor (`setDinnerCard`; R3 — the founder's own card, distinct
+  from the schema-only Dinner session/log which stays D-scope). 5a store actions unit-tested (state +5,
+  incl. the R-W two-same-day-taps-both-kept proof + derived side-quest XP); 5b `e2e/campfire.spec.ts`
+  drove the hub live → 1 passed, zero console/Anthropic. `typecheck`/`lint` 0 · `vitest` 334.
+  **Deferred:** the weather→literal-sky tint (bonus visual coupling).
 - **Cycle 4 — per-world visual identity: sky/fog/background + shrine accent (2026-07-10).** Each of the
   8 worlds now wears its own sky so it reads as its own place (A5), reusing the World-1 SkyDome+fog
   pipeline — NOT 8 bespoke scenes. New `src/game/worldPalette.ts`: `WORLD_SKIES` (zenith/horizon/glow/

@@ -20,9 +20,17 @@ export interface WorldEvents {
   onPortal(targetStage: number): void
   /** player takes a named-loop toll-portal → the loop toll (learning line) before travel */
   onLoop(name: string, toStage: number): void
+  /** player rests at the campfire → the furniture hub (weather / notes / quests / export / dinner) */
+  onCampfire(): void
 }
 
-export type InteractableKind = 'shrine' | 'vault' | 'registry' | 'flagpole' | 'portal'
+export type InteractableKind =
+  | 'shrine'
+  | 'vault'
+  | 'registry'
+  | 'flagpole'
+  | 'portal'
+  | 'campfire'
 
 export interface InteractableSpec {
   id: string
@@ -160,6 +168,17 @@ function loopPortalsForStage(stage: number): InteractableSpec[] {
   return NAMED_LOOPS.filter((l) => l.from === stage).map(loopPortal)
 }
 
+// ---- The campfire (the rest hub, every world). One waypoint near spawn where the
+// furniture lives: weather totem, field-notes lectern, side-quest board, journal
+// export desk, Dinner Card. A clear spot left of spawn, inside the rim, in KEEPOUT.
+export const CAMPFIRE_POSITION: [number, number, number] = [-4, 0, 20]
+
+const CAMPFIRE_SPEC: InteractableSpec = {
+  id: 'campfire',
+  kind: 'campfire',
+  position: CAMPFIRE_POSITION,
+}
+
 /**
  * Every placed interactable in the Stage 1 slice: all 8 s1 shrines (ids from
  * src/strings, canon order), 3 milestone flagpoles, the Vault, the Registry, plus
@@ -170,6 +189,7 @@ export const STAGE1_LAYOUT: readonly InteractableSpec[] = [
   ...STAGE1_MILESTONES.map((m, i) => flagpoleSpec(m, i)),
   { id: 'vault', kind: 'vault', position: VAULT_POSITION },
   { id: 'registry', kind: 'registry', position: REGISTRY_POSITION },
+  CAMPFIRE_SPEC,
   ...portalsForStage(1),
 ]
 
@@ -221,7 +241,13 @@ function generatedLayout(stage: number): InteractableSpec[] {
     position: GENERIC_FLAGPOLES[i] ?? [7, 0, 16],
     milestoneId: m.id,
   }))
-  return [...shrines, ...poles, ...portalsForStage(stage), ...loopPortalsForStage(stage)]
+  return [
+    ...shrines,
+    ...poles,
+    CAMPFIRE_SPEC,
+    ...portalsForStage(stage),
+    ...loopPortalsForStage(stage),
+  ]
 }
 
 /** Milestones for any stage, ids per R-K: s{n}-m{1..3}. */
