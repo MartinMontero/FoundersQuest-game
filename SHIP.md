@@ -82,4 +82,30 @@ wrapper stays deliberately light in the slice; per-stage funeral buffs (research
 deferred with the art pass; the set-piece feel shot catches the circle at frame edge
 (camera faces spawn) — operator sees it in-world.
 
-## A5 · The Ego — NEXT (gated on A2–A4: A2 ✅ A3 ✅ A4 closing)
+## A5 · The Ego (2026-07-11) — vertical slice, W8 (close pending two runs)
+**Shipped:** src/core/ego.ts — the Ego DERIVED at runtime from the real record (D-B: no
+egoRecord key exists anywhere): shields = overridden gates carrying their logged reasons
+VERBATIM · ghost summons = skipped-unheld funerals (+2 HP each; the already-live delayed
+funeral removes the weapon) · HP = 6 + 2×Σ weight(untested/testing, non-firstLight) ·
+founderEdge = E2+-resolved count (per-cite damage bonus, cap 2) · heavy-attack strength =
+live Action−Truth divergence. **THE OUTRANKING INVARIANT is a 200-state seeded property
+test — capture+resolve@E2+ never worse on ANY formula axis; the formula is tuned to the
+test.** The defense-mechanism ladder: denial (only E3/E4 land — "denial can't survive
+Gold") → rationalization (only sealed-criterion-linked evidence lands) → projection (no
+damage; the founder's own untested beliefs thrown back — "return as test" is a REAL
+untested→testing write) → sunk-cost (cut by evidence linked to an invalidated belief, or
+Gold) → identity-fusion (**no citation lands; won ONLY by the integration line, written to
+the wisdomCodex under sourceGuardianId 'ego'**). Capstone "Cartographer's Distance": a
+permanent HUD readout of Action−Truth drift, DERIVED from that codex entry — no new schema
+key, canon shapes untouched. D-F: the trough shows the pre-written delay (never the fight,
+never a block). B2 holds against the Ego (hunches bounce, unconsumed); deflected coins are
+NOT consumed either (anti-punitive — no soft-lock). Leaving mid-fight writes NOTHING
+(byte-identical record, e2e-proven); fight progress is session-only BY DESIGN. All dialogue
+pre-written in src/strings/ego.ts (D-E) — zero API. W8 Launch Threshold monolith set-piece.
+**Invariants proven:** 14 unit tests + the 200-state sweep + 2 store-action tests; 2 slice
+e2e (five-phase fight with reload-surviving capstone; trough delay + no-penalty exit).
+Feel pack archived: docs/feel-packs/a5/ (8 shots).
+**Deviations (plainly):** bias-pattern action moves (compliment projectiles, Wald shield,
+control-inversion) and per-world minions deferred — the slice ships the evidence ladder,
+not the bullet-hell; the capstone rides the wisdomCodex (sourceGuardianId 'ego') rather
+than a new schema key — deliberate, to stay inside the Gate-0-approved canon diff.
