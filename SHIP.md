@@ -43,6 +43,16 @@ flow through the real world (W1→W5→W1 via the product's reload-resume path).
 **Deviations:** the Council-addendum item remains split per B-4 (severable; zero API surface
 in this program either way).
 
-## A3 · First Light — BLOCKED (Gate-2 re-pass pending; operator plays first)
+## A3 · First Light (2026-07-11) — CLOSED (two clean full runs; see VERIFICATION)
+**Shipped:** the invitation (plain value-prop; findable never-hidden skip, override-exempt) ·
+the 11-beat induction over the live world (typewriter, instant-complete, never timed; ARIA
+live region; reduced-motion) · REAL artifacts every beat (vault capture · D-I firstLight
+guardian with sealed kill criterion · verbatim E2 quote · the honest first kill, both branches)
+· the D-G carve-out live in metrics · the Cartographer's Chart (M) + Legend (L) with HUD
+affordances, trough-dip road (D-K), archways, tombstones, the D-H consent line · skip path +
+one-time re-entry + campfire replay (write-once) · feel pack archived (docs/feel-packs/a3/).
+**Deviations (plainly):** per-world Truth/Action pips deferred (tombstones shipped); nested
+tooltips = one "more" level; the cold-open camera dolly is the standard rig (letterbox + text
+carry the register) — all logged for the art pass. Chart label crowding at W7/W8 = known QA nit.
 ## A4 · Confrontation + Funeral rite — BLOCKED (same gate)
 ## A5 · The Ego — BLOCKED (gated on A2–A4)

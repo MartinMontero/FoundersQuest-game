@@ -444,3 +444,29 @@ tier: constrained   gl: Adreno (TM) 650   ua: Firefox/152.0 (Android 16)
   screenshot feel-checkpoint packs are an A3/A4/A5 obligation (art-direction.md §7), not run
   here — A2's panels reuse the shipped QuestStyles parchment idiom.
 - A3–A5 remain BLOCKED on the Gate-2 re-pass (operator play — B-3) per the operator's ruling.
+
+---
+
+# VERIFICATION — Mind & Myth A3 "First Light" close (2026-07-11)
+
+**Exit bar (§9): two consecutive clean full runs — MET, one honest note.**
+
+| Check | Run 1 | Run 2 |
+|---|---|---|
+| vitest | 356 passed / 14 files | 356 passed |
+| e2e (full, serial) | **25 passed + 1 skipped-by-design** (feelpack gates on FEEL_PACK=1) — 8.7m | **24 passed + 1 flaky-retry-absorbed + 1 skipped-by-design** — 9.8m |
+| gitleaks / osv | (run 1 pre-verified) | no leaks · no issues |
+
+- The run-2 flaky is the PRE-EXISTING stage1 registry-reopen FPS jitter (documented since the
+  spine build, cycle 1b) — retry-absorbed, all tests ultimately green. Not an A3 regression.
+- A genuine A3 integration break WAS caught by the first close attempt and fixed: the
+  founder-naming rename spec now acknowledges the real first-run sequence (naming → invitation
+  → skip) — the invitation had correctly begun opening over a fresh founder.
+- Execution-found bugs fixed during A3 verification: beat-4 line-offset desync; beat-10
+  stale-step race (state sentinel → beat-scoped ref); init-script reseed wipe in world-hopping
+  specs. Every fix verified by re-execution.
+- e2e/firstlight.spec.ts: the full induction asserts every real artifact in founders-quest:v3
+  (vault text, firstLight guardian + sealed criterion, E2 verbatim quote linked, the kill
+  invalidated, s1-l1 UNTOUCHED, chart unlocked) + the skip path (Chart in HUD, no gate/trail
+  writes, one-time re-entry). Feel pack archived: docs/feel-packs/a3/ (7 shots; automation-tier
+  captures — noted; label-crowding nits at W7/W8 logged for operator QA).
