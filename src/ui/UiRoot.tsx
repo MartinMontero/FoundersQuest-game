@@ -14,9 +14,10 @@ import { riskiest, trough } from '../core/metrics'
 import type { QuestData } from '../core/schema'
 import { useJourneyStore } from '../state/journey'
 import { questStore, useQuestData } from '../state/store'
-import { shouldSummonShadow } from '../state/tunables'
+import { EARNED_HUNCH_BUMP, shouldSummonShadow } from '../state/tunables'
 import { useUiStore } from '../state/ui'
 import { STAGES, UI } from '../strings'
+import { CalibrationPanel } from './CalibrationPanel'
 import { CampfirePanel } from './CampfirePanel'
 import { DegradedBanner } from './DegradedBanner'
 import { FounderNaming } from './FounderNaming'
@@ -36,7 +37,8 @@ import { VaultPanel } from './VaultPanel'
  * statement. Pure and local; nothing invented, nothing sent anywhere.
  */
 export function chooseShadowQuote(data: QuestData): string {
-  const guardian = riskiest(data)
+  // same bump as useRiskiest — "riskiest" is one identity everywhere (A2)
+  const guardian = riskiest(data, EARNED_HUNCH_BUMP)
   if (guardian === null) return ''
   const stage = STAGES.find((s) => `s${s.stage}` === guardian.originStageId)
   const stageAnswers = data.answers[guardian.originStageId]
@@ -126,6 +128,7 @@ export function UiRoot(): ReactElement {
       {mode === 'panel:vault' ? <VaultPanel /> : null}
       {mode === 'panel:registry' ? <RegistryPanel focusRiskiest={focusRiskiest} /> : null}
       {mode === 'panel:campfire' ? <CampfirePanel /> : null}
+      {mode === 'panel:calibration' ? <CalibrationPanel /> : null}
       {mode === 'gate' ? <GatePanel /> : null}
       {mode === 'loop' ? <LoopPanel /> : null}
       {shadowVisible ? (

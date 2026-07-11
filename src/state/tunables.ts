@@ -13,6 +13,14 @@ export const SHADOW_DIVERGENCE_PP = 40
 export const SHADOW_MIN_ASSUMPTIONS = 3
 
 /**
+ * Earned-hunch priority bump (02 computed-metrics, Mind & Myth A2): added to a
+ * seeded-from-Earned guardian's riskiest-ORDERING score only. Weight/Truth/XP
+ * math untouched (invariant-tested). 2 ≈ two-thirds of a tier step at `dies`
+ * weight — enough to break ties and lift a rung, never to dwarf importance.
+ */
+export const EARNED_HUNCH_BUMP = 2
+
+/**
  * The derived divergence check — no write, zero network. True when:
  *   - ≥ SHADOW_MIN_ASSUMPTIONS assumptions are registered,
  *   - NOT in the trough (the Shadow holds fire there — 02/03), and

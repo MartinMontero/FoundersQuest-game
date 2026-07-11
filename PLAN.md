@@ -29,3 +29,22 @@ Phase 1 core is green (VERIFICATION round 1; CI run 4). This phase builds the pl
 ## Non-goals (Phase 2)
 
 Stages 2–8, gates, loops, side quests, weather totem, funerals (Phase 3) · Council temple/UI (Phase 4; transport stays unit-tested only) · Field Mode, PWA, QR (Phase 5) · exports UI, audio, onboarding polish (Phase 6) · non-grey-box assets (allowed: Kenney prototype textures if trivially embeddable; nothing on the critical path).
+
+---
+
+# Program Addendum A — "Mind & Myth" (merged 2026-07-11)
+
+The operator's addendum prompt (uploads/ccpromptfqgamemindmythintegration.md) merges here
+alongside the phase program. Gate 0 ran 2026-07-11: recon in AUDIT.md, consolidated canon diff
+in docs/build/mindmyth-canon-diff.md (RATIFIED, all defaults), blockers in BLOCKERS.md.
+
+- **A0 Gate 0** ✅ — three artifacts produced; operator ratified all D-blocks at defaults;
+  research files landed on main and merged; art law = docs/build/art-direction.md.
+- **A1 docs landing** ✅ — WIKJ v3 assembled at docs/epistemology/ (8 edits by intent, deviations
+  logged); canon commit applied (schema delta, council sentence swap, 5 riders, keybind
+  reservation, glossary). Council provenance-block: BLOCKERS B-4 (severable, awaiting source).
+- **A2 The Earned Hunch** — provenance tagging, wicked rune, priority bump, calibration record;
+  invariants unit-tested; e2e flow. (This entry is updated at phase close.)
+- **A3 First Light** ⛔ gated on Gate-2 re-pass (operator plays before A3 opens — B-3).
+- **A4 Confrontation + Funeral rite** ⛔ gated on Gate-2 re-pass.
+- **A5 The Ego** ⛔ gated on A2–A4 complete.

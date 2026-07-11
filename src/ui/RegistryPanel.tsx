@@ -7,12 +7,18 @@
 
 import { useId, useRef, useState, type ReactElement } from 'react'
 import { tierOf } from '../core/metrics'
-import type { Assumption, Importance } from '../core/schema'
+import type { Assumption, HunchProvenance, Importance } from '../core/schema'
 import { useQuestStore, useRiskiest } from '../state/store'
 import { useUiStore } from '../state/ui'
 import { IMPORTANCE_LABELS, IMPORTANCE_ORDER, STATUS_LABELS, UI, tierLabel } from '../strings'
 import { focusAfterCommit } from './focus'
 import { DialogShell } from './TrancePanel'
+
+const PROVENANCE_ORDER: readonly HunchProvenance[] = ['earned', 'adjacent', 'wild', 'borrowed']
+
+function isProvenance(value: string): value is HunchProvenance {
+  return value === 'earned' || value === 'adjacent' || value === 'wild' || value === 'borrowed'
+}
 
 // ASSUMPTION: guardians created from this panel originate from the Stage 1
 // world — the only stage in this slice. Phase 3 passes the active stage in.
@@ -35,7 +41,11 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
   const evidence = useQuestStore((s) => s.data.evidence)
   const addGuardian = useQuestStore((s) => s.addGuardian)
   const addEvidence = useQuestStore((s) => s.addEvidence)
+  const addHunch = useQuestStore((s) => s.addHunch)
+  const tagHunch = useQuestStore((s) => s.tagHunch)
+  const seedGuardianFromHunch = useQuestStore((s) => s.seedGuardianFromHunch)
   const riskiestGuardian = useRiskiest()
+  const openPanel = useUiStore((s) => s.openPanel)
   const closePanel = useUiStore((s) => s.closePanel)
   const titleId = useId()
   const riskiestRef = useRef<HTMLLIElement | null>(null)
@@ -51,6 +61,32 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
   const [linkOpenId, setLinkOpenId] = useState<string | null>(null)
   const [evidenceText, setEvidenceText] = useState('')
   const [evidenceSource, setEvidenceSource] = useState('')
+
+  // whispers (A2): capture + one open seed form at a time
+  const [hunchText, setHunchText] = useState('')
+  const [seedOpenId, setSeedOpenId] = useState<string | null>(null)
+  const [seedImportance, setSeedImportance] = useState<Importance>('dies')
+  const [seedKill, setSeedKill] = useState('')
+  const hunchRef = useRef<HTMLInputElement | null>(null)
+
+  const hunches = evidence.filter((e) => e.tier === 0)
+
+  const captureHunch = (): void => {
+    const text = hunchText.trim()
+    if (text === '') return
+    addHunch(text) // one commit — capture never asks for provenance (D-M)
+    setHunchText('')
+    focusAfterCommit(() => hunchRef.current)
+  }
+
+  const seedFromHunch = (evidenceId: string): void => {
+    seedGuardianFromHunch(evidenceId, seedImportance, seedKill.trim(), PANEL_ORIGIN_STAGE_ID)
+    setSeedOpenId(null)
+    setSeedKill('')
+    setSeedImportance('dies')
+    // the seed form (incl. its focused button) unmounts on commit
+    focusAfterCommit(() => hunchRef.current)
+  }
 
   const create = (): void => {
     if (statement.trim() === '') return
@@ -208,6 +244,149 @@ export function RegistryPanel({ focusRiskiest = false }: RegistryPanelProps): Re
           })}
         </ul>
       )}
+
+      {/* ---- Whispers (A2): two-tap capture, zero justification; the tag is
+           optional and post-capture (D-M); the rune warns, never nags ---- */}
+      <fieldset className="quest-aside mt-5 p-4" data-testid="whispers">
+        <legend className="quest-label px-1.5 text-2xs">{UI.hunch.whispersLegend}</legend>
+        <div className="flex gap-2">
+          <label className="quest-label flex flex-1 flex-col gap-1 text-2xs">
+            <span>{UI.hunch.captureLabel}</span>
+            <input
+              ref={hunchRef}
+              data-testid="hunch-capture-text"
+              value={hunchText}
+              onChange={(event) => setHunchText(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  captureHunch()
+                }
+              }}
+              className="quest-input px-2 py-1.5 text-sm normal-case tracking-normal"
+            />
+          </label>
+          <button
+            type="button"
+            data-testid="hunch-capture-add"
+            disabled={hunchText.trim() === ''}
+            onClick={captureHunch}
+            className="quest-btn quest-btn-quiet self-end px-3 py-1.5 text-sm"
+          >
+            {UI.hunch.captureButton}
+          </button>
+        </div>
+
+        {hunches.length > 0 ? (
+          <ul className="mt-3 flex flex-col gap-2">
+            {hunches.map((hunch, index) => {
+              const seeded = hunch.linkedAssumptionIds.length > 0
+              return (
+                <li key={hunch.id} data-testid={`hunch-${index + 1}`} className="quest-aside p-2.5">
+                  <div className="flex items-start gap-2">
+                    {/* the wicked-domain rune: standing, unobtrusive, plain hover text */}
+                    <span
+                      role="img"
+                      aria-label={UI.hunch.runeLabel}
+                      title={UI.hunch.runeText}
+                      className="mt-0.5 cursor-help text-sm text-[#5f43aa]"
+                    >
+                      {UI.hunch.runeGlyph}
+                    </span>
+                    <p className="flex-1 text-sm text-ink">{hunch.text}</p>
+                    <span className="quest-eyebrow text-2xs text-ink-faint">{tierLabel(0)}</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-end gap-2 pl-6">
+                    <label className="quest-label flex flex-col gap-1 text-2xs">
+                      <span>{UI.hunch.provenanceLabel}</span>
+                      <select
+                        data-testid={`hunch-provenance-${index + 1}`}
+                        value={hunch.provenance ?? ''}
+                        onChange={(event) => {
+                          if (isProvenance(event.target.value)) tagHunch(hunch.id, event.target.value)
+                        }}
+                        className="quest-input px-2 py-1.5 text-sm normal-case tracking-normal"
+                      >
+                        <option value="" disabled>
+                          {UI.hunch.provenanceUntagged}
+                        </option>
+                        {PROVENANCE_ORDER.map((rung) => (
+                          <option key={rung} value={rung}>
+                            {UI.hunch.provenanceOptions[rung]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {seeded ? (
+                      <p
+                        data-testid={`hunch-seeded-${index + 1}`}
+                        className="quest-eyebrow pb-2 text-2xs text-amber-accent-600"
+                      >
+                        {UI.hunch.seeded}
+                      </p>
+                    ) : seedOpenId === hunch.id ? (
+                      <span className="flex flex-wrap items-end gap-2">
+                        <label className="quest-label flex flex-col gap-1 text-2xs">
+                          <span>{UI.registry.importanceLabel}</span>
+                          <select
+                            data-testid="hunch-seed-importance"
+                            value={seedImportance}
+                            onChange={(event) => {
+                              if (isImportance(event.target.value)) setSeedImportance(event.target.value)
+                            }}
+                            className="quest-input px-2 py-1.5 text-sm normal-case tracking-normal"
+                          >
+                            {IMPORTANCE_ORDER.map((option) => (
+                              <option key={option} value={option}>
+                                {IMPORTANCE_LABELS[option]}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="quest-label flex flex-col gap-1 text-2xs">
+                          <span>{UI.registry.killCriterionLabel}</span>
+                          <input
+                            data-testid="hunch-seed-kill"
+                            value={seedKill}
+                            onChange={(event) => setSeedKill(event.target.value)}
+                            className="quest-input px-2 py-1.5 text-sm normal-case tracking-normal"
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          data-testid="hunch-seed-confirm"
+                          onClick={() => seedFromHunch(hunch.id)}
+                          className="quest-btn quest-btn-gold px-3 py-1.5 text-sm"
+                        >
+                          {UI.hunch.seedButton}
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        data-testid={`hunch-seed-${index + 1}`}
+                        onClick={() => setSeedOpenId(hunch.id)}
+                        className="quest-btn quest-btn-quiet px-2 py-1 text-2xs text-amber-accent-600"
+                      >
+                        {UI.hunch.seedButton}
+                      </button>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        ) : null}
+
+        <button
+          type="button"
+          data-testid="calibration-open"
+          onClick={() => openPanel('panel:calibration')}
+          className="quest-btn quest-btn-quiet mt-3 px-3 py-1.5 text-sm"
+        >
+          {UI.hunch.calibrationOpen}
+        </button>
+      </fieldset>
 
       {/* create form — no <form> tag; explicit button commit */}
       <fieldset className="quest-aside mt-5 p-4">

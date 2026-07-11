@@ -280,6 +280,41 @@ export const UI = {
     evidenceSourceLabel: 'Source',
     evidenceAdd: 'Log as E2',
   },
+  /** The Earned Hunch (Mind & Myth A2) — whispers, provenance, the gut's record. */
+  hunch: {
+    whispersLegend: 'Whispers — hunches on the bench',
+    captureLabel: 'Log a hunch — no justification needed',
+    captureButton: 'Log the whisper',
+    /** the wicked-domain rune: standing, unobtrusive; never blocks, never nags */
+    runeGlyph: '☽',
+    runeLabel: 'wicked-domain rune',
+    runeText:
+      'Confidence is not evidence. Founding gives slow, distorted feedback — send this to the test bench.',
+    provenanceLabel: 'Where did this come from?',
+    provenanceUntagged: 'untagged',
+    /** plain one-line definitions (mythic chrome stays on the entry, not here) */
+    provenanceOptions: {
+      earned: 'Earned — your own direct domain experience',
+      adjacent: 'Adjacent — a domain near the one you know',
+      wild: 'Wild — no experiential basis',
+      borrowed: 'Borrowed — someone else’s conviction',
+    },
+    seedButton: 'Send to the test bench',
+    seeded: 'on the bench',
+    calibrationOpen: 'Your gut’s record',
+  },
+  /** The Calibration Record page (A2): factual and warm; no shaming states. */
+  calibration: {
+    panelTitle: 'Your Gut’s Record',
+    intro:
+      'Nobody can introspect their own hit-rate — that is why this record exists. It never moves Truth or XP; it only shows how your gut has tested, rung by rung.',
+    empty: 'No tagged hunches yet. Log a whisper in the Registry and tag where it came from.',
+    awaiting: 'awaiting its test',
+    held: 'held',
+    broke: 'broke',
+    rateLine: (held: number, resolved: number): string =>
+      resolved === 0 ? 'no resolved tests yet' : `${held} of ${resolved} held`,
+  },
   shadow: {
     title: 'The Shadow',
     /** the exactly-one low-friction action: deep-link to the riskiest guardian */

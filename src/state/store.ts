@@ -14,13 +14,16 @@ import { migrateV2IfNeeded } from '../core/migration'
 import type {
   Answer,
   Assumption,
+  CalibrationEntry,
   EvidenceEntry,
   EvidenceTier,
+  HunchProvenance,
   Importance,
   QuestData,
   WeatherEntry,
 } from '../core/schema'
 import { loadQuestData, makeStore, saveQuestData, type QuestStore } from '../core/store'
+import { EARNED_HUNCH_BUMP } from './tunables'
 
 export interface GuardianInput {
   statement: string
@@ -103,6 +106,31 @@ export interface QuestState {
   completeSideQuest(id: string): void
   /** Dinner Card editor: the founder's own card that leads the Brief (R3). */
   setDinnerCard(text: string): void
+  // ---- The Earned Hunch (Mind & Myth A2; v3 §3.3 blocks 1, 5, 6, 7) ----
+  /**
+   * Log a hunch: one E0 Whisper entry, zero justification (D-M — capture never
+   * gates on provenance; the tag is a separate, optional, post-capture step).
+   */
+  addHunch(text: string): EvidenceEntry
+  /**
+   * Tag a hunch's provenance (Earned/Adjacent/Wild/Borrowed). Valid on tier-0
+   * entries only; editable (re-tag switches the rung). First tag opens the
+   * hunch's calibration row (taggedAt from the store clock). Provenance is
+   * NEVER read by tierOf/Truth/XP (invariant-tested) — it buys test priority
+   * and this calibration entry only.
+   */
+  tagHunch(evidenceId: string, provenance: HunchProvenance): void
+  /**
+   * Send a hunch to the test bench: create a guardian whose statement is the
+   * hunch's text and link the hunch to it (E0 linking never raises tierOf — 0
+   * is the floor). Returns null if the id is not a tier-0 entry.
+   */
+  seedGuardianFromHunch(
+    evidenceId: string,
+    importance: Importance,
+    killCriterion: string,
+    originStageId: string,
+  ): Assumption | null
 }
 
 export interface QuestStoreDeps {
@@ -122,6 +150,33 @@ function defaultMakeId(prefix: string): string {
       ? c.randomUUID()
       : `${Date.now().toString(36)}-${(idCounter++).toString(36)}-${Math.random().toString(36).slice(2, 10)}`
   return `${prefix}-${unique}`
+}
+
+/**
+ * Resolve calibration rows tied to guardian `guardianId` when it resolves at
+ * derived tier ≥ 2 (v3 §3.3 block 6: the record scores only E2+-resolved
+ * tests). `held` = the gut was right (validated); `broke` = it wasn't
+ * (invalidated). Rows already resolved are left untouched. Pure.
+ */
+function resolveCalibrationRows(
+  data: QuestData,
+  guardianId: string,
+  outcome: 'held' | 'broke',
+  resolvedAt: string,
+): CalibrationEntry[] {
+  const guardian = data.assumptions.find((a) => a.id === guardianId)
+  if (guardian === undefined || tierOf(guardian, data.evidence) < 2) return data.calibration
+  const linkedHunchIds = new Set(
+    data.evidence
+      .filter((e) => e.tier === 0 && e.linkedAssumptionIds.includes(guardianId))
+      .map((e) => e.id),
+  )
+  if (linkedHunchIds.size === 0) return data.calibration
+  return data.calibration.map((row) =>
+    row.resolvedAt === undefined && linkedHunchIds.has(row.hunchEvidenceId)
+      ? { ...row, resolvedAt, outcome }
+      : row,
+  )
 }
 
 /** Key-generic merge that drops undefined so inscribed answers hold exact 02 keys only. */
@@ -237,15 +292,19 @@ export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState
 
       invalidateAssumption(id: string): void {
         const { data } = get()
+        const target = data.assumptions.find((a) => a.id === id)
+        // idempotent — an already-buried belief (or unknown id) writes nothing
+        if (target === undefined || target.status === 'invalidated') return
         const resolvedAt = now()
-        commit({
+        const next: QuestData = {
           ...data,
           assumptions: data.assumptions.map((a) =>
-            a.id === id && a.status !== 'invalidated'
-              ? { ...a, status: 'invalidated', resolvedAt }
-              : a,
+            a.id === id ? { ...a, status: 'invalidated', resolvedAt } : a,
           ),
-        })
+        }
+        // the gut's record: linked tagged hunches resolve 'broke' at E2+ (A2)
+        next.calibration = resolveCalibrationRows(next, id, 'broke', resolvedAt)
+        commit(next)
       },
 
       unlockVault(): void {
@@ -322,6 +381,67 @@ export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState
         const { data } = get()
         commit({ ...data, dinnerCard: { text, updatedAt: now() } })
       },
+
+      addHunch(text: string): EvidenceEntry {
+        const { data } = get()
+        const entry: EvidenceEntry = {
+          id: makeId('evidence'),
+          tier: 0,
+          text,
+          source: '', // zero justification (D-M) — a whisper needs no source line
+          linkedAssumptionIds: [],
+          stageId: '', // a hunch belongs to the founder, not a stage
+          date: now(),
+        }
+        commit({ ...data, evidence: [...data.evidence, entry] })
+        return entry
+      },
+
+      tagHunch(evidenceId: string, provenance: HunchProvenance): void {
+        const { data } = get()
+        const target = data.evidence.find((e) => e.id === evidenceId)
+        if (target === undefined || target.tier !== 0) return // tier-0 only (02)
+        const evidence = data.evidence.map((e) =>
+          e.id === evidenceId ? { ...e, provenance } : e,
+        )
+        // first tag opens the calibration row; re-tags keep the original taggedAt
+        const calibration = data.calibration.some((c) => c.hunchEvidenceId === evidenceId)
+          ? data.calibration
+          : [...data.calibration, { hunchEvidenceId: evidenceId, taggedAt: now() }]
+        commit({ ...data, evidence, calibration })
+      },
+
+      seedGuardianFromHunch(
+        evidenceId: string,
+        importance: Importance,
+        killCriterion: string,
+        originStageId: string,
+      ): Assumption | null {
+        const { data } = get()
+        const hunch = data.evidence.find((e) => e.id === evidenceId)
+        if (hunch === undefined || hunch.tier !== 0) return null
+        const guardian: Assumption = {
+          id: makeId('guardian'),
+          statement: hunch.text,
+          originStageId,
+          importance,
+          status: 'untested',
+          killCriterion,
+          createdAt: now(),
+        }
+        // linking the E0 hunch never raises tierOf (0 is the floor) — the link
+        // is what the priority bump and the calibration resolution derive from
+        commit({
+          ...data,
+          assumptions: [...data.assumptions, guardian],
+          evidence: data.evidence.map((e) =>
+            e.id === evidenceId
+              ? { ...e, linkedAssumptionIds: [...e.linkedAssumptionIds, guardian.id] }
+              : e,
+          ),
+        })
+        return guardian
+      },
     }
   })
 }
@@ -358,7 +478,7 @@ export function useAction(milestoneIds: readonly string[]): number {
 
 /** The crowned guardian: max weight × (4 − derived tier) among untested/testing. */
 export function useRiskiest(): Assumption | null {
-  return useQuestStore((s) => riskiest(s.data))
+  return useQuestStore((s) => riskiest(s.data, EARNED_HUNCH_BUMP))
 }
 
 /**

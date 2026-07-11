@@ -9,7 +9,7 @@
 import { create } from 'zustand'
 import type { ActGateId } from '../core/metrics'
 
-export type PanelMode = 'panel:vault' | 'panel:registry' | 'panel:campfire'
+export type PanelMode = 'panel:vault' | 'panel:registry' | 'panel:campfire' | 'panel:calibration'
 // 'gate' = an Act-Gate threshold; 'loop' = a named loop's toll-portal. Both are
 // modal (mode !== 'roam' freezes the world), and both carry a payload below.
 export type UiMode = 'roam' | 'trance' | 'gate' | 'loop' | PanelMode

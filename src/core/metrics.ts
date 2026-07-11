@@ -80,17 +80,35 @@ export function xp(data: QuestData): number {
 }
 
 /**
+ * True when guardian `a` was SEEDED from an Earned-provenance hunch: a tier-0
+ * (Whisper) entry tagged 'earned' links it. Linking a hunch never raises tierOf
+ * (0 is the floor), so seeding is priority-visible but weight/Truth-invisible.
+ */
+export function seededFromEarnedHunch(a: Assumption, evidence: readonly EvidenceEntry[]): boolean {
+  return evidence.some(
+    (e) => e.tier === 0 && e.provenance === 'earned' && e.linkedAssumptionIds.includes(a.id),
+  )
+}
+
+/**
  * Riskiest guardian = the untested|testing assumption maximizing
  * weight × (4 − tierOf) (02). Null when none. Deterministic tie-break:
  * earlier createdAt wins, then smaller id — independent of array order.
- * (Earned-hunch priority bump is queued canon work, not implemented here.)
+ *
+ * `earnedBump` (02 computed-metrics, 2026-07-11): a guardian seeded from an
+ * Earned-provenance hunch adds this constant to its ORDERING score only. The
+ * value lives in src/state/tunables.ts (code constant, never canon); core
+ * takes it as a parameter so this module stays framework- and state-free.
+ * Weight, Truth, and XP are untouched by the bump (invariant-tested).
  */
-export function riskiest(data: QuestData): Assumption | null {
+export function riskiest(data: QuestData, earnedBump = 0): Assumption | null {
   let best: Assumption | null = null
   let bestScore = 0
   for (const a of data.assumptions) {
     if (a.status !== 'untested' && a.status !== 'testing') continue
-    const score = importanceWeight(a.importance) * (4 - tierOf(a, data.evidence))
+    const score =
+      importanceWeight(a.importance) * (4 - tierOf(a, data.evidence)) +
+      (earnedBump !== 0 && seededFromEarnedHunch(a, data.evidence) ? earnedBump : 0)
     if (
       best === null ||
       score > bestScore ||
