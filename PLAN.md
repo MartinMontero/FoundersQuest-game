@@ -57,7 +57,10 @@ in docs/build/mindmyth-canon-diff.md (RATIFIED, all defaults), blockers in BLOCK
 - **A4 Confrontation + Funeral rite** — BUILT (2026-07-11); in two-clean-run close. All 8 plan
   steps landed in the law's order (core → store → citation UI → finisher → rite → wrapper LAST
   → world → e2e/feel). 39 unit invariants + 4 slice e2e green first run; feel pack a4 archived.
-- **A5 The Ego** — IN BUILD (opened 2026-07-11, A2–A4 gate met).
+- **A5 The Ego** — ✅ CLOSED (2026-07-11): two clean full runs (vitest 411 ×2 · e2e 31+3
+  ×2 · gitleaks clean · osv proxy-blocked, zero new deps — note in VERIFICATION). The
+  addendum's build program is COMPLETE; the consolidated SITREP heads SITREP.md and the
+  operator's one full playthrough is the next gate.
 
 ## A5 build plan (addendum §8; egoRecord derived, NEVER stored — D-B)
 

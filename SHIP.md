@@ -82,7 +82,7 @@ wrapper stays deliberately light in the slice; per-stage funeral buffs (research
 deferred with the art pass; the set-piece feel shot catches the circle at frame edge
 (camera faces spawn) — operator sees it in-world.
 
-## A5 · The Ego (2026-07-11) — vertical slice, W8 (close pending two runs)
+## A5 · The Ego (2026-07-11) — CLOSED (two clean full runs; see VERIFICATION — osv note)
 **Shipped:** src/core/ego.ts — the Ego DERIVED at runtime from the real record (D-B: no
 egoRecord key exists anywhere): shields = overridden gates carrying their logged reasons
 VERBATIM · ghost summons = skipped-unheld funerals (+2 HP each; the already-live delayed

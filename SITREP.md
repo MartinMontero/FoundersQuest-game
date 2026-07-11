@@ -94,9 +94,10 @@ resolve it with real evidence and you are never worse off than if you'd hidden i
 - Unit tests: **411** (was 334 at the spine report) — including the Ego's
   200-state invariant sweep, the bounce/finisher/funeral invariants, and the
   metrics-blindness proofs for hunches.
-- e2e: **33 tests / 12-ish minutes serial** — full induction, skip path, hunch
-  lifecycle, both confrontation endings, skip→ghost→lay-to-rest, trough
-  queueing, the five-phase Ego fight, reload-persistence checks.
+- e2e: **34 tests (31 live + 3 screenshot-pack, ~12 minutes serial)** — full
+  induction, skip path, hunch lifecycle, both confrontation endings,
+  skip→ghost→lay-to-rest, trough queueing, the five-phase Ego fight, and
+  reload-persistence checks. Two consecutive fully-clean runs closed each phase.
 - Feel packs archived per phase: docs/feel-packs/a3 · a4 · a5.
 
 ---

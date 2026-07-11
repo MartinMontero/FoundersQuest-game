@@ -512,3 +512,42 @@ tier: constrained   gl: Adreno (TM) 650   ua: Firefox/152.0 (Android 16)
 - Execution-found issues this phase: none blocking — the slice e2e passed on its first run
   (4/4). Honest nits logged in SHIP: poise-chip stagger is labor-not-timing (slice scope),
   set-piece feel shot at frame edge, per-stage funeral buffs deferred.
+
+---
+
+# VERIFICATION — Mind & Myth A5 "The Ego" close (2026-07-11)
+
+**Exit bar (§9): two consecutive clean full runs — MET (osv note carries over).**
+
+| Check | Run 1 | Run 2 |
+|---|---|---|
+| vitest | 411 passed / 17 files | 411 passed / 17 files |
+| e2e (full, serial) | **31 passed + 3 skipped-by-design** (feelpack a3/a4/a5 gate on FEEL_PACK=1) — 12.0m, zero flaky | **31 passed + 3 skipped-by-design** — 11.8m, zero flaky |
+| gitleaks | (run 2) | **no leaks found** |
+| osv | (run 2) | **UNREACHABLE — proxy 403** on api.osv.dev, same condition as the A4 close the same day. A5 adds ZERO dependencies (lockfile untouched since Phase 2b); the identical tree's clean scan (A3 close, same morning) stands. Re-run when the proxy readmits osv.dev. |
+
+**The A5 invariants and where each is proven:**
+- **THE OUTRANKING INVARIANT** (addendum §8 — outranks any formula) — 200 seeded-random
+  states in tests/ego.spec.ts: adding a captured assumption RESOLVED at E2+ never makes the
+  founder worse off on ANY formula axis (hp ≤ · founderEdge ≥ · per-tier damage ≥ · shields
+  = · ghosts = · divergence ≤). Deterministic seed; the sweep is identical every run.
+- **egoRecord derived, never stored (D-B)** — no schema key exists; deriveEgo is pure over
+  QuestData; fight progress is session-only and the e2e proves leaving mid-fight leaves the
+  record BYTE-IDENTICAL (deep-equal before/after).
+- **Identity-fusion cannot be won by damage** — citationLands returns false for every tier
+  in 'identity-fusion' (and 'projection'); the e2e reaches fusion with the ledger hidden
+  and ends it only via the integration line.
+- **The capstone with no canon change** — integration writes ONE wisdomCodex entry
+  (sourceGuardianId 'ego', write-once, non-empty enforced); egoIntegrated derives from it;
+  the HUD Distance readout survives reload in e2e.
+- **D-F trough delays the offer** — the threshold shows the pre-written delay (no enter
+  affordance) under three low readings; the offer opens when the last-3 window lifts;
+  e2e-proven both sides.
+- **B2 holds against the Ego** — hunches bounce unconsumed; deflected E2+ coins are ALSO
+  unconsumed (anti-punitive: no soft-lock; found during test planning, fixed before the
+  first e2e run).
+- **Shields quote the founder verbatim** — the e2e asserts the override reason string
+  appears in the shield-break line; projection's "return as test" is a real
+  untested→testing write asserted in the persisted record.
+- **Zero API (D-E)** — every fight line lives in src/strings/ego.ts; recordRun asserts
+  zero api.anthropic.com requests in both A5 specs (as in every e2e).
