@@ -15,7 +15,8 @@ test.describe.configure({ timeout: 240_000 })
 
 test.skip(process.env['FEEL_PACK'] !== '1', 'feel pack runs only when FEEL_PACK=1')
 
-test('feel pack: spawn, shrine, trance frame, opening, chart, legend', async ({ page }) => {
+test('feel pack a3: spawn, shrine, trance frame, opening, chart, legend', async ({ page }) => {
+  test.skip(PHASE !== 'a3', 'a3 shots run under FEEL_PACK_PHASE=a3')
   mkdirSync(DIR, { recursive: true })
 
   // 1-2: fresh opening — invitation + dialogue over the live world
@@ -63,4 +64,107 @@ test('feel pack: spawn, shrine, trance frame, opening, chart, legend', async ({ 
   await page.keyboard.press('KeyL')
   await page.waitForTimeout(300)
   await page.screenshot({ path: `${DIR}/07-legend.png` })
+})
+
+// ---- A4: the Proving Circle + the Funeral rite (art floor: the arena and
+// ---- rite must sit over the LIVE world — a rite over a void fails the phase)
+
+const A4_GUARDIAN = {
+  id: 'g-feel',
+  statement: 'Everyone has this problem',
+  originStageId: 's1',
+  importance: 'dies',
+  status: 'untested',
+  killCriterion: 'Fewer than 3 of 10 name it unprompted',
+  createdAt: '2026-07-01T00:00:00.000Z',
+}
+
+const A4_LEDGER = [
+  {
+    id: 'e-word',
+    tier: 2,
+    text: '"I gave up and went back to my spreadsheet"',
+    source: 'interview 3',
+    linkedAssumptionIds: [],
+    stageId: 's1',
+    date: '2026-07-03',
+  },
+  {
+    id: 'e-gold',
+    tier: 4,
+    text: 'paid $40/mo for the manual workaround',
+    source: 'receipt',
+    linkedAssumptionIds: [],
+    stageId: 's1',
+    date: '2026-07-05',
+  },
+]
+
+test('feel pack a4: arena set-piece, press, window, thread, shatter, rite, graveside', async ({
+  page,
+}) => {
+  test.skip(PHASE !== 'a4', 'a4 shots run under FEEL_PACK_PHASE=a4')
+  mkdirSync(DIR, { recursive: true })
+
+  await seedFounderName(page)
+  await page.addInitScript(
+    ([storageKey, seedJson]) => {
+      const raw = window.localStorage.getItem(storageKey as string)
+      const data = raw === null ? {} : (JSON.parse(raw) as Record<string, unknown>)
+      const existing = data['assumptions']
+      if (Array.isArray(existing) && existing.length > 0) return
+      window.localStorage.setItem(
+        storageKey as string,
+        JSON.stringify({ ...data, ...(JSON.parse(seedJson as string) as object) }),
+      )
+    },
+    [
+      'founders-quest:v3',
+      JSON.stringify({ assumptions: [A4_GUARDIAN], evidence: A4_LEDGER }),
+    ],
+  )
+  await page.goto('/')
+  await waitForWorldReady(page)
+
+  // 1: the circle from the field — challenger menhir, braziers, golden thread
+  await tabToTarget(page, 'arena')
+  await page.waitForTimeout(600)
+  await page.screenshot({ path: `${DIR}/01-arena-setpiece.png` })
+
+  // 2: the press — poise, strike, the world holding the frame
+  await page.keyboard.press('KeyE')
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: `${DIR}/02-arena-press.png` })
+
+  // 3: the citation window broken open early (four strikes at dies-weight)
+  for (let i = 0; i < 4; i += 1) await page.keyboard.press('Space')
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: `${DIR}/03-citation-window.png` })
+
+  // 4: the golden thread ignited (verdict recorded, finisher persistent)
+  await page.getByTestId('arena-cite-2').press('Enter')
+  await page.getByTestId('arena-verdict-tripped').press('Enter')
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: `${DIR}/04-thread-ignited.png` })
+
+  // 5: the shatter — both-outcomes-win staging
+  await page.getByTestId('arena-finisher').press('Enter')
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: `${DIR}/05-shatter.png` })
+
+  // 6-7: the rite over the live world — vigil, then the verbatim eulogy
+  await page.getByTestId('arena-to-rite').press('Enter')
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: `${DIR}/06-rite-vigil.png` })
+  await page.getByTestId('rite-continue').press('Enter')
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: `${DIR}/07-rite-eulogy.png` })
+
+  // 8: committal sealed → the graveside (tombstone by the circle)
+  await page.getByTestId('rite-continue').press('Enter')
+  await page.getByTestId('rite-line').fill('It was never everyone.')
+  await page.getByTestId('rite-seal').press('Enter')
+  await page.getByTestId('rite-done').press('Enter')
+  await page.waitForTimeout(600)
+  await page.screenshot({ path: `${DIR}/08-graveside.png` })
 })
