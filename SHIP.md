@@ -24,7 +24,7 @@ anywhere on hand — the REPLACE half is applied, the APPEND half stays queued (
 severable; not authored by inference). (3) HUD M/L help strings ship with the A3 surfaces, not
 before (02 documents the reservation; no dead keys documented in-game).
 
-## A2 · The Earned Hunch (2026-07-11) — see VERIFICATION for the two clean runs
+## A2 · The Earned Hunch (2026-07-11) — CLOSED (two consecutive clean full runs; see VERIFICATION)
 **Shipped:** hunch capture (E0 Whisper; one field, zero justification — D-M) · provenance
 tagging Earned/Adjacent/Wild/Borrowed (optional, post-capture, editable; plain one-line
 definitions in the picker) · the wicked-domain rune on every hunch (standing, unobtrusive,

@@ -43,8 +43,9 @@ in docs/build/mindmyth-canon-diff.md (RATIFIED, all defaults), blockers in BLOCK
 - **A1 docs landing** ✅ — WIKJ v3 assembled at docs/epistemology/ (8 edits by intent, deviations
   logged); canon commit applied (schema delta, council sentence swap, 5 riders, keybind
   reservation, glossary). Council provenance-block: BLOCKERS B-4 (severable, awaiting source).
-- **A2 The Earned Hunch** — provenance tagging, wicked rune, priority bump, calibration record;
-  invariants unit-tested; e2e flow. (This entry is updated at phase close.)
+- **A2 The Earned Hunch** ✅ CLOSED (2026-07-11) — provenance tagging, wicked rune, priority
+  bump, calibration record; 15 invariant tests + full e2e flow; two consecutive clean full runs
+  (vitest 351 ×2 · e2e 23 ×2 · scanners clean). 05 moved Queued→Shipped.
 - **A3 First Light** ⛔ gated on Gate-2 re-pass (operator plays before A3 opens — B-3).
 - **A4 Confrontation + Funeral rite** ⛔ gated on Gate-2 re-pass.
 - **A5 The Ego** ⛔ gated on A2–A4 complete.

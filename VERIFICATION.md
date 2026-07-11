@@ -415,3 +415,32 @@ tier: constrained   gl: Adreno (TM) 650   ua: Firefox/152.0 (Android 16)
 **BYOK floor status (Phase 1 scope):** key containment proven by test (own storage key, consent-precedes-store negative-tested, never serialized — planted `sk-ant-` fixture absent from all serializer output); one endpoint constant guard-tested; three error classes + 400KB pre-flight cap classified and tested; fallback acceptance persisted (`founders-quest:settings`) and tested; parity suite byte-matches 03/04 at test time, mutation-checked.
 
 **UNTESTED (by design or pending):** any live Anthropic call (no key exists — operator queue, Phase 4); CSP on a deployed preview (first deploy is Phase 2); e2e beyond boot (UI lands Phase 2); byte-parity fixture for `COUNCIL_SYSTEM_PROMPT` runs in the parity suite but the temple that consumes it is Phase 4.
+
+---
+
+# VERIFICATION — Program Addendum A "Mind & Myth" · A1 + A2 close (2026-07-11)
+
+**Exit bar (§9): two consecutive clean full runs — MET.**
+
+| Check | Run 1 | Run 2 |
+|---|---|---|
+| vitest (incl. parity, guards, A2 invariants) | 351 passed / 14 files (exit 0) | 351 passed / 14 files |
+| Playwright e2e, full suite, serial | **23 passed (8.7m)** | **23 passed (8.8m)** |
+| gitleaks dir + git | no leaks (pre-run) | no leaks ×2 |
+| osv-scanner (offline flags, canon vite-5 filters) | no issues (pre-run) | no issues |
+
+- A1: WIKJ v3 landed (assembly deviations itemized in commit 15bf502 — anchor drift applied by
+  intent, edit-4 no-op; nothing invented); canon commit 3a183a3 (schema delta + hydration
+  guards, 04/council.ts sentence swap with parity green, 5 riders, keybind reservation,
+  glossary, rulings logged). Council provenance-block: NOT applied — no verbatim source
+  (BLOCKERS B-4, severable).
+- A2: earned-hunch invariants are EXECUTED tests, not inspection: static source assertion +
+  provenance-mutation sweep (zero metric delta), calibration-mutation (zero delta), bump
+  ordering-only (incl. earned-only rung check), E2+-only resolution, key-store isolation.
+  e2e drives the real world: capture → tag → seed → bump beats an earlier equal-weight
+  guardian → E2 link → Mirror funeral → record shows 'broke' (W1→W5→W1 reload-resume;
+  keyboard-only; zero console errors; zero api.anthropic.com requests).
+- Honest labels: A2's surfaces are click-verified via Playwright (real DOM, real store);
+  screenshot feel-checkpoint packs are an A3/A4/A5 obligation (art-direction.md §7), not run
+  here — A2's panels reuse the shipped QuestStyles parchment idiom.
+- A3–A5 remain BLOCKED on the Gate-2 re-pass (operator play — B-3) per the operator's ruling.
