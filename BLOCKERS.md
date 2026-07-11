@@ -46,5 +46,13 @@ QA playthrough per SITREP.md serves as the re-judgment).
   merged) — law for all feel checkpoints.
 - **2026-07-11 · B-3 PARTIALLY RESOLVED.** Gate-2 re-pass: PENDING — operator will play before
   A3 opens. **A3–A5 remain hard-blocked**; A1–A2 authorized and proceeding.
+- **2026-07-11 (later) · B-3 SUPERSEDED — A3–A5 UNBLOCKED by operator directive.** Operator
+  (verbatim): "follow the master prompt and the loop until you build out the full game … I will
+  do the eye ball then by playing the whole game myself and then make my full human QA report …
+  Unless there is a massive problem or conflict or danger, keep going." The per-phase play
+  gates (Gate-2 re-pass before A3; operator-plays-between-phases, addendum §9) are consolidated
+  by the operator into ONE end-of-build playthrough. Feel-checkpoint screenshot packs are still
+  produced and archived per phase against docs/build/art-direction.md; the human verdict lands
+  once, at the end, via the consolidated SITREP + QA report.
 - **2026-07-11 · D-blocks.** All defaults ratified, no exceptions (operator, verbatim: "all
   defaults ratified").

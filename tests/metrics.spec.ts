@@ -497,6 +497,35 @@ describe('actionFraction', () => {
   })
 })
 
+describe('the First-Light carve-out (D-G, 2026-07-11)', () => {
+  it('firstLight assumptions are excluded from the Truth denominator entirely', () => {
+    const live = assumption({ id: 'live-1', importance: 'dies', status: 'validated' })
+    const tut = assumption({ id: 'tut-1', importance: 'dies', status: 'invalidated', firstLight: true })
+    const d = data({
+      assumptions: [live, tut],
+      evidence: [evidence({ tier: 2, linkedAssumptionIds: ['live-1'] })],
+    })
+    expect(truth(d)).toBe(1) // 3/3 — the tutorial kill neither lowers nor raises the ceiling
+    // ONLY firstLight assumptions → Truth stays null (the meter is unlit, not corrupted)
+    expect(truth(data({ assumptions: [tut] }))).toBeNull()
+  })
+
+  it('a RESOLVED firstLight assumption pays fixed First-Light XP outside the tier≥2 formula', () => {
+    const killed = assumption({ id: 'fl-1', status: 'invalidated', firstLight: true }) // tier 0
+    expect(xp(data({ assumptions: [killed] }))).toBe(15)
+    const confirmed = assumption({ id: 'fl-2', status: 'validated', firstLight: true })
+    expect(xp(data({ assumptions: [confirmed] }))).toBe(15) // fixed — not the 15/10 split
+    const unresolved = assumption({ id: 'fl-3', firstLight: true })
+    expect(xp(data({ assumptions: [unresolved] }))).toBe(0)
+    // and tier≥2 evidence does NOT double-pay a firstLight assumption
+    const withEvidence = data({
+      assumptions: [killed],
+      evidence: [evidence({ tier: 3, linkedAssumptionIds: ['fl-1'] })],
+    })
+    expect(xp(withEvidence)).toBe(15)
+  })
+})
+
 describe('verdictRecorded (the W5 sequence-lock key)', () => {
   it('true only for a yes/no verdict at s5-th', () => {
     expect(verdictRecorded(data({ answers: { s5: { 's5-th': { verdict: 'yes' } } } }))).toBe(true)

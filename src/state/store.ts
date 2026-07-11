@@ -131,6 +131,29 @@ export interface QuestState {
     killCriterion: string,
     originStageId: string,
   ): Assumption | null
+  // ---- First Light (Mind & Myth A3) ----
+  /** The invitation was shown (one-way; the card never re-opens as mandatory). */
+  markInvitationSeen(): void
+  /** Resume marker for the induction — beat number + store-clock ts. */
+  setOpeningBeat(beat: number): void
+  /** The induction completed: stamp completedAt, unlock the Chart, clear the marker. */
+  completeOpening(): void
+  /** The courtesy skip (never override-logged): stamp skippedAt, unlock the Chart. */
+  skipOpening(): void
+  /**
+   * Register the opening's REAL assumption via the D-I distinct elicitation —
+   * firstLight-tagged (D-G: excluded from the Truth denominator; fixed XP on
+   * resolution). The id is recorded to firstLightArtifactIds.
+   */
+  registerFirstLightGuardian(statement: string, killCriterion: string): Assumption
+  /**
+   * Resolve a firstLight assumption by the founder's own real admission (the
+   * first kill / the rarer 'seen it' confirmation). Pays XP_FIRST_LIGHT via
+   * the metrics carve-out — never the tier≥2 formula.
+   */
+  resolveFirstLight(id: string, outcome: 'invalidated' | 'validated'): void
+  /** Record an opening-produced artifact id (vault capture, evidence, guardian). */
+  recordFirstLightArtifact(id: string): void
 }
 
 export interface QuestStoreDeps {
@@ -441,6 +464,77 @@ export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState
           ),
         })
         return guardian
+      },
+
+      markInvitationSeen(): void {
+        const { data } = get()
+        if (data.invitationSeen) return
+        commit({ ...data, invitationSeen: true })
+      },
+
+      setOpeningBeat(beat: number): void {
+        const { data } = get()
+        commit({ ...data, openingBeatProgress: { beat, ts: now() } })
+      },
+
+      completeOpening(): void {
+        const { data } = get()
+        commit({
+          ...data,
+          openingCompletedAt: data.openingCompletedAt ?? now(),
+          chartUnlocked: true,
+          openingBeatProgress: null,
+        })
+      },
+
+      skipOpening(): void {
+        const { data } = get()
+        commit({
+          ...data,
+          openingSkippedAt: data.openingSkippedAt ?? now(),
+          chartUnlocked: true, // skippers still receive the Chart — nothing is gated
+          openingBeatProgress: null,
+        })
+      },
+
+      registerFirstLightGuardian(statement: string, killCriterion: string): Assumption {
+        const { data } = get()
+        const guardian: Assumption = {
+          id: makeId('guardian'),
+          statement,
+          originStageId: 's1',
+          importance: 'dies', // the belief the venture leans on hardest
+          status: 'untested',
+          killCriterion,
+          createdAt: now(),
+          firstLight: true,
+        }
+        commit({
+          ...data,
+          assumptions: [...data.assumptions, guardian],
+          firstLightArtifactIds: [...data.firstLightArtifactIds, guardian.id],
+        })
+        return guardian
+      },
+
+      resolveFirstLight(id: string, outcome: 'invalidated' | 'validated'): void {
+        const { data } = get()
+        const target = data.assumptions.find((a) => a.id === id)
+        if (target === undefined || target.firstLight !== true) return
+        if (target.status === 'invalidated' || target.status === 'validated') return
+        const resolvedAt = now()
+        commit({
+          ...data,
+          assumptions: data.assumptions.map((a) =>
+            a.id === id ? { ...a, status: outcome, resolvedAt } : a,
+          ),
+        })
+      },
+
+      recordFirstLightArtifact(id: string): void {
+        const { data } = get()
+        if (data.firstLightArtifactIds.includes(id)) return
+        commit({ ...data, firstLightArtifactIds: [...data.firstLightArtifactIds, id] })
       },
     }
   })

@@ -30,6 +30,11 @@ export function importanceWeight(importance: Importance): number {
 export const XP_INVALIDATED = 15
 export const XP_VALIDATED = 10
 export const XP_SIDE_QUEST = 5
+/** The D-G carve-out (02, 2026-07-11): a resolved firstLight-tagged assumption
+ *  pays this FIXED award outside the tier≥2 formula — the tutorial artifact is
+ *  real, the live metric stays uncorrupted. Matches the invalidation award so
+ *  the first kill's celebration is honest. */
+export const XP_FIRST_LIGHT = 15
 
 /**
  * tierOf(a) = max tier of evidence linked to assumption `a`, else 0 (02).
@@ -50,10 +55,14 @@ export function tierOf(a: Assumption, evidence: readonly EvidenceEntry[]): Evide
  * Milestones, side quests, and the field journal never touch this number.
  */
 export function truth(data: QuestData): number | null {
-  if (data.assumptions.length === 0) return null
+  // D-G carve-out (02, 2026-07-11): firstLight-tagged assumptions are excluded
+  // from the denominator entirely — the tutorial can never lower (or raise)
+  // the founder's live Truth ceiling.
+  const counted = data.assumptions.filter((a) => a.firstLight !== true)
+  if (counted.length === 0) return null
   let numerator = 0
   let denominator = 0
-  for (const a of data.assumptions) {
+  for (const a of counted) {
     const w = importanceWeight(a.importance)
     denominator += w
     const resolved = a.status === 'validated' || a.status === 'invalidated'
@@ -69,6 +78,12 @@ export function truth(data: QuestData): number | null {
 export function xp(data: QuestData): number {
   let total = 0
   for (const a of data.assumptions) {
+    // D-G carve-out: a RESOLVED firstLight assumption pays the fixed award
+    // outside the tier≥2 formula (tier is irrelevant to it, both directions)
+    if (a.firstLight === true) {
+      if (a.status === 'invalidated' || a.status === 'validated') total += XP_FIRST_LIGHT
+      continue
+    }
     if (tierOf(a, data.evidence) < 2) continue
     if (a.status === 'invalidated') total += XP_INVALIDATED
     else if (a.status === 'validated') total += XP_VALIDATED

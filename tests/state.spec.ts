@@ -491,6 +491,55 @@ describe('sequence-lock actions (unlockVault / passGate / overrideGate / recordL
     ])
   })
 
+  it('First Light actions: begin/skip/complete, the D-I guardian, the real first kill', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().markInvitationSeen()
+    expect(store.getState().data.invitationSeen).toBe(true)
+    store.getState().setOpeningBeat(3)
+    expect(store.getState().data.openingBeatProgress).toEqual({ beat: 3, ts: FIXED_NOW })
+
+    // the D-I distinct elicitation registers a REAL, firstLight-tagged guardian
+    const g = store.getState().registerFirstLightGuardian(
+      'small cafés will pay to cut spoilage',
+      'ask 5 owners; 4 shrug',
+    )
+    expect(g).toMatchObject({ firstLight: true, importance: 'dies', originStageId: 's1', status: 'untested' })
+    expect(store.getState().data.firstLightArtifactIds).toContain(g.id)
+
+    // the first kill: the founder's own admission — fixed XP, Truth untouched (null: no live assumptions)
+    store.getState().resolveFirstLight(g.id, 'invalidated')
+    expect(store.getState().data.assumptions[0]?.status).toBe('invalidated')
+    expect(xp(store.getState().data)).toBe(15)
+    expect(truth(store.getState().data)).toBeNull()
+    // idempotent — a resolved firstLight assumption never flips again
+    store.getState().resolveFirstLight(g.id, 'validated')
+    expect(store.getState().data.assumptions[0]?.status).toBe('invalidated')
+
+    store.getState().completeOpening()
+    const { data } = store.getState()
+    expect(data.openingCompletedAt).toBe(FIXED_NOW)
+    expect(data.chartUnlocked).toBe(true)
+    expect(data.openingBeatProgress).toBeNull()
+  })
+
+  it('the courtesy skip unlocks the Chart and is NEVER an override (no gates/trail writes)', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().skipOpening()
+    const { data } = store.getState()
+    expect(data.openingSkippedAt).toBe(FIXED_NOW)
+    expect(data.chartUnlocked).toBe(true)
+    expect(data.gates).toEqual({}) // exempt from override-logging (F15)
+    expect(data.trail).toEqual([])
+  })
+
+  it('resolveFirstLight refuses non-firstLight guardians (the carve-out cannot leak)', () => {
+    const { spy, deps } = makeDeps()
+    spy.map.set(STORAGE_KEY, JSON.stringify(dataWith({ assumptions: [guardian('g-1')] })))
+    const store = createQuestStore(deps)
+    store.getState().resolveFirstLight('g-1', 'invalidated')
+    expect(store.getState().data.assumptions[0]?.status).toBe('untested')
+  })
+
   it('gate/loop writes persist through core save and never touch the key store', () => {
     const { spy, deps } = makeDeps()
     const store = createQuestStore(deps)
