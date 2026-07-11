@@ -470,3 +470,44 @@ tier: constrained   gl: Adreno (TM) 650   ua: Firefox/152.0 (Android 16)
   invalidated, s1-l1 UNTOUCHED, chart unlocked) + the skip path (Chart in HUD, no gate/trail
   writes, one-time re-entry). Feel pack archived: docs/feel-packs/a3/ (7 shots; automation-tier
   captures — noted; label-crowding nits at W7/W8 logged for operator QA).
+
+---
+
+# VERIFICATION — Mind & Myth A4 "Confrontation + Funeral rite" close (2026-07-11)
+
+**Exit bar (§9): two consecutive clean full runs — RUN 2 IN FLIGHT.**
+
+| Check | Run 1 | Run 2 |
+|---|---|---|
+| vitest | 395 passed / 16 files | (pending) |
+| e2e (full, serial) | **29 passed + 2 skipped-by-design** (both feelpack tests gate on FEEL_PACK=1) — 10.9m, zero flaky | (pending) |
+| gitleaks / osv | (run 2) | (pending) |
+
+**The A4 invariants and where each is proven:**
+- **B2 bounce-is-feedback** — core: applyCitation returns the SAME object (reference-equal)
+  for E0/E1; store: citeInConfrontation writes NOTHING on a bounce (whole-record zero-delta
+  asserted); e2e: bounce line shows, hp text unchanged, window stays open, citations[] ends
+  without the hunch.
+- **B3 no-inverse-HP** — hp 0 is `argumentSpent` (narration) and the finisher predicate
+  ignores hp entirely; unit-tested both ways.
+- **Finisher persistent-until-used, never RNG** — pure predicate over (outcome, resolvedAt);
+  100-call determinism unit test; e2e proves it SURVIVES A RELOAD mid-fight and the replayed
+  argument state (hp 6/12) matches the pre-reload state exactly.
+- **D-C action-never-gates-evidence** — structural (no stagger/poise parameter exists in
+  core or store citation paths) + e2e: the validation branch wins the entire fight with
+  ZERO strikes, on the idle auto-window alone. The golden thread renders in BOTH phases.
+- **Both outcomes win (D-D)** — equally authored staging asserted in both branches;
+  validated pays +10 / invalidated +15 (the 1.5×) DERIVED by the untouched metrics module;
+  unproven resolutions display the honest no-XP-yet line.
+- **The rite** — Eulogy recites ONLY cited/linked E2+ entries verbatim (count + exact text
+  asserted); Committal writes funerals[].heldAt + epitaph + a wisdomCodex line in one action;
+  skip = one warning then write-once skippedAt; the delayed funeral adds heldAt while
+  KEEPING skippedAt (honest history) and the ghost ember disappears; the trough hides the
+  ember entirely (queued, never lost).
+- **No synthetic ammunition** — citing requires an id present in data.evidence (store guard,
+  unit-tested with a forged id); the UI renders only the real Ledger.
+- **Canon shapes only** — confrontations[]/funerals[]/wisdomCodex writes asserted field-exact
+  in unit tests; hydration sanitizers for these keys were already in schema.ts (A1).
+- Execution-found issues this phase: none blocking — the slice e2e passed on its first run
+  (4/4). Honest nits logged in SHIP: poise-chip stagger is labor-not-timing (slice scope),
+  set-piece feel shot at frame edge, per-stage funeral buffs deferred.
