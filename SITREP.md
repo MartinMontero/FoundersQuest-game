@@ -4,7 +4,7 @@ Plain-English status for your one consolidated playthrough. Everything below was
 built since the spine report (which still stands — it's the second half of this
 file, and its route is still the right warm-up lap).
 
-**Live (desktop-first):** https://claude-dev-environment-setup.founders-quest-game.pages.dev
+**Live (desktop-first):** https://claude-dev-environment-setup-sp4q.founders-quest-game.pages.dev
 
 ---
 
@@ -108,7 +108,7 @@ Plain-English status for your human-QA playthrough. What's playable, what's
 deliberately not there yet, and the security posture — so you can judge it fairly
 and hand me a punch-list.
 
-**Live (desktop-first):** https://claude-dev-environment-setup.founders-quest-game.pages.dev
+**Live (desktop-first):** https://claude-dev-environment-setup-sp4q.founders-quest-game.pages.dev
 
 ---
 
