@@ -18,7 +18,8 @@ export type PanelMode =
   | 'panel:legend'
 // 'gate' = an Act-Gate threshold; 'loop' = a named loop's toll-portal. Both are
 // modal (mode !== 'roam' freezes the world), and both carry a payload below.
-// 'arena' = the Proving Circle (A4 confrontation); 'rite' = the Funeral rite.
+// 'arena' = the Proving Circle (A4 confrontation); 'rite' = the Funeral rite;
+// 'ego' = the W8 Launch Threshold (A5 — offer, fight, or trough delay).
 export type UiMode =
   | 'roam'
   | 'trance'
@@ -27,6 +28,7 @@ export type UiMode =
   | 'reentry'
   | 'arena'
   | 'rite'
+  | 'ego'
   | PanelMode
 
 export interface ShadowState {
@@ -88,6 +90,9 @@ export interface UiState {
   /** open the Funeral rite for an invalidated belief (A4) */
   enterRite(guardianId: string): void
   exitRite(): void
+  /** the W8 Launch Threshold (A5) — the overlay decides offer/fight/trough */
+  enterEgo(): void
+  exitEgo(): void
   summonShadow(quote: string, action: string): void
   dismissShadow(): void
 }
@@ -165,6 +170,14 @@ export const useUiStore = create<UiState>()((set) => ({
 
   exitRite(): void {
     set({ mode: 'roam', riteGuardianId: null })
+  },
+
+  enterEgo(): void {
+    set({ mode: 'ego' })
+  },
+
+  exitEgo(): void {
+    set({ mode: 'roam' })
   },
 
   summonShadow(quote: string, action: string): void {

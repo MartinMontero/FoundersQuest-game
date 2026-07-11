@@ -23,6 +23,7 @@ import { CampfirePanel } from './CampfirePanel'
 import { ChartPanel } from './ChartPanel'
 import { ConfrontationOverlay } from './ConfrontationOverlay'
 import { DegradedBanner } from './DegradedBanner'
+import { EgoOverlay } from './EgoOverlay'
 import { FounderNaming } from './FounderNaming'
 import { FuneralRiteOverlay } from './FuneralRiteOverlay'
 import { GatePanel } from './GatePanel'
@@ -148,6 +149,7 @@ export function UiRoot(): ReactElement {
       {mode === 'loop' ? <LoopPanel /> : null}
       <ConfrontationOverlay />
       <FuneralRiteOverlay />
+      <EgoOverlay />
       {shadowVisible ? (
         <ShadowOverlay onAction={handleShadowAction} onDismiss={handleShadowDismiss} />
       ) : null}

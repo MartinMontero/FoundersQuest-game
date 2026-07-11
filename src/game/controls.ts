@@ -90,6 +90,9 @@ function activate(events: WorldEvents): void {
     case 'arena':
       events.onArenaEnter()
       break
+    case 'ego':
+      events.onEgoApproach()
+      break
   }
 }
 

@@ -23,6 +23,7 @@ export const WORLD_COPY = {
   registryName: 'The Assumption Registry',
   campfireName: 'The Campfire',
   arenaName: 'The Proving Circle',
+  egoGateName: 'The Launch Threshold',
 
   /** interaction prompt chips ("E — kneel" is the game-design §2 F0 chip) */
   prompts: {
@@ -34,6 +35,7 @@ export const WORLD_COPY = {
     portal: 'E — travel',
     campfire: 'E — rest at the campfire',
     arena: 'E — step into the circle',
+    ego: 'E — face what waits',
   },
 
   /** path-portal chip labels — composed with the destination world name */

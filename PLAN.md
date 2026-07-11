@@ -57,7 +57,40 @@ in docs/build/mindmyth-canon-diff.md (RATIFIED, all defaults), blockers in BLOCK
 - **A4 Confrontation + Funeral rite** — BUILT (2026-07-11); in two-clean-run close. All 8 plan
   steps landed in the law's order (core → store → citation UI → finisher → rite → wrapper LAST
   → world → e2e/feel). 39 unit invariants + 4 slice e2e green first run; feel pack a4 archived.
-- **A5 The Ego** — after A4 closes.
+- **A5 The Ego** — IN BUILD (opened 2026-07-11, A2–A4 gate met).
+
+## A5 build plan (addendum §8; egoRecord derived, NEVER stored — D-B)
+
+1. **Pure core** `src/core/ego.ts` — the Ego assembled at runtime from the real record:
+   shields = overridden gates (each carries its logged reason verbatim; absorb one landed
+   cite each) · ghosts = skipped-unheld funerals (+2 HP each; a delayed funeral removes the
+   weapon — mechanic already live) · HP = 6 + 2×Σ weight(untested|testing, non-firstLight)
+   · founderEdge = count of E2+-resolved assumptions (per-cite damage bonus, capped +2) ·
+   heavy-attack strength = live Action−Truth divergence. **The outranking invariant ships
+   as a PROPERTY TEST across seeded-random states: capture+resolve@E2+ is never worse than
+   not capturing, on every axis the formula has (hp ≤, edge ≥, damage ≥, shields/ghosts =).
+   The formula is tuned to the test, never the reverse.**
+2. **Phase ladder** (deterministic, session-state only — no canon key exists for fight
+   progress, so a re-entry re-forms the Ego, thematically honest): denial (only E3/E4
+   land; hp full→2/3) → rationalization (only evidence linked to a SEALED-criterion
+   guardian lands; →1/3) → projection (no damage: the founder's own untested assumptions
+   thrown back; "return as test" flips untested→testing — a real write; ≤3 in the slice)
+   → sunk-cost (chains; cut by E2+ linked to an invalidated guardian OR any E4; →0) →
+   identity-fusion (**cannot be won by damage**: the integration — one deliberate typed
+   line, written to the wisdomCodex with sourceGuardianId 'ego' — the capstone unlock
+   derives from that entry; NO new schema key, canon shapes untouched).
+3. **Capstone** "Cartographer's Distance": once integrated (derived from the codex), the
+   HUD shows the live Truth-vs-Action divergence readout permanently.
+4. **Store actions** — markTesting (projection's return-as-test), integrateEgo (write-once
+   codex line). Zero API anywhere (D-E: all dialogue pre-written).
+5. **Surfaces** — src/strings/ego.ts (phase lines, per-mechanic feedback, integration
+   exchange, trough-delay line) · EgoOverlay over the live world (phase banner, shields
+   with verbatim reasons, ghosts named, Ledger reuse, fusion finale) · W8 'ego' gate
+   set-piece (the pad's threshold; spawn-clear position) · D-F: in the trough the gate
+   opens to the pre-written DELAY offer, never the fight, never a block.
+6. **Close** — e2e (full five-phase fight on a seeded rich record; trough delay; leave-
+   without-penalty; capstone persistence across reload), feel pack a5, two clean runs,
+   SHIP/VERIFICATION, deploy. Then the consolidated SITREP for the operator's playthrough.
 
 ## A4 build plan (order is law — addendum §7)
 

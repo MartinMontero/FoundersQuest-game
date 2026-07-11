@@ -333,3 +333,38 @@ describe('the funeral pair', () => {
     expect(persisted().funerals).toEqual([])
   })
 })
+
+describe('the Ego actions (A5)', () => {
+  it('markTesting flips untested → testing and nothing else; firstLight refused', () => {
+    const { store, persisted } = makeStore({
+      assumptions: [
+        { ...GUARDIAN },
+        { ...GUARDIAN, id: 'fl', firstLight: true },
+        { ...GUARDIAN, id: 'done', status: 'validated' },
+      ],
+    })
+    store.getState().markTesting('g1')
+    store.getState().markTesting('fl')
+    store.getState().markTesting('done')
+    const data = persisted()
+    expect(data.assumptions.find((a) => a.id === 'g1')?.status).toBe('testing')
+    expect(data.assumptions.find((a) => a.id === 'fl')?.status).toBe('untested')
+    expect(data.assumptions.find((a) => a.id === 'done')?.status).toBe('validated')
+  })
+
+  it('integrateEgo writes ONE codex line under sourceGuardianId ego — write-once, non-empty', () => {
+    const { store, persisted } = makeStore({})
+    store.getState().integrateEgo('   ')
+    expect(persisted().wisdomCodex).toEqual([])
+    store.getState().integrateEgo('  I am not my idea.  ')
+    store.getState().integrateEgo('second try never lands')
+    const codex = persisted().wisdomCodex
+    expect(codex).toHaveLength(1)
+    expect(codex[0]).toEqual({
+      id: 'wisdom-1',
+      text: 'I am not my idea.',
+      sourceGuardianId: 'ego',
+      date: FIXED_NOW,
+    })
+  })
+})

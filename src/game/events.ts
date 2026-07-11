@@ -75,4 +75,9 @@ export const defaultWorldEvents: WorldEvents = {
     )
     useUiStore.getState().enterArena(guardianId)
   },
+  onEgoApproach(): void {
+    // the overlay owns what the threshold shows (trough delay / offer / fight)
+    // — one surface, no hidden state, D-F honored where the player can see it
+    useUiStore.getState().enterEgo()
+  },
 }

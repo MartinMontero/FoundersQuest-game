@@ -24,6 +24,8 @@ export interface WorldEvents {
   onCampfire(): void
   /** player steps into the Proving Circle → the confrontation loop (A4) */
   onArenaEnter(): void
+  /** player approaches the W8 Launch Threshold → the Ego (A5) */
+  onEgoApproach(): void
 }
 
 export type InteractableKind =
@@ -34,6 +36,7 @@ export type InteractableKind =
   | 'portal'
   | 'campfire'
   | 'arena'
+  | 'ego'
 
 export interface InteractableSpec {
   id: string
@@ -233,6 +236,11 @@ const GENERIC_FLAGPOLES: readonly [number, number, number][] = [
   [13, 0, 14],
 ]
 
+// ---- The Launch Threshold (A5): the Ego's gate, World 8 only. Far −z end of
+// the pad (W8 has no onward portal, so the slot is clear of the spiral: the
+// nearest shrine ring point sits at r=18 near spawn, +z side).
+export const EGO_POSITION: [number, number, number] = [0, 0, -19]
+
 function generatedLayout(stage: number): InteractableSpec[] {
   const stageData = STAGES.find((s) => s.stage === stage)
   if (stageData === undefined) throw new Error(`contracts: no STAGES entry for stage ${stage}`)
@@ -256,6 +264,9 @@ function generatedLayout(stage: number): InteractableSpec[] {
     CAMPFIRE_SPEC,
     ...portalsForStage(stage),
     ...loopPortalsForStage(stage),
+    ...(stage === STAGES.length
+      ? [{ id: 'ego-gate', kind: 'ego', position: EGO_POSITION } as InteractableSpec]
+      : []),
   ]
 }
 

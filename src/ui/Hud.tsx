@@ -15,13 +15,14 @@
 
 import type { ReactElement } from 'react'
 import { pendingFunerals, restlessGhosts } from '../core/confrontation'
+import { egoIntegrated } from '../core/ego'
 import type { EvidenceTier } from '../core/schema'
 import { milestoneIdsForStage } from '../game/contracts'
 import { founderDisplayName, useFounderStore } from '../state/founder'
 import { useJourneyStore } from '../state/journey'
 import { useAction, useEvidenceBanked, useQuestStore, useTierCounts, useTrough, useTruth } from '../state/store'
 import { useUiStore } from '../state/ui'
-import { FIRST_LIGHT, RITE, STAGES, TIER_CODES, TIER_METALS, UI, coinCount, formatPercent, stageBanner } from '../strings'
+import { EGO, FIRST_LIGHT, RITE, STAGES, TIER_CODES, TIER_METALS, UI, coinCount, formatPercent, stageBanner } from '../strings'
 
 const TIERS: readonly EvidenceTier[] = [0, 1, 2, 3, 4]
 
@@ -43,6 +44,7 @@ export function Hud(): ReactElement | null {
   const pendingRiteId = useQuestStore((s) => pendingFunerals(s.data)[0]?.id ?? null)
   const ghostRiteId = useQuestStore((s) => restlessGhosts(s.data)[0]?.guardianId ?? null)
   const enterRite = useUiStore((s) => s.enterRite)
+  const hasDistance = useQuestStore((s) => egoIntegrated(s.data))
   const stage = STAGES.find((s) => s.stage === currentStage)
   if (stage === undefined) return null
 
@@ -193,6 +195,17 @@ export function Hud(): ReactElement | null {
               style={{ width: `${actionPct}%` }}
             />
           </div>
+          {/* Cartographer's Distance — the Ego's capstone (A5): once integrated,
+              the drift between Action and Truth reads permanently, from here on */}
+          {hasDistance ? (
+            <p
+              data-testid="hud-distance"
+              title={EGO.capstone.hudTitle}
+              className="mt-1 text-2xs text-parchment-300/70"
+            >
+              {EGO.capstone.hudLabel}: {EGO.capstone.hudValue(Math.max(0, actionPct - truthPct))}
+            </p>
+          ) : null}
         </div>
       </div>
 

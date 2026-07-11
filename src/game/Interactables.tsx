@@ -903,6 +903,64 @@ function ProvingCircle({
   )
 }
 
+// ---- the Launch Threshold (A5): the Ego's gate, World 8 only ----
+// A tall dark monolith with a single ember eye that watches, and the founder's
+// shadow pooled at its base. Reads at distance; the fight itself is the DOM
+// overlay — this is the world's honest marker that something waits here.
+
+function EgoGate({
+  spec,
+  reduced,
+}: {
+  spec: InteractableSpec
+  reduced: boolean
+}): JSX.Element {
+  const eye = useRef<Mesh>(null)
+  const [cx, cy, cz] = spec.position
+
+  // the eye breathes — steady under reduced motion
+  useSafeFrame(({ clock }) => {
+    const m = eye.current
+    if (m === null) return
+    const s = reduced ? 1 : 1 + Math.sin(clock.elapsedTime * 1.2) * 0.12
+    m.scale.setScalar(s)
+  })
+
+  return (
+    <group position={[cx, cy, cz]}>
+      {/* the monolith */}
+      <mesh position={[0, 2.2, 0]} rotation={[0.02, 0.35, 0.015]}>
+        <boxGeometry args={[1.6, 4.4, 0.7]} />
+        <meshStandardMaterial color="#14101f" roughness={0.6} metalness={0.15} />
+      </mesh>
+      {/* the ember eye */}
+      <mesh ref={eye} position={[0, 3.1, 0.4]}>
+        <sphereGeometry args={[0.16, 12, 12]} />
+        <meshStandardMaterial
+          color={PALETTE.ember}
+          emissive={PALETTE.ember}
+          emissiveIntensity={1.6}
+          roughness={0.4}
+          metalness={0.1}
+        />
+      </mesh>
+      {/* the founder's shadow, pooled at the base */}
+      <mesh rotation={[-Math.PI / 2, 0, 0.5]} position={[0.4, 0.03, 1.1]}>
+        <circleGeometry args={[1.1, 24]} />
+        <meshBasicMaterial color="#0a0714" transparent opacity={0.65} />
+      </mesh>
+      {/* threshold sigil ring */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 1.6]}>
+        <ringGeometry args={[1.7, 1.85, 40]} />
+        <meshBasicMaterial color={PALETTE.ember} transparent opacity={0.4} />
+      </mesh>
+      {!LOW_POWER ? (
+        <pointLight position={[0, 3.2, 1]} color={PALETTE.ember} intensity={0.8} distance={8} decay={2} />
+      ) : null}
+    </group>
+  )
+}
+
 // ---- the shared highlight: ground ring + name chip + prompt chip ----
 
 /** chip anchor height per kind (the vault hovers, so its chip sits higher) */
@@ -922,6 +980,8 @@ function chipHeight(spec: InteractableSpec): number {
       return 2.2
     case 'arena':
       return 2.8
+    case 'ego':
+      return 5.0
   }
 }
 
@@ -948,6 +1008,8 @@ function chipLabel(spec: InteractableSpec): string {
       return WORLD_COPY.campfireName
     case 'arena':
       return WORLD_COPY.arenaName
+    case 'ego':
+      return WORLD_COPY.egoGateName
   }
 }
 
@@ -1126,6 +1188,8 @@ export function Interactables({ reduced }: InteractablesProps): JSX.Element {
             return <Campfire key={spec.id} spec={spec} reduced={reduced} />
           case 'arena':
             return <ProvingCircle key={spec.id} spec={spec} reduced={reduced} />
+          case 'ego':
+            return <EgoGate key={spec.id} spec={spec} reduced={reduced} />
         }
       })}
       {!LOW_POWER ? <ProximityLight reduced={reduced} /> : null}

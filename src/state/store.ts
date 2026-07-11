@@ -14,6 +14,7 @@ import {
   openConfrontation,
   type CitationImpact,
 } from '../core/confrontation'
+import { EGO_SOURCE_ID } from '../core/ego'
 import { actionFraction, riskiest, tierOf, trough, truth, type ActGateId } from '../core/metrics'
 import { migrateV2IfNeeded } from '../core/migration'
 import type {
@@ -208,6 +209,20 @@ export interface QuestState {
    * Narrative-only consequence: the ghost lingers until a delayed funeral.
    */
   skipFuneral(guardianId: string): void
+  // ---- The Ego (Mind & Myth A5) ----
+  /**
+   * Projection returned as a test (the Ego's third phase): flip an untested,
+   * non-firstLight belief to `testing` — a real, deliberate commitment the
+   * founder makes mid-fight. Nothing else about the record changes.
+   */
+  markTesting(assumptionId: string): void
+  /**
+   * The integration (identity-fusion cannot be won by damage): write the
+   * founder's own line to the wisdomCodex under sourceGuardianId 'ego' —
+   * the permanent capstone derives from that entry (egoIntegrated). Write-
+   * once; requires a non-empty line (one deliberate input).
+   */
+  integrateEgo(line: string): void
 }
 
 export interface QuestStoreDeps {
@@ -721,6 +736,33 @@ export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState
         commit({
           ...data,
           funerals: [...data.funerals, { guardianId, skippedAt: now() }],
+        })
+      },
+
+      markTesting(assumptionId: string): void {
+        const { data } = get()
+        const target = data.assumptions.find((a) => a.id === assumptionId)
+        if (target === undefined || target.status !== 'untested') return
+        if (target.firstLight === true) return
+        commit({
+          ...data,
+          assumptions: data.assumptions.map((a) =>
+            a.id === assumptionId ? { ...a, status: 'testing' } : a,
+          ),
+        })
+      },
+
+      integrateEgo(line: string): void {
+        const { data } = get()
+        const text = line.trim()
+        if (text === '') return // one deliberate input — an empty seal is none
+        if (data.wisdomCodex.some((w) => w.sourceGuardianId === EGO_SOURCE_ID)) return
+        commit({
+          ...data,
+          wisdomCodex: [
+            ...data.wisdomCodex,
+            { id: makeId('wisdom'), text, sourceGuardianId: EGO_SOURCE_ID, date: now() },
+          ],
         })
       },
     }
