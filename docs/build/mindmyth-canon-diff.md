@@ -1,9 +1,12 @@
 # Program Addendum A "Mind & Myth" — Consolidated Canon Diff (A0-2)
 
-**Status: DRAFT — awaiting (a) the six research uploads, (b) operator answers to D-A…D-M.**
-Applied as ONE canon commit at Phase A1 only after both land. Exact before/after per file.
-Where an item's full text lives in a missing research file, the diff pins its anchor and marks
-the body `PENDING-UPLOAD` — nothing is invented in its place.
+**Status: RATIFIED (all defaults, operator 2026-07-11) · APPLIED in the A1 canon commit, with
+two recorded exceptions:** (1) the Council provenance-reading block's verbatim text never
+arrived — the REPLACE sentence is applied, the APPEND half stays queued (BLOCKERS B-4, severable);
+(2) the HUD M/L help strings ship with the Chart/Legend surfaces at A3, not before (02 documents
+the reservation now; no dead keys documented in-game). Original ratified text below.
+`openingCompletedAt?`/`openingSkippedAt?` implemented as `string | null` (the repo's established
+hydration idiom for may-be-absent keys — same semantic, whitelist-copy-safe).
 
 ---
 

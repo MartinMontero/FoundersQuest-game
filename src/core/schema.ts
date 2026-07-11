@@ -32,8 +32,15 @@ export interface Assumption {
   killCriterion: string
   createdAt: string
   resolvedAt?: string
+  /** set ONLY by the First-Light opening's distinct elicitation (D-I). Tagged
+   *  assumptions are excluded from the Truth denominator and pay fixed
+   *  First-Light XP — the explicit D-G canon carve-out (02, 2026-07-11). */
+  firstLight?: boolean
   // NO tier field — tier is DERIVED from linked evidence, never stored (02).
 }
+
+/** Earned Hunch provenance rungs (02, Mind & Myth): where a hunch came from. */
+export type HunchProvenance = 'earned' | 'adjacent' | 'wild' | 'borrowed'
 
 export interface EvidenceEntry {
   id: string
@@ -43,9 +50,57 @@ export interface EvidenceEntry {
   linkedAssumptionIds: string[]
   stageId: string
   date: string
+  /** tier-0 (hunch) entries only; optional, post-capture, editable (D-M).
+   *  NEVER read by tierOf/Truth/XP — provenance buys test priority and a
+   *  calibration entry only (constitutional floor; invariant-tested). */
+  provenance?: HunchProvenance
   // NO origin field — canon 02's evidence shape has none; import provenance is
   // DERIVED from fieldJournal.imports[].evidenceIds, never stored (A-101 §1).
 }
+
+// ---- Mind & Myth keys (canon commit 2026-07-11) ----
+
+/** "Your gut's record": one row per provenance-tagged hunch, resolved when its
+ *  seeded guardian resolves at E2+. Never alters any metric. */
+export interface CalibrationEntry {
+  hunchEvidenceId: string
+  taggedAt: string
+  resolvedAt?: string
+  outcome?: 'held' | 'broke'
+}
+
+/** A guardian confrontation (A4): citations are REAL Ledger evidence ids —
+ *  no synthetic ammunition exists anywhere (02). */
+export interface ConfrontationRecord {
+  guardianId: string
+  startedAt: string
+  resolvedAt?: string
+  outcome?: 'invalidated' | 'validated'
+  citations: string[]
+}
+
+/** The funeral rite's record (A4): a skip is a narrative-only consequence. */
+export interface FuneralRecord {
+  guardianId: string
+  heldAt?: string
+  skippedAt?: string
+  epitaph?: string
+}
+
+export interface WisdomCodexEntry {
+  id: string
+  text: string
+  sourceGuardianId: string
+  date: string
+}
+
+/** First Light resume marker: which induction beat, entered when. */
+export interface OpeningBeatProgress {
+  beat: number
+  ts: string
+}
+// NO egoRecord key — the Ego is DERIVED at runtime from trail/gates/funerals,
+// never stored (D-B; mirrors the tier-derivation rule).
 
 export interface TrailEntry {
   type: 'loop' | 'gate-pass' | 'gate-override'
@@ -227,6 +282,18 @@ export interface QuestData {
   fieldJournal: { attempts: FieldAttempt[]; imports: FieldImportRecord[] }
   momentum: Momentum
   fieldDay: { current: FieldDayCurrent | null; log: FieldDayLogEntry[] }
+  // ---- Mind & Myth (canon commit 2026-07-11); null/[] = not reached yet ----
+  openingCompletedAt: string | null
+  /** the skip is a courtesy control — never override-logged (First Light) */
+  openingSkippedAt: string | null
+  invitationSeen: boolean
+  chartUnlocked: boolean
+  firstLightArtifactIds: string[]
+  openingBeatProgress: OpeningBeatProgress | null
+  calibration: CalibrationEntry[]
+  confrontations: ConfrontationRecord[]
+  funerals: FuneralRecord[]
+  wisdomCodex: WisdomCodexEntry[]
 }
 
 export const EMPTY_DATA: QuestData = {
@@ -251,6 +318,16 @@ export const EMPTY_DATA: QuestData = {
   fieldJournal: { attempts: [], imports: [] },
   momentum: { value: 0, lastAttemptDate: null, lastTickDate: null },
   fieldDay: { current: null, log: [] },
+  openingCompletedAt: null,
+  openingSkippedAt: null,
+  invitationSeen: false,
+  chartUnlocked: false,
+  firstLightArtifactIds: [],
+  openingBeatProgress: null,
+  calibration: [],
+  confrontations: [],
+  funerals: [],
+  wisdomCodex: [],
 }
 
 // ---- hydration shape-hardening (Phase 2 adversarial review, ruled fix 6) ----
@@ -293,6 +370,23 @@ function asSlotState(value: unknown): SlotState {
     : 'open'
 }
 
+/** enum guard: unknown provenance is DROPPED (undefined) — never fabricated. */
+function asProvenance(value: unknown): HunchProvenance | undefined {
+  return value === 'earned' || value === 'adjacent' || value === 'wild' || value === 'borrowed'
+    ? value
+    : undefined
+}
+
+/** enum guard: unknown calibration outcome is dropped — a corrupt row can never fake a record. */
+function asCalibrationOutcome(value: unknown): CalibrationEntry['outcome'] {
+  return value === 'held' || value === 'broke' ? value : undefined
+}
+
+/** enum guard: unknown confrontation outcome is dropped (never fabricates a verdict). */
+function asConfrontationOutcome(value: unknown): ConfrontationRecord['outcome'] {
+  return value === 'invalidated' || value === 'validated' ? value : undefined
+}
+
 function finiteOr(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
 }
@@ -328,22 +422,68 @@ function plainObjectElement<T>(element: unknown): T | null {
 
 function sanitizeAssumption(element: unknown): Assumption | null {
   if (!isPlainObject(element)) return null
-  return {
+  const out: Assumption = {
     ...(element as unknown as Assumption),
     importance: asImportance(element['importance']),
     status: asStatus(element['status']),
   }
+  // firstLight is boolean-or-absent — a truthy string must not smuggle the carve-out in
+  if (element['firstLight'] === true) out.firstLight = true
+  else delete out.firstLight
+  return out
 }
 
 function sanitizeEvidence(element: unknown): EvidenceEntry | null {
   if (!isPlainObject(element)) return null
-  return {
+  const tier = asTier(element['tier'])
+  const out: EvidenceEntry = {
     ...(element as unknown as EvidenceEntry),
-    tier: asTier(element['tier']),
+    tier,
     linkedAssumptionIds: Array.isArray(element['linkedAssumptionIds'])
       ? (element['linkedAssumptionIds'] as string[])
       : [],
   }
+  // provenance is valid ONLY on tier-0 (hunch) entries (02) — dropped elsewhere,
+  // and unknown rungs are dropped rather than coerced
+  const provenance = tier === 0 ? asProvenance(element['provenance']) : undefined
+  if (provenance !== undefined) out.provenance = provenance
+  else delete out.provenance
+  return out
+}
+
+function sanitizeCalibrationEntry(element: unknown): CalibrationEntry | null {
+  if (!isPlainObject(element)) return null
+  const out: CalibrationEntry = {
+    ...(element as unknown as CalibrationEntry),
+    outcome: asCalibrationOutcome(element['outcome']),
+  }
+  if (out.outcome === undefined) delete out.outcome
+  return out
+}
+
+function sanitizeConfrontation(element: unknown): ConfrontationRecord | null {
+  if (!isPlainObject(element)) return null
+  const out: ConfrontationRecord = {
+    ...(element as unknown as ConfrontationRecord),
+    outcome: asConfrontationOutcome(element['outcome']),
+    citations: Array.isArray(element['citations']) ? (element['citations'] as string[]) : [],
+  }
+  if (out.outcome === undefined) delete out.outcome
+  return out
+}
+
+/** string-array guard: non-strings dropped. */
+function stringElement(element: unknown): string | null {
+  return typeof element === 'string' ? element : null
+}
+
+/** shape guard: the opening resume marker needs a finite beat + a string ts, else null. */
+function sanitizeOpeningBeatProgress(value: unknown): OpeningBeatProgress | null {
+  if (!isPlainObject(value)) return null
+  const beat = value['beat']
+  const ts = value['ts']
+  if (typeof beat !== 'number' || !Number.isFinite(beat) || typeof ts !== 'string') return null
+  return { beat, ts }
 }
 
 function sanitizeWeatherEntry(element: unknown): WeatherEntry | null {
@@ -425,5 +565,15 @@ export function withDefaults(loaded: Partial<QuestData> | null | undefined): Que
     fieldJournal: sanitizeFieldJournal(source['fieldJournal']),
     momentum: sanitizeMomentum(source['momentum']),
     fieldDay: sanitizeFieldDay(source['fieldDay']),
+    openingCompletedAt: stringOrNull(source['openingCompletedAt']),
+    openingSkippedAt: stringOrNull(source['openingSkippedAt']),
+    invitationSeen: booleanOr(source['invitationSeen'], false),
+    chartUnlocked: booleanOr(source['chartUnlocked'], false),
+    firstLightArtifactIds: arrayOr(source['firstLightArtifactIds'], stringElement),
+    openingBeatProgress: sanitizeOpeningBeatProgress(source['openingBeatProgress']),
+    calibration: arrayOr(source['calibration'], sanitizeCalibrationEntry),
+    confrontations: arrayOr(source['confrontations'], sanitizeConfrontation),
+    funerals: arrayOr(source['funerals'], plainObjectElement<FuneralRecord>),
+    wisdomCodex: arrayOr(source['wisdomCodex'], plainObjectElement<WisdomCodexEntry>),
   }
 }

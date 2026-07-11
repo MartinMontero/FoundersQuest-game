@@ -2,6 +2,16 @@
 
 Per Addendum §10, these halt the program at Gate 0. No inference fills a gap.
 
+## B-4 · Council provenance-reading block: no verbatim source (OPEN — severable)
+The A0-2 diff's 04/council.ts change has two halves. The REPLACE sentence was fully specified
+and is APPLIED (A1 canon commit, parity green). The APPEND block ("the provenance-reading
+block") has no verbatim text anywhere on hand: `wikj-v3-content-package.md` grounds the content
+(§3.3 blocks 1, 5, 6) but contains no Council-prompt text, and `cc-prompt-earned-hunch.md` is
+not in the repo. Authoring Council canon from a summary = inference filling a gap — declined.
+**Severable:** nothing in A2 depends on it (the Council convenes in Phase 4; BYOK program adds
+no API surface). **Needed:** operator uploads `cc-prompt-earned-hunch.md` (or the block text),
+or approves a draft I post on request. Until then 04's queued-addenda entry records the split.
+
 ## B-1 · Six required research inputs MISSING (STOP condition, Addendum §1)
 None of the required files exist in `docs/research/` (verified byte-level 2026-07-11; uploads
 dir holds only the prompt itself):
