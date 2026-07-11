@@ -11,7 +11,7 @@
 // - D-C: the Ledger and the thread are NEVER skill-locked. The action wrapper
 //   (poise/window rhythm) accelerates access; the auto-window guarantees it.
 
-import { useEffect, useRef, useState, type ReactElement } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
 import {
   argumentStateFrom,
   finisherAvailable,
@@ -21,6 +21,7 @@ import {
 import { tierOf } from '../core/metrics'
 import type { Assumption } from '../core/schema'
 import { useQuestStore, useTrough } from '../state/store'
+import { ARENA_POISE_CHIP, ARENA_WINDOW_AUTO_MS } from '../state/tunables'
 import { useUiStore } from '../state/ui'
 import { CONFRONTATION, TIER_CODES } from '../strings'
 import { useFocusTrap } from './TrancePanel'
@@ -148,9 +149,68 @@ function Confrontation({ guardian }: { guardian: Assumption }): ReactElement {
   // proven honors are read AFTER the strike from the live record
   const proven = tierOf(guardian, data.evidence) >= 2
 
+  // ---- the action wrapper (built LAST, addendum §7): press ⇄ window rhythm.
+  // Strikes chip the guardian's POISE (pool = its composureMax) and break the
+  // citation window open EARLY; the idle timer opens it regardless — D-C:
+  // skill accelerates evidence access, it never locks it. A landed citation
+  // draws a pre-written bias counter and the press resumes. A spent argument
+  // (hp 0) stops pressing entirely. The golden thread is NEVER in this rhythm.
+  const spent = argument.hp === 0
+  const [windowOpen, setWindowOpen] = useState(false)
+  const [poise, setPoise] = useState(argument.composureMax)
+  const [counter, setCounter] = useState<number | null>(null)
+  const landedRef = useRef(0)
+  const pressing = !windowOpen && !spent && struck === null
+
+  useEffect(() => {
+    if (!pressing) return
+    const t = window.setTimeout(() => setWindowOpen(true), ARENA_WINDOW_AUTO_MS)
+    return (): void => window.clearTimeout(t)
+  }, [pressing])
+
+  const strike = useCallback((): void => {
+    setPoise((p) => {
+      const next = Math.max(0, p - ARENA_POISE_CHIP)
+      if (next === 0) setWindowOpen(true) // stagger — the window breaks open early
+      return next
+    })
+  }, [])
+
+  // Space = strike (keyboard path). Buttons and editable targets keep their own
+  // Space semantics — the body-level accelerator never double-fires them.
+  useEffect(() => {
+    if (!pressing) return
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.code !== 'Space' || event.defaultPrevented) return
+      const t = event.target
+      if (
+        t instanceof HTMLElement &&
+        (t.isContentEditable ||
+          t instanceof HTMLInputElement ||
+          t instanceof HTMLTextAreaElement ||
+          t instanceof HTMLButtonElement ||
+          t instanceof HTMLSelectElement)
+      )
+        return
+      event.preventDefault()
+      strike()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return (): void => document.removeEventListener('keydown', onKeyDown)
+  }, [pressing, strike])
+
   const onCite = (evidenceId: string): void => {
     const impact = cite(guardian.id, evidenceId)
-    if (impact !== null) setFeedback(impact)
+    if (impact === null) return
+    setFeedback(impact)
+    // B2: a bounce is pure feedback — the open window is NOT taken away
+    if (impact === 'bounce') return
+    // a landed citation: the guardian counters (pre-written bias line) and the
+    // press resumes with its poise recomposed
+    setCounter(landedRef.current % CONFRONTATION.counters.length)
+    landedRef.current += 1
+    setWindowOpen(false)
+    setPoise(argument.composureMax)
   }
 
   const onStrike = (): void => {
@@ -230,13 +290,54 @@ function Confrontation({ guardian }: { guardian: Assumption }): ReactElement {
               >
                 {feedback !== null ? CONFRONTATION.impact[feedback] : ''}
               </p>
-              {argument.hp === 0 ? (
+              {spent ? (
                 <p data-testid="arena-spent" className="mt-1 text-sm text-amber-accent-600">
                   {CONFRONTATION.challenge.spent}
                 </p>
               ) : null}
 
-              <Ledger citations={citations} onCite={onCite} />
+              {pressing ? (
+                <section data-testid="arena-press" className="mt-3">
+                  {counter !== null ? (
+                    <p aria-live="polite" className="text-sm italic text-teal-200/90">
+                      {CONFRONTATION.counters[counter]}
+                    </p>
+                  ) : null}
+                  <p className="mt-1 text-xs italic text-ink-faint">
+                    {CONFRONTATION.wrapper.pressHint}
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-4">
+                    <button
+                      type="button"
+                      data-testid="arena-strike"
+                      onClick={strike}
+                      className="quest-btn quest-btn-gold px-3 py-1.5 text-sm"
+                    >
+                      {CONFRONTATION.wrapper.strike}
+                    </button>
+                    <Meter
+                      label={CONFRONTATION.wrapper.poiseLabel}
+                      value={poise}
+                      max={argument.composureMax}
+                      tone="composure"
+                      testId="arena-poise"
+                    />
+                  </div>
+                </section>
+              ) : (
+                <>
+                  {!spent ? (
+                    <p
+                      data-testid="arena-window"
+                      aria-live="polite"
+                      className="mt-1 text-sm text-amber-accent-600"
+                    >
+                      {CONFRONTATION.wrapper.windowOpen}
+                    </p>
+                  ) : null}
+                  <Ledger citations={citations} onCite={onCite} />
+                </>
+              )}
 
               {/* the golden thread — verdict before interpretation */}
               <section className="mt-4 border-t border-white/10 pt-3">
