@@ -54,5 +54,32 @@ one-time re-entry + campfire replay (write-once) · feel pack archived (docs/fee
 **Deviations (plainly):** per-world Truth/Action pips deferred (tombstones shipped); nested
 tooltips = one "more" level; the cold-open camera dolly is the standard rig (letterbox + text
 carry the register) — all logged for the art pass. Chart label crowding at W7/W8 = known QA nit.
-## A4 · Confrontation + Funeral rite — BLOCKED (same gate)
-## A5 · The Ego — BLOCKED (gated on A2–A4)
+## A4 · Confrontation + Funeral rite (2026-07-11) — vertical slice, W1 (close pending two runs)
+**Shipped (build order followed to the letter — evidence layer first):**
+argument core (src/core/confrontation.ts — HP/composure DERIVED by replaying
+confrontations[].citations against the real Ledger; dies 12/4 · wobbles 8/2 · shrugs 5/1;
+E2=2 soak-first · E3=4 · E4=6 shatters the whole shield with overflow) · citation UI over the
+live world (each coin spends once; **E0/E1 bounce = reference-equal no-op — never strengthens
+the guardian, never penalizes the founder (B2)**; citing links the coin so derived tier/Truth/
+XP stay honest) · the golden thread (sealed criterion verbatim; **verdict before
+interpretation, write-once; the finishing strike persists until used — never RNG — proven
+across a mid-fight RELOAD in e2e**) · the action wrapper LAST (Space-strikes chip poise and
+break the window open early; **the idle auto-window guarantees evidence access with ZERO
+successful strikes — D-C, e2e-proven**; pre-written bias counters; hp 0 = argument SPENT,
+narrates, resolves nothing — B3) · both outcomes equally authored (shatter + 1.5× honors +
+rite vs the standing pillar, D-D; unproven resolutions say so honestly) · the Funeral rite
+(Vigil → Eulogy verbatim-from-Ledger → Committal one-input epitaph → wisdomCodex line +
+inheritance; **skip = ONE warning, logged, ghost wisp narrative-only; delayed funeral lays it
+to rest keeping the skip history**; the trough QUEUES the offer — HUD funeral ember only in
+roam + clear skies) · the W1 Proving Circle set-piece (challenger menhir scaled by importance,
+evidence-state translucency, thread torus; graveside tombstones + ghost wisps) ·
+arenaChallenger (resume-first, else riskiest of THIS world, same bump as the crown).
+**Invariants proven:** 39 unit tests (tests/confrontation.spec.ts + -store) + 4 slice e2e
+(invalidation, validation-with-zero-strikes, skip→ghost→lay-to-rest, trough-queue +
+empty-circle). Feel pack archived: docs/feel-packs/a4/ (8 shots).
+**Deviations (plainly):** the stagger is poise-chips (labor), not timing-skill — the
+wrapper stays deliberately light in the slice; per-stage funeral buffs (research "grant")
+deferred with the art pass; the set-piece feel shot catches the circle at frame edge
+(camera faces spawn) — operator sees it in-world.
+
+## A5 · The Ego — NEXT (gated on A2–A4: A2 ✅ A3 ✅ A4 closing)

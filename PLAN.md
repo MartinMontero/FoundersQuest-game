@@ -54,10 +54,10 @@ in docs/build/mindmyth-canon-diff.md (RATIFIED, all defaults), blockers in BLOCK
   courtesy skip + one-time re-entry prompt + campfire replay, accessibility (no timed reading,
   instant-complete typewriter, reduced-motion, ARIA live region). e2e: full induction + skip
   path. Feel pack: docs/feel-packs/a3/ (FEEL_PACK=1 run).
-- **A4 Confrontation + Funeral rite** — IN BUILD (opened 2026-07-11). Research + audit absorbed;
-  Gate-0 defaults cover every audit escalation: bounce-is-feedback B2, no inverse-HP B3,
-  D-A/D-C/D-D rulings.
-- **A5 The Ego** — after A4.
+- **A4 Confrontation + Funeral rite** — BUILT (2026-07-11); in two-clean-run close. All 8 plan
+  steps landed in the law's order (core → store → citation UI → finisher → rite → wrapper LAST
+  → world → e2e/feel). 39 unit invariants + 4 slice e2e green first run; feel pack a4 archived.
+- **A5 The Ego** — after A4 closes.
 
 ## A4 build plan (order is law — addendum §7)
 
