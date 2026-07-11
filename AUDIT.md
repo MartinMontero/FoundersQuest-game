@@ -42,3 +42,52 @@ Allowed direct: registry.npmjs.org, proxy.golang.org, pypi, crates. Blocked (403
 
 ## Environment adaptations already in repo
 `scripts/session-bootstrap.sh` (scanner reinstall), `scripts/doctor-remote.sh` (remote-adapted doctor; ALL CLEAR as of Gate 0).
+
+---
+
+# AUDIT — Program Addendum A "Mind & Myth" · Gate 0 recon (2026-07-11)
+
+Every claim traces to a tool result from this session (A0-1).
+
+## Repo / branch state
+- Branch `claude/dev-environment-setup-tsp3tv` @ `eac95ea`, clean tree, HEAD == origin.
+- Phase 3 (8-world spine) functionally complete: traversal, 9 trance controls, sequence locks
+  (Vault unseal W3 · verdict-first W5 · s5-dec citation lock · Act Gates · loop tolls),
+  per-world sky identity, campfire hub (weather/notes/side quests/export/Dinner Card).
+- SITREP.md delivered 2026-07-10; operator full-game QA playthrough PENDING.
+
+## Phase 2b / Gate 2 re-verdict status
+- LOOP.md line 4 records the operator's "build out the rest of the worlds" (2026-07-10) as the
+  **Gate-2 fun-check go-ahead** (human touchpoint 2) after the Phase 2b reskin + several live
+  eyeball rounds ("the UI is now in decent shape").
+- **No formal "Gate 2 re-pass: PASSED" ruling is recorded as such.** Per Addendum A0-1, until the
+  operator confirms it, **phases A3–A5 are hard-blocked**; A1–A2 (docs + framework layer) are not.
+  → Confirmation requested in the Gate 0 decision round.
+
+## Research-file manifest check — **BLOCKER (stop condition met)**
+Required byte-nonempty in `docs/research/`; found NONE of the six:
+| file | status |
+|---|---|
+| antagonist-combat-architecture.md | MISSING |
+| antagonist-combat-architecture-audit.md | MISSING |
+| first-light-opening-orientation.md | MISSING |
+| first-light-opening-orientation-audit.md | MISSING |
+| wikj-v2.md | MISSING |
+| wikj-v3-content-package.md | MISSING |
+
+`docs/research/` holds only `premium-ui-direction.md`. Uploads dir holds only the prompt itself.
+
+## Phase 2b art-direction addendum — **BLOCKER**
+Required in `docs/build/` ("if no such file is committed, that is a BLOCKER"). Not present.
+`docs/build/`: a101-field-mode-spec, constitution-review, game-design, license-proposal,
+phase0-canon-diff, phase0-restatement — none is the art-direction/world-feel addendum.
+Candidate: `docs/research/premium-ui-direction.md` (cited by code comments as the premium-UI
+research) — operator to rule whether it IS the addendum or the real one still needs to land.
+
+## Test-count baseline
+- Unit (vitest): **334 passed** (13 files). e2e (Playwright ~1.56.1, chromium-1194): **14 spec
+  files / 22 tests — all passed** in the 2026-07-10 serial run (9.0m).
+- Keybinds M / L: **free** — no `KeyM`/`KeyL` handling anywhere in `src/game/controls.ts`.
+- 5-rider queue confirmed present in `docs/build/phase0-canon-diff.md` (5 items, verbatim).
+- 04-council.md already carries the queued Earned-Hunch addendum entry whose replacement sentence
+  matches Addendum A §A0-2 byte-for-byte; `src/strings/council.ts:18` holds the current sentence.
