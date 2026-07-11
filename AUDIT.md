@@ -91,3 +91,108 @@ research) — operator to rule whether it IS the addendum or the real one still 
 - 5-rider queue confirmed present in `docs/build/phase0-canon-diff.md` (5 items, verbatim).
 - 04-council.md already carries the queued Earned-Hunch addendum entry whose replacement sentence
   matches Addendum A §A0-2 byte-for-byte; `src/strings/council.ts:18` holds the current sentence.
+
+---
+
+# AUDIT — Backlog Build-Out + Design Elevation · Phase 1 (2026-07-11)
+
+8-reader research pass (canon, build docs, research docs, program records, repo
+map, security/a11y code audit, feel-pack image review, stack verification) —
+every claim below traces to a file read, an image viewed, a command run, or a
+cited primary source. Full inventory with acceptance criteria: BACKLOG.md.
+
+## Ground truth at open
+- vitest 411/411 (17 files) · e2e 31 passed + 3 skipped-by-design (feel-gated),
+  zero flaky — fresh run this session (scratchpad ground-truth log).
+- gitleaks: clean over working tree AND full history (both run this session).
+- osv: **clean, verified via offline DB** — `osv-scanner scan
+  --offline-vulnerabilities --download-offline-databases -L package-lock.json`
+  → "No issues found", 4 documented dev-only filters (accuracy of each ignore
+  reason re-verified against the advisories). Closes the A4/A5 inherited
+  claim. Note: this exact offline flag guidance was already in the Gate-0
+  audit (this file, "Security scans" §) — the A4/A5 closes missed it; the
+  verify-loop command now uses it.
+
+## P0/P1 findings (new this pass)
+1. **P0 · Stock textarea resize grip visible in the trance panel** —
+   docs/feel-packs/a3/05-trance-frame.png shows the default browser resize
+   control; art-direction §3 bans default-browser controls. In-product, not
+   just archival. Fix: resize-none across textareas.
+2. **P0 · Archived feel packs show the banned capsule protagonist** — the
+   capture/automation render tier skips rogue.glb and draws CapsuleAvatar
+   (src/game/Player.tsx:174 region); 10/23 shots auto-fail §4.3/§4.8
+   (per-shot list: a3/02,03,04,05 · a4/01,05,08 · a5/01,02 + root cause).
+   Fix capture tier, recapture all packs.
+3. **P1 · Systemic elevation gap: the world never reacts to dramatic beats.**
+   Every celebration/boss beat (shatter, funeral, all Ego phases, integration)
+   is a parchment panel over a pixel-identical backdrop — the "form over a
+   void" pattern with nicer panels (feel review, all three packs). This is
+   the design-elevation epic's spine (BACKLOG E-0/E-8).
+4. **P1 · Shrines/thresholds read as lone slabs** — §2.6 "enterable
+   architecture, never lone slabs" fails at shrines (glow-ring pillars) and
+   the W8 threshold (flat monolith). W8 palette also off-spec (§5 night
+   launchpad vs generic dawn); W1 ground brown vs indigo/violet.
+5. **P1 · a11y: two dialogs built outside DialogShell lack its guarantees** —
+   FounderNaming (no focus trap/restoration, Esc only from the input, input
+   named by placeholder only, outline-none suppressing :focus-visible —
+   src/ui/FounderNaming.tsx:51-83) and the OpeningOverlay Invitation (no trap,
+   no Esc — src/ui/OpeningOverlay.tsx:109-148).
+6. **P1 · Council surfaces are dead code** — keyManager + transport are built
+   and guard-tested but no key-entry UI or temple surface exists
+   (src/key/keyManager.ts:74 note). BACKLOG C-1 (B-4 keeps live calls dark).
+
+## Verified clean (evidence in the audit returns)
+- Zero dangerous sinks in src/ (eval/new Function/dangerouslySetInnerHTML/
+  innerHTML/document.write — only hit is the guard test that bans them,
+  tests/guards.spec.ts:59-73). No inline JS in index.html.
+- All user text renders through React text nodes; the one constructed URL is
+  a revoked Blob download; the serializer fence-neutralizes every
+  interpolated field (src/core/serializer.ts:26-69).
+- Key handling: bare key under its own storage key only; never in any JSON
+  envelope; serializer cannot import keyManager (guard); fetch banned outside
+  the transport module (guards.spec.ts:31-41); no ANTHROPIC_API_KEY anywhere
+  in src/; no functions/ directory exists.
+- No timed reading anywhere (typewriter completes on input; the only gameplay
+  timer OPENS a window). Reduced-motion coverage comprehensive (negative-
+  lookahead grep found no ungated animation).
+- Async surfaces: storage ladder + degraded banner, boot status line, error
+  boundary with reload, per-asset Suspense fallbacks.
+
+## CSP notes (public/_headers:5-6)
+- connect-src carries `blob:` beyond 'self' + api.anthropic.com (BACKLOG X-3:
+  verify consumer or tighten); Permissions-Policy camera=(self) is currently
+  unused — its intended consumer is the Field-Mode QR scanner (F-8);
+  style-src 'unsafe-inline' + script-src 'wasm-unsafe-eval' are the two
+  documented relaxations (Tailwind inline styles / rapier WASM).
+
+## Stack verification (primary sources cited in the research return)
+- **Vite 5.4.21 is out of upstream support** — 2026 dev-server CVEs fixed
+  only in 6.4.x+; canon pins Vite 5, so the dev-only ignore list is the
+  standing policy (BLOCKERS K-13, operator-facing). esbuild 0.21.5 CORS
+  advisory (moderate, dev-only) unfixable under the pin — documented filter.
+- eslint 9 on the upstream maintenance tag (limited support ends ~2026-08-06,
+  derived; exact page proxy-blocked → UNTESTED). fiber-8/drei-9/rapier-1
+  lines frozen upstream (React-19-only successors) but newest-of-line,
+  advisory-free, internally consistent. React 18.3.1 covered by React's
+  security-backport policy. Playwright 1.56.1: no known advisories; 5 minors
+  behind, no backport channel (canon + chromium-1194 environment pin).
+  vitest 3.2.7 = live v3 maintenance tag; tailwind 3.4.19 = upstream v3-lts
+  tag. Deprecated-pattern greps for every pinned major: clean (verified by
+  grep, not assumed). @types/node 26 vs Node 22 runtime — dev-only mismatch
+  (BACKLOG Z-9).
+- No major upgrades proposed — canon pins are constraints, not defects.
+
+## Repo map deltas worth holding
+- Bundle: single 3,645,900-byte JS chunk (measured, dist hash matches live
+  deploy); rogue.glb 3,597,652 B; public/ total ~11.7MB (trees' bark normal
+  map alone 2.3MB). No manualChunks configured (vite.config.ts:5-11).
+  BACKLOG E-0 perf items.
+- Canon-text gap CONFIRMED: Reset-loop retro/critique prompts have NO
+  canonical question text in 03 (only the header parenthetical at 03:95) —
+  wiring them would mean authoring canon by inference → PARKED K-1, STOP
+  honored.
+- Stale doc: phase0-canon-diff.md rider-queue section says "Queued… not yet
+  posted" while all 5 riders are applied in canon (02:36,43,81 · 05:13,21) —
+  correction is itself a canon-umbrella edit → PARKED K-11 as a proposed diff.
+- The unsuffixed Pages alias serves an A3-era bundle (hash-verified,
+  commit 16c1322); live alias is -sp4q. Z-12 documents; no deletion (Rule 9).
