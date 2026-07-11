@@ -137,3 +137,59 @@ in docs/build/mindmyth-canon-diff.md (RATIFIED, all defaults), blockers in BLOCK
 8. **Close** — slice e2e (invalidation branch incl. rite + skip/lay-to-rest; validation
    branch incl. pillar), feel pack a4 (a rite over a void fails the phase), two clean full
    runs, SHIP/VERIFICATION, deploy.
+
+---
+
+# PLAN — Backlog Build-Out + Design Elevation run (2026-07-11)
+
+RPI Phase 2. Inputs: BACKLOG.md (inventory + acceptance criteria — the IDs
+below reference it) and AUDIT.md (this run's section). Baseline green:
+vitest 411 · e2e 31+3 · gitleaks tree+history · osv offline-verified.
+
+## Order of work (epic gates; feel pack per world; anti-thrash 3-strike)
+
+1. **Hygiene sprint** — P0-3 resize grip kill (all textareas + static guard),
+   P0-4 capture-tier fix (rigged model in capture tier) + recapture a3/a4/a5
+   packs, X-1/X-2 dialog a11y (trap/Esc/label via DialogShell or equivalent),
+   X-3 CSP blob: verdict, Z-9 @types/node align, Z-10 tab-cycle audit.
+   Exit: suite green; packs show no primitive protagonist.
+2. **BLOCKERS update** — park K-1..K-13 with operator-facing asks; post the
+   F-8 QR vendoring proposal (exact packages + licenses) as a Rule-9 item so
+   operator review runs in parallel with the build. STOP only on that item.
+3. **E-0 shared groundwork** — rogue.glb compression (<1MB, meshopt/draco via
+   three's bundled decoders; degrade path retested), vite manualChunks split,
+   weather→sky tint, celebration-staging framework (world reacts: light/
+   particles/set-piece response, reduced-motion gated), panel typography/
+   material pass, camera transition language, DOF/quality toggle audit.
+   Exit: bundle numbers recorded before/after; suite green.
+4. **Design elevation W1→W8** (E-1..E-8, one world per cycle, feel-pack gate
+   each; E-9 Chart/HUD, E-10 First Light v2, E-11 attribution inside the
+   relevant cycles). A world that fails its pack is not done.
+5. **Field Mode** (F-1..F-7, F-10 core first; F-11 responsive; F-9 PWA;
+   F-8 QR LAST, gated on the Rule-9 approval from step 2). Invariants F-103 +
+   A1-A4 ship as tests before surfaces wire to them (evidence-layer-first).
+6. **Audio A-1** — silence-default, sliders, CC0 beds + cues, attribution.
+7. **Mechanics M-1..M-6** — invariant suite green throughout; M-3 stops the
+   moment anything reads metric-adjacent.
+8. **Council C-1** — temple + key UI + consent + fallback readings; live
+   calls dark (B-4); C-2 stays parked.
+9. **P2 sweep** — Z-1..Z-8, Z-11 docs, Z-12 alias note.
+10. **Phase 4 verification loop** — clean-state build; full suite (vitest,
+    serial e2e incl. every new flow, gitleaks tree+history, osv OFFLINE
+    command, parity, invariant suite); two consecutive clean full runs to
+    exit (three if flakiness appears — recorded); per-flow evidence in
+    VERIFICATION.md; SHIP.md + consolidated SITREP section; deploy +
+    hash-verify; state the URL explicitly.
+
+## Non-goals (this run)
+No features beyond the recorded backlog · no canon reinterpretation (K-items
+wait for rulings) · no mobile port of the 3D world (graceful small-viewport
+message only) · no major version upgrades (canon pins stand) · no live
+Council traffic (B-4 + operator key) · no telemetry, ever.
+
+## Standing constraints
+Invariants outrank features (the shipped suite must stay green through every
+change). Canon-file edits, new dependencies, new consent surfaces = Rule-9 FQ
+protocol (proposed diff → STOP → approval). Evidence-layer-first for combat
+work. Every world close archives a feel pack self-audited vs art §4 + this
+run's elevation criteria.

@@ -56,3 +56,46 @@ QA playthrough per SITREP.md serves as the re-judgment).
   once, at the end, via the consolidated SITREP + QA report.
 - **2026-07-11 · D-blocks.** All defaults ratified, no exceptions (operator, verbatim: "all
   defaults ratified").
+
+---
+
+# Backlog run parks (2026-07-11) — operator-facing decisions, zero silent drops
+
+- **K-1 · Reset-loop retro + undefended-critique prompts.** Canon question text
+  does NOT exist in 03 (only the header parenthetical, 03:95). Wiring = authoring
+  canon by inference → STOP honored. NEEDS: verbatim prompts from the operator,
+  or approval of a drafted 03 diff.
+- **K-2 · B-4 Council provenance block** — standing; needs cc-prompt-earned-hunch.md
+  or approval of a posted draft.
+- **K-3 · i18n 40 locales** (05:13) — D-scope STOP per CLAUDE.md; prereq repo
+  unreachable.
+- **K-4 · 05:17 "next after" features** (Mentor/Shadow AI · Interview Debrief ·
+  Story Forge · pre-mortem ritual · Five-Whys chain · onboarding tour · cookbook ·
+  dinner shared-board · self-hosting recipe) — each needs its operator prompt/ruling
+  before build; several touch D-scope or new canon content.
+- **K-5 · Whiplash ritual** — source-blocked (R-K; game-design:193,277).
+- **K-6 · OQ4 id-constants cross-check** — blocked on the v3 source upload.
+- **K-7 · Session-draft retention (F3) wording** — needs the one-line ruling
+  (VERIFICATION Round 2).
+- **K-8 · Per-beat spine→evidence map** — deferred by ruling (05:22); requires the
+  drafted 02 diff approval to take.
+- **K-9 · GitHub default-branch flip to main** — operator console action.
+- **K-10 · Real-hardware FPS + live-render eyes-on** — structurally operator-side;
+  in-container claims stay labeled UNTESTED.
+- **K-11 · phase0-canon-diff.md stale rider-queue section** — all 5 riders are
+  applied in canon (02:36,43,81 · 05:13,21) but the doc still reads "Queued… not
+  yet posted". PROPOSED DIFF (needs approval, canon-umbrella file): replace that
+  section's status line with "All 5 riders applied to canon 2026-07-08–11; see
+  02/05." No other change.
+- **K-12 · WIKJ v3 §12 UNVERIFIED closure list** — research debt; will verify what
+  primary sources allow during this run; the rest keeps honest labels.
+- **K-13 · Vite 5 EOL** — upstream support ended (2026 dev-server CVEs fixed in
+  6.4+ only; dev-only exposure). Canon pins Vite 5; the documented osv ignore list
+  is the standing policy. Operator owns any future pin change.
+- **F-8 deps-review table (R-H, pre-ruled):** QR encoder/decoder to be vendored
+  per the recorded R-H ruling; exact name/version/license verified online and
+  listed here before the files land. Candidates: nayuki qrcodegen (MIT, single
+  file) for encode; decoder pick pending license verification (jsQR is
+  Apache-2.0, NOT MIT — R-H says MIT; qr-scanner (MIT) bundles a jsQR fork —
+  license lineage must be verified before vendoring). If no clean MIT decoder
+  verifies, fallback = BarcodeDetector + file/paste only, logged here.
