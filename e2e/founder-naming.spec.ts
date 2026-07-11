@@ -68,6 +68,12 @@ test('rename: click the HUD name → card reopens pre-filled → Save changes it
   await expect(page.getByTestId('founder-naming')).toBeHidden()
   await expect(page.getByTestId('hud-founder-name')).toHaveText('Ada')
 
+  // naming resolved -> First Light's invitation opens (the real first-run flow);
+  // skip it — this spec exercises the rename path, not the induction
+  await expect(page.getByTestId('opening-invitation')).toBeVisible()
+  await page.getByTestId('opening-skip').press('Enter')
+  await expect(page.getByTestId('opening-invitation')).toBeHidden()
+
   // click the HUD name to re-open the card — it is pre-filled with the current name
   await page.getByTestId('hud-founder-name').click()
   const card = page.getByTestId('founder-naming')
