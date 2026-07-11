@@ -6,6 +6,7 @@
 // render plumbing, never state of record. Zero network, zero DOM focus tricks.
 
 import { useEffect, useRef } from 'react'
+import { questStore } from '../state/store'
 import { useUiStore } from '../state/ui'
 import type { WorldEvents } from './contracts'
 import { SPEC_BY_ID, activeTargetId, useInteractionStore } from './interaction'
@@ -165,6 +166,14 @@ export function useWorldControls(events: WorldEvents): void {
       }
       if (e.code === 'Escape') {
         useInteractionStore.getState().clearFocus()
+        return
+      }
+      // the Cartographer's Chart (M = map, L = legend) — once handed over
+      // (completed OR skipped opening both unlock it; nothing is gated)
+      if ((e.code === 'KeyM' || e.code === 'KeyL') && !e.repeat) {
+        if (questStore.getState().data.chartUnlocked) {
+          useUiStore.getState().openPanel(e.code === 'KeyM' ? 'panel:chart' : 'panel:legend')
+        }
         return
       }
       const isArrow = e.code.startsWith('Arrow')

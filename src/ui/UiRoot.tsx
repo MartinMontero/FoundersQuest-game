@@ -19,10 +19,12 @@ import { useUiStore } from '../state/ui'
 import { STAGES, UI } from '../strings'
 import { CalibrationPanel } from './CalibrationPanel'
 import { CampfirePanel } from './CampfirePanel'
+import { ChartPanel } from './ChartPanel'
 import { DegradedBanner } from './DegradedBanner'
 import { FounderNaming } from './FounderNaming'
 import { GatePanel } from './GatePanel'
 import { Hud } from './Hud'
+import { LegendPanel } from './LegendPanel'
 import { LoopPanel } from './LoopPanel'
 import { OnboardingHint } from './OnboardingHint'
 import { RegistryPanel } from './RegistryPanel'
@@ -129,6 +131,8 @@ export function UiRoot(): ReactElement {
       {mode === 'panel:registry' ? <RegistryPanel focusRiskiest={focusRiskiest} /> : null}
       {mode === 'panel:campfire' ? <CampfirePanel /> : null}
       {mode === 'panel:calibration' ? <CalibrationPanel /> : null}
+      {mode === 'panel:chart' ? <ChartPanel /> : null}
+      {mode === 'panel:legend' ? <LegendPanel /> : null}
       {mode === 'gate' ? <GatePanel /> : null}
       {mode === 'loop' ? <LoopPanel /> : null}
       {shadowVisible ? (

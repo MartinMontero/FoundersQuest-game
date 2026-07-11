@@ -19,6 +19,7 @@ export {
   HINTS,
 } from './questions'
 export { WORLD_COPY } from './world'
+export { FIRST_LIGHT } from './firstlight'
 // ui.ts is DOM-UI chrome only (Phase 2): tier metal skin, canon vocabulary labels,
 // and authored panel/HUD copy — never question or Council text.
 export {

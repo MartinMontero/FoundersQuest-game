@@ -18,8 +18,9 @@ import type { EvidenceTier } from '../core/schema'
 import { milestoneIdsForStage } from '../game/contracts'
 import { founderDisplayName, useFounderStore } from '../state/founder'
 import { useJourneyStore } from '../state/journey'
-import { useAction, useEvidenceBanked, useTierCounts, useTruth } from '../state/store'
-import { STAGES, TIER_CODES, TIER_METALS, UI, coinCount, formatPercent, stageBanner } from '../strings'
+import { useAction, useEvidenceBanked, useQuestStore, useTierCounts, useTruth } from '../state/store'
+import { useUiStore } from '../state/ui'
+import { FIRST_LIGHT, STAGES, TIER_CODES, TIER_METALS, UI, coinCount, formatPercent, stageBanner } from '../strings'
 
 const TIERS: readonly EvidenceTier[] = [0, 1, 2, 3, 4]
 
@@ -30,6 +31,8 @@ export function Hud(): ReactElement | null {
   const banked = useEvidenceBanked()
   const coins = useTierCounts()
   const founderName = useFounderStore((s) => s.name)
+  const chartUnlocked = useQuestStore((s) => s.data.chartUnlocked)
+  const openPanel = useUiStore((s) => s.openPanel)
   const openRename = useFounderStore((s) => s.openRename)
   const stage = STAGES.find((s) => s.stage === currentStage)
   if (stage === undefined) return null
@@ -68,6 +71,30 @@ export function Hud(): ReactElement | null {
         >
           {stageBanner(stage)}
         </p>
+
+        {/* the Cartographer's Chart — in the HUD once handed over (skippers included) */}
+        {chartUnlocked ? (
+          <div className="pointer-events-auto flex gap-1.5">
+            <button
+              type="button"
+              data-testid="hud-chart"
+              title={FIRST_LIGHT.chart.title}
+              onClick={() => openPanel('panel:chart')}
+              className="quest-btn quest-btn-quiet px-2 py-0.5 text-2xs"
+            >
+              {FIRST_LIGHT.chart.hudChart}
+            </button>
+            <button
+              type="button"
+              data-testid="hud-legend"
+              title={FIRST_LIGHT.legend.title}
+              onClick={() => openPanel('panel:legend')}
+              className="quest-btn quest-btn-quiet px-2 py-0.5 text-2xs"
+            >
+              {FIRST_LIGHT.chart.hudLegend}
+            </button>
+          </div>
+        ) : null}
 
         {/* Truth leads — a glowing crystal gauge, the "life" slot (game-design §4) */}
         <div>
