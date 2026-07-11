@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
 import { riskiest, trough } from '../core/metrics'
+import { useFounderStore } from '../state/founder'
 import type { QuestData } from '../core/schema'
 import { useJourneyStore } from '../state/journey'
 import { questStore, useQuestData } from '../state/store'
@@ -27,6 +28,8 @@ import { Hud } from './Hud'
 import { LegendPanel } from './LegendPanel'
 import { LoopPanel } from './LoopPanel'
 import { OnboardingHint } from './OnboardingHint'
+import { OpeningOverlay } from './OpeningOverlay'
+import { ReentryPrompt } from './ReentryPrompt'
 import { RegistryPanel } from './RegistryPanel'
 import { ShadowOverlay } from './ShadowOverlay'
 import { TrancePanel } from './TrancePanel'
@@ -61,6 +64,8 @@ export function chooseShadowQuote(data: QuestData): string {
 }
 
 export function UiRoot(): ReactElement {
+  // '' = the first-run naming card is up (skips adopt the default name)
+  const founderNamed = useFounderStore((s) => s.name !== '')
   const mode = useUiStore((s) => s.mode)
   const activeQid = useUiStore((s) => s.activeQid)
   const shadowVisible = useUiStore((s) => s.shadow.visible)
@@ -123,6 +128,9 @@ export function UiRoot(): ReactElement {
       <Hud />
       <FounderNaming />
       <OnboardingHint />
+      {/* First Light mounts once the founder is named (the naming card leads;
+          '' = unnamed and the card is up) — invitation, beats, or nothing */}
+      {founderNamed ? <OpeningOverlay /> : null}
       {mode === 'trance' && activeQid !== null ? (
         // key: each shrine gets its own draft state (drafts are per-question)
         <TrancePanel key={activeQid} qid={activeQid} />
@@ -133,6 +141,7 @@ export function UiRoot(): ReactElement {
       {mode === 'panel:calibration' ? <CalibrationPanel /> : null}
       {mode === 'panel:chart' ? <ChartPanel /> : null}
       {mode === 'panel:legend' ? <LegendPanel /> : null}
+      {mode === 'reentry' ? <ReentryPrompt /> : null}
       {mode === 'gate' ? <GatePanel /> : null}
       {mode === 'loop' ? <LoopPanel /> : null}
       {shadowVisible ? (

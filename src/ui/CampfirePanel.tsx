@@ -8,9 +8,9 @@ import { useId, useState, type ReactElement } from 'react'
 import { buildJournalMd } from '../core/serializer'
 import type { WeatherEntry } from '../core/schema'
 import { useJourneyStore } from '../state/journey'
-import { useQuestData, useQuestStore } from '../state/store'
+import { questStore, useQuestData, useQuestStore } from '../state/store'
 import { useUiStore } from '../state/ui'
-import { SIDE_QUESTS, SIDE_QUESTS_RULE, UI, WEATHER_LABELS } from '../strings'
+import { FIRST_LIGHT, SIDE_QUESTS, SIDE_QUESTS_RULE, UI, WEATHER_LABELS } from '../strings'
 import { DialogShell } from './TrancePanel'
 
 const WEATHER_VALUES: readonly WeatherEntry['value'][] = [1, 2, 3, 4, 5]
@@ -216,6 +216,17 @@ export function CampfirePanel(): ReactElement {
       </fieldset>
 
       <div className="mt-6">
+        <button
+          type="button"
+          data-testid="campfire-replay-firstlight"
+          onClick={() => {
+            closePanel()
+            questStore.getState().setOpeningBeat(2)
+          }}
+          className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
+        >
+          {FIRST_LIGHT.reentry.campfireReplay}
+        </button>
         <button
           type="button"
           data-testid="campfire-close"

@@ -46,6 +46,14 @@ in docs/build/mindmyth-canon-diff.md (RATIFIED, all defaults), blockers in BLOCK
 - **A2 The Earned Hunch** ✅ CLOSED (2026-07-11) — provenance tagging, wicked rune, priority
   bump, calibration record; 15 invariant tests + full e2e flow; two consecutive clean full runs
   (vitest 351 ×2 · e2e 23 ×2 · scanners clean). 05 moved Queued→Shipped.
-- **A3 First Light** ⛔ gated on Gate-2 re-pass (operator plays before A3 opens — B-3).
-- **A4 Confrontation + Funeral rite** ⛔ gated on Gate-2 re-pass.
-- **A5 The Ego** ⛔ gated on A2–A4 complete.
+- **A3 First Light** — UNBLOCKED by the 2026-07-11 operator directive (one consolidated
+  end-of-build playthrough; BLOCKERS B-3 superseded-entry). Shipped: D-G carve-out in metrics
+  (denominator exclusion + fixed XP), opening store actions, the Cartographer's Chart (M) +
+  Legend (L) panels + HUD affordances, the 11-beat induction (real artifacts: vault capture,
+  D-I firstLight guardian + sealed kill criterion, verbatim E2 quote, the real first kill),
+  courtesy skip + one-time re-entry prompt + campfire replay, accessibility (no timed reading,
+  instant-complete typewriter, reduced-motion, ARIA live region). e2e: full induction + skip
+  path. Feel pack: docs/feel-packs/a3/ (FEEL_PACK=1 run).
+- **A4 Confrontation + Funeral rite** — next (research + audit absorbed; Gate-0 defaults cover
+  every audit escalation: bounce-is-feedback B2, no inverse-HP B3, D-A/D-C/D-D rulings).
+- **A5 The Ego** — after A4.

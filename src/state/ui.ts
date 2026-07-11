@@ -18,7 +18,7 @@ export type PanelMode =
   | 'panel:legend'
 // 'gate' = an Act-Gate threshold; 'loop' = a named loop's toll-portal. Both are
 // modal (mode !== 'roam' freezes the world), and both carry a payload below.
-export type UiMode = 'roam' | 'trance' | 'gate' | 'loop' | PanelMode
+export type UiMode = 'roam' | 'trance' | 'gate' | 'loop' | 'reentry' | PanelMode
 
 export interface ShadowState {
   visible: boolean
@@ -65,6 +65,10 @@ export interface UiState {
   openLoop(loop: PendingLoop): void
   /** close the loop toll (paid or cancelled) — back to roam */
   closeLoop(): void
+  /** the one-time First-Light re-entry prompt intercepting a skipper's first kneel */
+  pendingReentryQid: string | null
+  openReentry(qid: string): void
+  closeReentry(): void
   summonShadow(quote: string, action: string): void
   dismissShadow(): void
 }
@@ -112,6 +116,16 @@ export const useUiStore = create<UiState>()((set) => ({
 
   closeLoop(): void {
     set({ mode: 'roam', pendingLoop: null })
+  },
+
+  pendingReentryQid: null,
+
+  openReentry(qid: string): void {
+    set({ mode: 'reentry', pendingReentryQid: qid })
+  },
+
+  closeReentry(): void {
+    set({ mode: 'roam', pendingReentryQid: null })
   },
 
   summonShadow(quote: string, action: string): void {

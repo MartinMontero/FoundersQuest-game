@@ -14,18 +14,42 @@ export const SCREENSHOT_DIR = 'e2e/screenshots'
 /** Pre-seed the founder's name so the first-run naming card never opens over a
  * gameplay spec (the card is exercised on its own in founder-naming.spec). The
  * name lives under the settings' own key, so it never touches founders-quest:v3.
+ * ALSO (unless `freshOpening`) pre-seeds a COMPLETED First Light into an absent
+ * founders-quest:v3 — a returning founder — so the invitation/induction never
+ * opens over a gameplay spec (First Light is exercised in firstlight.spec). A
+ * spec that writes its own STORAGE_KEY afterwards simply overwrites this seed;
+ * its non-pristine record keeps the invitation away by the product rule.
  * Best-effort under a storage shim: setItem throws there and is swallowed (that
  * spec dismisses the card in-test instead). Call BEFORE page.goto. */
-export async function seedFounderName(page: Page, name = 'Tester'): Promise<void> {
+export async function seedFounderName(
+  page: Page,
+  name = 'Tester',
+  opts: { freshOpening?: boolean } = {},
+): Promise<void> {
   await page.addInitScript(
-    ([key, value]) => {
+    ([key, value, storageKey, openingDone]) => {
       try {
         window.localStorage.setItem(key as string, value as string)
+        if (openingDone === 'yes' && window.localStorage.getItem(storageKey as string) === null) {
+          window.localStorage.setItem(
+            storageKey as string,
+            JSON.stringify({
+              openingCompletedAt: '2026-07-10T00:00:00.000Z',
+              invitationSeen: true,
+              chartUnlocked: true,
+            }),
+          )
+        }
       } catch {
         // storage blocked (degraded-mode spec) — handled in that spec directly
       }
     },
-    [SETTINGS_STORAGE_KEY, JSON.stringify({ fallbackAccepted: false, founderName: name })],
+    [
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({ fallbackAccepted: false, founderName: name }),
+      STORAGE_KEY,
+      opts.freshOpening === true ? 'no' : 'yes',
+    ],
   )
 }
 

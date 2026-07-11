@@ -4,6 +4,7 @@
 // The UI layer may pass its own WorldEvents into <GameRoot events={...}/> and
 // override any of these.
 
+import { useFirstLightUiStore } from '../state/firstlight'
 import { useJourneyStore } from '../state/journey'
 import { questStore } from '../state/store'
 import { useUiStore } from '../state/ui'
@@ -13,6 +14,14 @@ import type { WorldEvents } from './contracts'
 
 export const defaultWorldEvents: WorldEvents = {
   onShrineEnter(qid: string): void {
+    // a skipper's FIRST kneel gets the one-time First-Light offer (once, ever;
+    // declining proceeds straight into the trance and never asks again)
+    const { openingSkippedAt, openingCompletedAt } = questStore.getState().data
+    const fl = useFirstLightUiStore.getState()
+    if (openingSkippedAt !== null && openingCompletedAt === null && !fl.reentryPromptSeen) {
+      useUiStore.getState().openReentry(qid)
+      return
+    }
     useUiStore.getState().enterTrance(qid)
   },
   onVaultApproach(): void {

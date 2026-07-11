@@ -48,10 +48,16 @@ test('Earned Hunch: capture → tag → seed → bump → E2 → funeral → the
   await page.addInitScript(
     ([sk, seed]) => {
       try {
-        // first load ONLY — init scripts re-run on reload, and this spec's
-        // world-hops reload; re-seeding would wipe the test's own writes
-        if (window.localStorage.getItem(sk as string) === null) {
-          window.localStorage.setItem(sk as string, seed as string)
+        // merge ONCE over the helper's returning-founder pre-seed; on later
+        // reloads (this spec world-hops) the marker prevents re-wiping the
+        // test's own writes
+        const existing = window.localStorage.getItem(sk as string)
+        const parsed = existing === null ? {} : (JSON.parse(existing) as Record<string, unknown>)
+        if (parsed['__seeded'] === undefined && parsed['assumptions'] === undefined) {
+          window.localStorage.setItem(
+            sk as string,
+            JSON.stringify({ ...parsed, ...(JSON.parse(seed as string) as object), __seeded: true }),
+          )
         }
       } catch {
         // storage blocked — not this spec's concern

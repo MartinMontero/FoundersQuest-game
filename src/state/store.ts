@@ -154,6 +154,8 @@ export interface QuestState {
   resolveFirstLight(id: string, outcome: 'invalidated' | 'validated'): void
   /** Record an opening-produced artifact id (vault capture, evidence, guardian). */
   recordFirstLightArtifact(id: string): void
+  /** Hand the Chart over mid-induction (beat 9) so M/L work before completion. */
+  unlockChart(): void
 }
 
 export interface QuestStoreDeps {
@@ -535,6 +537,12 @@ export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState
         const { data } = get()
         if (data.firstLightArtifactIds.includes(id)) return
         commit({ ...data, firstLightArtifactIds: [...data.firstLightArtifactIds, id] })
+      },
+
+      unlockChart(): void {
+        const { data } = get()
+        if (data.chartUnlocked) return
+        commit({ ...data, chartUnlocked: true })
       },
     }
   })
