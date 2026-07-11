@@ -54,7 +54,7 @@ one-time re-entry + campfire replay (write-once) · feel pack archived (docs/fee
 **Deviations (plainly):** per-world Truth/Action pips deferred (tombstones shipped); nested
 tooltips = one "more" level; the cold-open camera dolly is the standard rig (letterbox + text
 carry the register) — all logged for the art pass. Chart label crowding at W7/W8 = known QA nit.
-## A4 · Confrontation + Funeral rite (2026-07-11) — vertical slice, W1 (close pending two runs)
+## A4 · Confrontation + Funeral rite (2026-07-11) — CLOSED (two clean full runs; see VERIFICATION — osv note)
 **Shipped (build order followed to the letter — evidence layer first):**
 argument core (src/core/confrontation.ts — HP/composure DERIVED by replaying
 confrontations[].citations against the real Ledger; dies 12/4 · wobbles 8/2 · shrugs 5/1;

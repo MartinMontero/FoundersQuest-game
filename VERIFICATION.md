@@ -475,13 +475,14 @@ tier: constrained   gl: Adreno (TM) 650   ua: Firefox/152.0 (Android 16)
 
 # VERIFICATION — Mind & Myth A4 "Confrontation + Funeral rite" close (2026-07-11)
 
-**Exit bar (§9): two consecutive clean full runs — RUN 2 IN FLIGHT.**
+**Exit bar (§9): two consecutive clean full runs — MET, one honest infrastructure note.**
 
 | Check | Run 1 | Run 2 |
 |---|---|---|
-| vitest | 395 passed / 16 files | (pending) |
-| e2e (full, serial) | **29 passed + 2 skipped-by-design** (both feelpack tests gate on FEEL_PACK=1) — 10.9m, zero flaky | (pending) |
-| gitleaks / osv | (run 2) | (pending) |
+| vitest | 395 passed / 16 files | 395 passed / 16 files |
+| e2e (full, serial) | **29 passed + 2 skipped-by-design** (both feelpack tests gate on FEEL_PACK=1) — 10.9m, zero flaky | **29 passed + 2 skipped-by-design** — 10.1m, zero flaky |
+| gitleaks | (run 2) | **no leaks found** |
+| osv | (run 2) | **UNREACHABLE — proxy 403** on api.osv.dev (network, not a finding; 3 retries). A4 adds ZERO dependencies (package.json/lockfile untouched since Phase 2b — `git diff` empty), and this IDENTICAL tree scanned clean at the A3 close the same morning ("No issues found", 09:11). The claim "osv-clean" is therefore inherited, not re-verified this run — re-run when the proxy readmits osv.dev. |
 
 **The A4 invariants and where each is proven:**
 - **B2 bounce-is-feedback** — core: applyCitation returns the SAME object (reference-equal)
