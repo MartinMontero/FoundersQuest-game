@@ -168,3 +168,117 @@ test('feel pack a4: arena set-piece, press, window, thread, shatter, rite, grave
   await page.waitForTimeout(600)
   await page.screenshot({ path: `${DIR}/08-graveside.png` })
 })
+
+// ---- A5: the Ego at the W8 Launch Threshold ----
+
+test('feel pack a5: threshold monolith, offer, denial, projection, fusion, integration', async ({
+  page,
+}) => {
+  test.skip(PHASE !== 'a5', 'a5 shots run under FEEL_PACK_PHASE=a5')
+  mkdirSync(DIR, { recursive: true })
+
+  // the exact record + drive proven in e2e/ego.spec.ts test 1 — with shots
+  await seedFounderName(page)
+  await page.addInitScript(
+    ([storageKey, seedJson]) => {
+      window.localStorage.setItem('founders-quest:journey', '8')
+      const raw = window.localStorage.getItem(storageKey as string)
+      const data = raw === null ? {} : (JSON.parse(raw) as Record<string, unknown>)
+      const existing = data['assumptions']
+      if (Array.isArray(existing) && existing.length > 0) return
+      window.localStorage.setItem(
+        storageKey as string,
+        JSON.stringify({ ...data, ...(JSON.parse(seedJson as string) as object) }),
+      )
+    },
+    [
+      'founders-quest:v3',
+      JSON.stringify({
+        assumptions: [
+          {
+            id: 'u-heavy',
+            statement: 'Enterprise buyers will self-serve',
+            originStageId: 's7',
+            importance: 'dies',
+            status: 'untested',
+            killCriterion: '',
+            createdAt: '2026-07-01T00:00:00.000Z',
+          },
+          {
+            id: 'sealed-g',
+            statement: 'Ops leads feel this weekly',
+            originStageId: 's1',
+            importance: 'wobbles',
+            status: 'validated',
+            resolvedAt: '2026-07-08T00:00:00.000Z',
+            killCriterion: 'Fewer than 3 of 10 name it unprompted',
+            createdAt: '2026-07-01T00:00:00.000Z',
+          },
+          {
+            id: 'dead-g',
+            statement: 'They will prepay for a beta',
+            originStageId: 's5',
+            importance: 'wobbles',
+            status: 'invalidated',
+            resolvedAt: '2026-07-09T00:00:00.000Z',
+            killCriterion: '',
+            createdAt: '2026-07-01T00:00:00.000Z',
+          },
+        ],
+        evidence: [
+          { id: 'e-hunch', tier: 0, text: 'gut says launch now', source: '', linkedAssumptionIds: [], stageId: '', date: '2026-07-02' },
+          { id: 'e-deed', tier: 3, text: 'watched three teams route around the tool', source: 'shadowing', linkedAssumptionIds: [], stageId: 's4', date: '2026-07-03' },
+          { id: 'e-gold', tier: 4, text: 'two paid pilots signed', source: 'contracts', linkedAssumptionIds: [], stageId: 's7', date: '2026-07-04' },
+          { id: 'e-sealed', tier: 2, text: '"we lose every Friday afternoon to this"', source: 'interview 7', linkedAssumptionIds: ['sealed-g'], stageId: 's1', date: '2026-07-05' },
+          { id: 'e-dead', tier: 2, text: '"I would not pay for this today"', source: 'pricing call', linkedAssumptionIds: ['dead-g'], stageId: 's5', date: '2026-07-06' },
+        ],
+        gates: {
+          act1: { status: 'overridden', reason: 'demo day pressure — crossed unready', date: '2026-07-07' },
+        },
+        funerals: [{ guardianId: 'dead-g', skippedAt: '2026-07-09T01:00:00.000Z' }],
+      }),
+    ],
+  )
+  await page.goto('/')
+  await waitForWorldReady(page)
+
+  // 1: the monolith at the pad's threshold · 2: the offer over the live world
+  await tabToTarget(page, 'ego-gate')
+  await page.waitForTimeout(600)
+  await page.screenshot({ path: `${DIR}/01-threshold.png` })
+  await page.keyboard.press('KeyE')
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: `${DIR}/02-offer.png` })
+
+  // 3: denial (conviction 14, walls 1, the unmourned 1)
+  await page.getByTestId('ego-enter').press('Enter')
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: `${DIR}/03-denial.png` })
+
+  // 4: the wall breaks, naming the founder's own override reason
+  await page.getByTestId('ego-cite-2').press('Enter') // E3 → absorbed by the wall
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: `${DIR}/04-wall-breaks.png` })
+
+  // 5: rationalization after Gold lands
+  await page.getByTestId('ego-cite-3').press('Enter') // E4 → 14→6
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: `${DIR}/05-rationalization.png` })
+
+  // 6: projection — the untested belief thrown back
+  await page.getByTestId('ego-cite-4').press('Enter') // sealed E2 → 6→2
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: `${DIR}/06-projection.png` })
+
+  // 7: identity-fusion after the chain is cut
+  await page.getByTestId('ego-return-1').press('Enter')
+  await page.getByTestId('ego-cite-5').press('Enter') // the chain cutter → 0
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: `${DIR}/07-fusion.png` })
+
+  // 8: the integration — it does not die; it sits down beside you
+  await page.getByTestId('ego-line').fill('I am not my idea. I am the one who tests it.')
+  await page.getByTestId('ego-integrate').press('Enter')
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: `${DIR}/08-integration.png` })
+})

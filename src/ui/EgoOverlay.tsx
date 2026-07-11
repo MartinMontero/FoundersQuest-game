@@ -221,11 +221,13 @@ function Fight(): ReactElement {
       sealed: sealedBy(entry, data),
       cutsChain: cutsChain(entry, data),
     })
-    setCited([...cited, entry.id]) // a coin spends once per fight, land or not
     if (!lands) {
+      // a deflect TEACHES the phase rule and costs nothing — consuming the
+      // coin would be a soft-lock and a punishment (anti-punitive law)
       setFeedback({ kind: 'deflect', phase })
       return
     }
+    setCited([...cited, entry.id]) // a coin spends once per fight — when it LANDS
     if (brokenShields < ego.shields.length) {
       const shield = ego.shields[brokenShields]
       setBrokenShields(brokenShields + 1)
