@@ -56,7 +56,7 @@ export function LoopPanel(): ReactElement | null {
           value={learning}
           onChange={(event) => setLearning(event.target.value)}
           rows={3}
-          className="quest-paper resize-y text-sm"
+          className="quest-paper text-sm"
         />
       </label>
 

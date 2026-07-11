@@ -20,6 +20,7 @@ import { useQuestStore } from '../state/store'
 import { useUiStore } from '../state/ui'
 import { FIRST_LIGHT, TIER_CODES, TIER_METALS, UI } from '../strings'
 import { useReducedMotion } from '../game/useReducedMotion'
+import { useFocusTrap } from './TrancePanel'
 
 // beat numbers (1 = invitation card; 2..11 = the induction)
 const BEAT_COLD_OPEN = 2
@@ -107,13 +108,27 @@ function ContinueButton({ onClick, label }: { onClick: () => void; label?: strin
 /** The invitation card (beat 1) — required-but-escapable; the skip is small,
  *  findable, never hidden, and exempt from override-logging (a courtesy). */
 function Invitation({ onAccept, onSkip }: { onAccept: () => void; onSkip: () => void }): ReactElement {
+  const trapRef = useFocusTrap()
+  // Esc = the courtesy skip (same recoverable path as the button: the one-time
+  // re-entry prompt offers the way back in) — an aria-modal dialog must answer Esc
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      event.preventDefault()
+      onSkip()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return (): void => document.removeEventListener('keydown', onKeyDown)
+  }, [onSkip])
   return (
     <div className="fixed inset-0 z-trance flex items-center justify-center p-4">
       <div className="quest-backdrop absolute inset-0" aria-hidden="true" />
       <div
+        ref={trapRef}
         role="dialog"
         aria-modal="true"
         aria-label={FIRST_LIGHT.invitation.title}
+        tabIndex={-1}
         data-testid="opening-invitation"
         className="quest-panel relative w-full max-w-lg p-7"
       >

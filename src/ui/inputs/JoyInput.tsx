@@ -22,7 +22,7 @@ export function JoyInput({ value, onChange }: JoyInputProps): ReactElement {
           value={value}
           onChange={(event) => onChange(event.target.value)}
           rows={4}
-          className="quest-paper resize-y text-sm"
+          className="quest-paper text-sm"
         />
       </label>
       <p className="quest-eyebrow text-2xs text-amber-accent-600">{UI.joy.prompt}</p>

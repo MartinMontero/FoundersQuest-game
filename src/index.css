@@ -128,6 +128,14 @@
     border: 1px solid rgba(107, 79, 46, 0.38);
     border-radius: 0.4rem;
     box-shadow: inset 0 1px 2px rgba(80, 55, 25, 0.14);
+    /* art-direction §3: no default-browser controls — the OS resize grip is
+       banned chrome. Fixed rows do the sizing on every writing surface. */
+    resize: none;
+  }
+
+  /* the same law for every textarea in the experience, whatever its skin */
+  textarea {
+    resize: none;
   }
   .quest-input::placeholder {
     color: rgba(90, 74, 50, 0.5);

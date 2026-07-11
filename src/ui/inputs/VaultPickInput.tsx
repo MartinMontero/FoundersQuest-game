@@ -39,7 +39,7 @@ export function VaultPickInput({
             value={fallback}
             onChange={(event) => onChange({ selectedId: null, fallback: event.target.value })}
             rows={5}
-            className="quest-paper resize-y text-sm"
+            className="quest-paper text-sm"
           />
         </label>
       </div>

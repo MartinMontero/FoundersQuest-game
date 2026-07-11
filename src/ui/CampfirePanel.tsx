@@ -100,7 +100,7 @@ export function CampfirePanel(): ReactElement {
               setNoteSaved(false)
             }}
             rows={3}
-            className="quest-paper resize-y text-sm"
+            className="quest-paper text-sm"
           />
         </label>
         <div className="mt-2 flex items-center gap-2">
@@ -194,7 +194,7 @@ export function CampfirePanel(): ReactElement {
               setDinnerSaved(false)
             }}
             rows={3}
-            className="quest-paper resize-y text-sm"
+            className="quest-paper text-sm"
           />
         </label>
         <div className="mt-2 flex items-center gap-2">

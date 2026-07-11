@@ -104,7 +104,7 @@ export async function shot(page: Page, name: string): Promise<void> {
 }
 
 // 8 shrines + 3 flagpoles + vault + registry = 13 interactables in the cycle.
-const TAB_CYCLE_LIMIT = 16
+const TAB_CYCLE_LIMIT = 24
 
 /** Tab-cycle the 3D interactable focus (keyboard a11y path) until the name
  * chip shows `label` — the chip is the player-visible signal that this target

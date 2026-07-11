@@ -64,7 +64,7 @@ export function VerbatimInput({ quotes, onChange, onLogQuote }: VerbatimInputPro
                 value={quote}
                 onChange={(event) => setAt(index, event.target.value)}
                 rows={2}
-                className="quest-paper resize-y text-sm"
+                className="quest-paper text-sm"
               />
             </label>
             {isLogged ? (

@@ -21,8 +21,9 @@ test('feel pack a3: spawn, shrine, trance frame, opening, chart, legend', async 
 
   // 1-2: fresh opening — invitation + dialogue over the live world
   await seedFounderName(page, 'Tester', { freshOpening: true })
-  await page.goto('/')
+  await page.goto('/?render=constrained') // P0-4: rigged rogue, never the capsule (full-tier postFX is untenable in software GL)
   await waitForWorldReady(page)
+  await page.waitForTimeout(2500) // let rogue.glb stream + skin before any shot
   await page.screenshot({ path: `${DIR}/01-invitation.png` })
   await page.getByTestId('opening-accept').press('Enter')
   await page.waitForTimeout(1200) // let the typewriter ink a line
@@ -123,8 +124,9 @@ test('feel pack a4: arena set-piece, press, window, thread, shatter, rite, grave
       JSON.stringify({ assumptions: [A4_GUARDIAN], evidence: A4_LEDGER }),
     ],
   )
-  await page.goto('/')
+  await page.goto('/?render=constrained') // P0-4: rigged rogue, never the capsule (full-tier postFX is untenable in software GL)
   await waitForWorldReady(page)
+  await page.waitForTimeout(2500) // let rogue.glb stream + skin before any shot
 
   // 1: the circle from the field — challenger menhir, braziers, golden thread
   await tabToTarget(page, 'arena')
@@ -239,8 +241,9 @@ test('feel pack a5: threshold monolith, offer, denial, projection, fusion, integ
       }),
     ],
   )
-  await page.goto('/')
+  await page.goto('/?render=constrained') // P0-4: rigged rogue, never the capsule (full-tier postFX is untenable in software GL)
   await waitForWorldReady(page)
+  await page.waitForTimeout(2500) // let rogue.glb stream + skin before any shot
 
   // 1: the monolith at the pad's threshold · 2: the offer over the live world
   await tabToTarget(page, 'ego-gate')

@@ -12,12 +12,11 @@ import { useQuestStore } from '../state/store'
 import { useFounderStore, FOUNDER_NAME_MAX } from '../state/founder'
 import { useUiStore } from '../state/ui'
 import { UI } from '../strings'
+import { useFocusTrap } from './TrancePanel'
 
 export function FounderNaming(): ReactElement | null {
   const name = useFounderStore((s) => s.name)
-  const setName = useFounderStore((s) => s.setName)
   const renaming = useFounderStore((s) => s.renaming)
-  const closeRename = useFounderStore((s) => s.closeRename)
   const firstRun = useQuestStore((s) => Object.keys(s.data.answers).length === 0)
   const mode = useUiStore((s) => s.mode)
   const [draft, setDraft] = useState('')
@@ -32,6 +31,23 @@ export function FounderNaming(): ReactElement | null {
   const firstRunNaming = firstRun && name === ''
   const open = mode === 'roam' && (firstRunNaming || renaming)
   if (!open) return null
+  return <NamingCard renaming={renaming} draft={draft} setDraft={setDraft} />
+}
+
+/** The card itself — split so the focus trap mounts/unmounts WITH the dialog
+ *  (trap + focus restoration + document-level Esc are its a11y contract). */
+function NamingCard({
+  renaming,
+  draft,
+  setDraft,
+}: {
+  renaming: boolean
+  draft: string
+  setDraft(next: string): void
+}): ReactElement {
+  const setName = useFounderStore((s) => s.setName)
+  const closeRename = useFounderStore((s) => s.closeRename)
+  const trapRef = useFocusTrap()
 
   const commit = (): void => {
     setName(draft)
@@ -43,15 +59,30 @@ export function FounderNaming(): ReactElement | null {
     else setName('')
   }
 
+  // document-level Esc — not just while the input holds focus
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      event.preventDefault()
+      dismiss()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return (): void => document.removeEventListener('keydown', onKeyDown)
+    // dismiss is stable per open (renaming doesn't change mid-dialog)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [renaming])
+
   // one title for both moods (operator copy); only the actions differ by mood
   const commitLabel = renaming ? UI.founder.renameSave : UI.founder.namingBegin
   const dismissLabel = renaming ? UI.founder.renameCancel : UI.founder.namingSkip
 
   return (
     <div
+      ref={trapRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="founder-naming-title"
+      tabIndex={-1}
       data-testid="founder-naming"
       className="fixed inset-0 z-hud flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm motion-safe:animate-quest-fade"
     >
@@ -62,25 +93,25 @@ export function FounderNaming(): ReactElement | null {
         >
           {UI.founder.namingTitle}
         </h2>
-        <p className="mt-2 text-sm text-parchment-300/85">{UI.founder.namingPrompt}</p>
+        <p id="founder-naming-prompt" className="mt-2 text-sm text-parchment-300/85">
+          {UI.founder.namingPrompt}
+        </p>
         <input
           type="text"
           autoFocus
           value={draft}
           maxLength={FOUNDER_NAME_MAX}
           placeholder={UI.founder.namingPlaceholder}
+          aria-labelledby="founder-naming-prompt"
           data-testid="founder-name-input"
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault()
               commit()
-            } else if (e.key === 'Escape') {
-              e.preventDefault()
-              dismiss()
             }
           }}
-          className="quest-track mt-4 w-full rounded-lg border border-amber-accent-300/30 bg-slate-950/60 px-3 py-2 text-center font-display text-base text-parchment-100 outline-none focus:border-amber-accent-300/70"
+          className="quest-track mt-4 w-full rounded-lg border border-amber-accent-300/30 bg-slate-950/60 px-3 py-2 text-center font-display text-base text-parchment-100 outline-none focus:border-amber-accent-300/70 focus-visible:ring-2 focus-visible:ring-amber-accent-300/60"
         />
         <div className="mt-5 flex flex-col gap-2">
           <button

@@ -72,7 +72,7 @@ export function SpineInput({
               placeholder={UI.spine.beatPlaceholders[index] ?? ''}
               onChange={(event) => setBeat(index, event.target.value)}
               rows={2}
-              className="quest-paper resize-y text-sm"
+              className="quest-paper text-sm"
             />
           </label>
         )

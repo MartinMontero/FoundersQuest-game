@@ -78,7 +78,7 @@ export function GatePanel(): ReactElement | null {
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             rows={3}
-            className="quest-paper resize-y text-sm"
+            className="quest-paper text-sm"
           />
         </label>
       )}

@@ -53,7 +53,7 @@ export function IfThenInput({
           value={ifPart}
           onChange={(event) => onChange({ ifPart: event.target.value, thenPart, withinDays })}
           rows={2}
-          className="quest-paper resize-y text-sm"
+          className="quest-paper text-sm"
         />
       </label>
       <label className="quest-label flex flex-col gap-1 text-2xs">
@@ -63,7 +63,7 @@ export function IfThenInput({
           value={thenPart}
           onChange={(event) => onChange({ ifPart, thenPart: event.target.value, withinDays })}
           rows={2}
-          className="quest-paper resize-y text-sm"
+          className="quest-paper text-sm"
         />
       </label>
       <label className="quest-label flex w-40 flex-col gap-1 text-2xs">

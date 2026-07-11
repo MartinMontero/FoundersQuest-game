@@ -46,7 +46,7 @@ export function SealInput({ text, sealedAt, onChange, onSeal }: SealInputProps):
             setConfirming(false)
           }}
           rows={5}
-          className="quest-paper resize-y text-sm"
+          className="quest-paper text-sm"
         />
       </label>
       {confirming ? (

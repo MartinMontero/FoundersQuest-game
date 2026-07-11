@@ -18,7 +18,7 @@ export function TextAnswer({ value, onChange }: TextAnswerProps): ReactElement {
       value={value}
       onChange={(event) => onChange(event.target.value)}
       rows={8}
-      className="quest-paper resize-y text-sm"
+      className="quest-paper text-sm"
     />
   )
 }
