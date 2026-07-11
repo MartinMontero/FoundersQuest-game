@@ -21,8 +21,10 @@ import { STAGES, UI } from '../strings'
 import { CalibrationPanel } from './CalibrationPanel'
 import { CampfirePanel } from './CampfirePanel'
 import { ChartPanel } from './ChartPanel'
+import { ConfrontationOverlay } from './ConfrontationOverlay'
 import { DegradedBanner } from './DegradedBanner'
 import { FounderNaming } from './FounderNaming'
+import { FuneralRiteOverlay } from './FuneralRiteOverlay'
 import { GatePanel } from './GatePanel'
 import { Hud } from './Hud'
 import { LegendPanel } from './LegendPanel'
@@ -144,6 +146,8 @@ export function UiRoot(): ReactElement {
       {mode === 'reentry' ? <ReentryPrompt /> : null}
       {mode === 'gate' ? <GatePanel /> : null}
       {mode === 'loop' ? <LoopPanel /> : null}
+      <ConfrontationOverlay />
+      <FuneralRiteOverlay />
       {shadowVisible ? (
         <ShadowOverlay onAction={handleShadowAction} onDismiss={handleShadowDismiss} />
       ) : null}

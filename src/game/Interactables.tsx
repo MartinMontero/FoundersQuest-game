@@ -21,8 +21,10 @@ import { useRef } from 'react'
 import { Float, Html } from '@react-three/drei'
 import { DoubleSide } from 'three'
 import type { Group, Mesh, PointLight } from 'three'
-import { IMPORTANCE_WEIGHT, tierOf } from '../core/metrics'
+import { arenaChallenger } from '../core/confrontation'
+import { IMPORTANCE_WEIGHT, riskiest, tierOf } from '../core/metrics'
 import type { Answer, Assumption, EvidenceEntry, EvidenceTier } from '../core/schema'
+import { EARNED_HUNCH_BUMP } from '../state/tunables'
 import { useQuestStore, useRiskiest } from '../state/store'
 import { useUiStore } from '../state/ui'
 import { STAGES, WORLD_COPY } from '../strings'
@@ -681,6 +683,226 @@ function PortalArch({ spec, reduced }: ShrineProps): JSX.Element {
   )
 }
 
+// ---- the Proving Circle (A4): the confrontation arena set-piece ----
+// The challenger manifests in the Registry's menhir language, sized by
+// importance weight, translucency by evidence state (untested = ghostly,
+// testing = firming — the research's Dark Link solidity read). The sealed
+// kill criterion reads as a golden thread ringing its core. Graveside: a
+// tombstone per HELD funeral of this world's beliefs; a pale wisp per
+// skipped one (narrative-only — laid to rest, it disappears).
+
+function ChallengerFigure({
+  assumption,
+  reduced,
+}: {
+  assumption: Assumption
+  reduced: boolean
+}): JSX.Element {
+  const group = useRef<Group>(null)
+  const weight = IMPORTANCE_WEIGHT[assumption.importance]
+  const scale = 0.8 + weight * 0.45 // hulking at dies, brittle at shrugs
+  const opacity = assumption.status === 'untested' ? 0.55 : 0.8
+  const sealed = assumption.killCriterion.trim() !== ''
+
+  // it presses forward and eases back — a slow menace, static under reduced motion
+  useSafeFrame(({ clock }) => {
+    const g = group.current
+    if (g === null) return
+    g.position.z = reduced ? 0 : Math.sin(clock.elapsedTime * 0.9) * 0.2
+  })
+
+  return (
+    <group ref={group} scale={scale}>
+      {/* the challenger's body — a hooded menhir, ghostly until tested */}
+      <mesh position={[0, 0.85, 0]}>
+        <cylinderGeometry args={[0.2, 0.42, 1.7, 6]} />
+        <meshStandardMaterial
+          color={PALETTE.stoneCool}
+          emissive={PALETTE.ember}
+          emissiveIntensity={0.35}
+          transparent
+          opacity={opacity}
+          roughness={0.72}
+          metalness={0.05}
+        />
+      </mesh>
+      <mesh position={[0, 1.78, 0]}>
+        <sphereGeometry args={[0.28, 12, 12]} />
+        <meshStandardMaterial
+          color={PALETTE.stoneCool}
+          emissive={PALETTE.emberDeep}
+          emissiveIntensity={0.3}
+          transparent
+          opacity={opacity}
+          roughness={0.72}
+          metalness={0.05}
+        />
+      </mesh>
+      {/* the golden thread — the sealed kill criterion wraps its core */}
+      {sealed ? (
+        <mesh position={[0, 0.85, 0]} rotation={[Math.PI / 2.6, 0, 0]}>
+          <torusGeometry args={[0.5, 0.03, 8, 32]} />
+          <meshStandardMaterial
+            color={PALETTE.amberBright}
+            emissive={PALETTE.amberBright}
+            emissiveIntensity={1.2}
+            roughness={0.5}
+            metalness={0.2}
+          />
+        </mesh>
+      ) : null}
+    </group>
+  )
+}
+
+/** a small graveside stone — one per HELD funeral of this world's beliefs */
+function Tombstone({ position }: { position: [number, number, number] }): JSX.Element {
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.32, 0]}>
+        <cylinderGeometry args={[0.16, 0.2, 0.64, 8]} />
+        <meshStandardMaterial color={PALETTE.stone} roughness={0.85} metalness={0.02} />
+      </mesh>
+      <mesh position={[0, 0.68, 0]}>
+        <sphereGeometry args={[0.17, 10, 10]} />
+        <meshStandardMaterial color={PALETTE.stone} roughness={0.85} metalness={0.02} />
+      </mesh>
+    </group>
+  )
+}
+
+/** a restless ghost — an unmourned belief, pale and hovering (narrative-only) */
+function GhostWisp({
+  position,
+  reduced,
+}: {
+  position: [number, number, number]
+  reduced: boolean
+}): JSX.Element {
+  const group = useRef<Group>(null)
+  useSafeFrame(({ clock }) => {
+    const g = group.current
+    if (g === null) return
+    g.position.y = reduced ? 0.4 : 0.4 + Math.sin(clock.elapsedTime * 1.4) * 0.12
+  })
+  return (
+    <group position={position}>
+      <group ref={group}>
+        <mesh position={[0, 0.5, 0]}>
+          <cylinderGeometry args={[0.1, 0.26, 1.0, 6]} />
+          <meshStandardMaterial
+            color={PALETTE.teal}
+            emissive={PALETTE.teal}
+            emissiveIntensity={0.5}
+            transparent
+            opacity={0.35}
+            roughness={0.6}
+            metalness={0}
+          />
+        </mesh>
+        <mesh position={[0, 1.12, 0]}>
+          <sphereGeometry args={[0.16, 10, 10]} />
+          <meshStandardMaterial
+            color={PALETTE.teal}
+            emissive={PALETTE.teal}
+            emissiveIntensity={0.5}
+            transparent
+            opacity={0.35}
+            roughness={0.6}
+            metalness={0}
+          />
+        </mesh>
+      </group>
+    </group>
+  )
+}
+
+function ProvingCircle({
+  spec,
+  reduced,
+}: {
+  spec: InteractableSpec
+  reduced: boolean
+}): JSX.Element {
+  const stage = useJourneyStore((s) => s.currentStage)
+  const assumptions = useQuestStore((s) => s.data.assumptions)
+  const funerals = useQuestStore((s) => s.data.funerals)
+  const [cx, cy, cz] = spec.position
+
+  // the challenger on display is EXACTLY the pick the circle makes on entry
+  // (core arenaChallenger over the same store) — display and event never split
+  const data = useQuestStore((s) => s.data)
+  const stageId = `s${stage}`
+  const challengerId = arenaChallenger(data, stageId, (scoped) =>
+    riskiest(scoped, EARNED_HUNCH_BUMP),
+  )
+  const challenger = assumptions.find((a) => a.id === challengerId) ?? null
+
+  // graveside rows: held funerals → tombstones; skipped-and-not-held → wisps
+  const stageBeliefs = new Map(
+    assumptions.filter((a) => a.originStageId === stageId).map((a) => [a.id, a]),
+  )
+  const held = funerals.filter((f) => f.heldAt !== undefined && stageBeliefs.has(f.guardianId))
+  const ghosts = funerals.filter(
+    (f) => f.skippedAt !== undefined && f.heldAt === undefined && stageBeliefs.has(f.guardianId),
+  )
+
+  return (
+    <group position={[cx, cy, cz]}>
+      {/* the inscribed proving ring — double circle, ember-lit */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+        <ringGeometry args={[2.6, 2.85, 48]} />
+        <meshBasicMaterial color={PALETTE.ember} transparent opacity={0.45} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+        <ringGeometry args={[1.9, 2.0, 48]} />
+        <meshBasicMaterial color={PALETTE.ember} transparent opacity={0.25} />
+      </mesh>
+      {/* four brazier posts */}
+      {[0, 1, 2, 3].map((i) => {
+        const angle = (i / 4) * Math.PI * 2 + Math.PI / 4
+        return (
+          <group
+            key={i}
+            position={[Math.cos(angle) * 2.72, 0, Math.sin(angle) * 2.72]}
+          >
+            <mesh position={[0, 0.55, 0]}>
+              <cylinderGeometry args={[0.09, 0.14, 1.1, 6]} />
+              <meshStandardMaterial color={PALETTE.stoneWarm} roughness={0.82} metalness={0.05} />
+            </mesh>
+            <mesh position={[0, 1.18, 0]}>
+              <octahedronGeometry args={[0.13, 0]} />
+              <meshStandardMaterial
+                color={PALETTE.ember}
+                emissive={PALETTE.ember}
+                emissiveIntensity={1.1}
+                roughness={0.72}
+                metalness={0.05}
+              />
+            </mesh>
+          </group>
+        )
+      })}
+      {/* the challenger, if any belief stands challenge */}
+      {challenger !== null ? <ChallengerFigure assumption={challenger} reduced={reduced} /> : null}
+      {/* graveside: tombstones for the mourned, wisps for the unmourned */}
+      {held.map((f, i) => (
+        <Tombstone key={f.guardianId} position={[-3.6 - i * 0.75, 0, 1.4 + (i % 2) * 0.6]} />
+      ))}
+      {ghosts.map((f, i) => (
+        <GhostWisp
+          key={f.guardianId}
+          position={[-3.6 - i * 0.75, 0, -1.6 - (i % 2) * 0.6]}
+          reduced={reduced}
+        />
+      ))}
+      {!LOW_POWER ? (
+        <pointLight position={[0, 2.4, 0]} color={PALETTE.ember} intensity={0.7} distance={9} decay={2} />
+      ) : null}
+    </group>
+  )
+}
+
 // ---- the shared highlight: ground ring + name chip + prompt chip ----
 
 /** chip anchor height per kind (the vault hovers, so its chip sits higher) */
@@ -698,6 +920,8 @@ function chipHeight(spec: InteractableSpec): number {
       return 3.8
     case 'campfire':
       return 2.2
+    case 'arena':
+      return 2.8
   }
 }
 
@@ -722,6 +946,8 @@ function chipLabel(spec: InteractableSpec): string {
     }
     case 'campfire':
       return WORLD_COPY.campfireName
+    case 'arena':
+      return WORLD_COPY.arenaName
   }
 }
 
@@ -898,6 +1124,8 @@ export function Interactables({ reduced }: InteractablesProps): JSX.Element {
             return <PortalArch key={spec.id} spec={spec} reduced={reduced} />
           case 'campfire':
             return <Campfire key={spec.id} spec={spec} reduced={reduced} />
+          case 'arena':
+            return <ProvingCircle key={spec.id} spec={spec} reduced={reduced} />
         }
       })}
       {!LOW_POWER ? <ProximityLight reduced={reduced} /> : null}

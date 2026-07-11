@@ -22,6 +22,8 @@ export interface WorldEvents {
   onLoop(name: string, toStage: number): void
   /** player rests at the campfire → the furniture hub (weather / notes / quests / export / dinner) */
   onCampfire(): void
+  /** player steps into the Proving Circle → the confrontation loop (A4) */
+  onArenaEnter(): void
 }
 
 export type InteractableKind =
@@ -31,6 +33,7 @@ export type InteractableKind =
   | 'flagpole'
   | 'portal'
   | 'campfire'
+  | 'arena'
 
 export interface InteractableSpec {
   id: string
@@ -179,16 +182,22 @@ const CAMPFIRE_SPEC: InteractableSpec = {
   position: CAMPFIRE_POSITION,
 }
 
+// ---- The Proving Circle (A4): the confrontation arena. Vertical slice lives in
+// World 1 — a clear spot on the east side, inside the rim (r≈17.1 < 23.5), well
+// off the shrine spiral (nearest shrine s1-l1 at [10,9] is ~6.7 away).
+export const ARENA_POSITION: [number, number, number] = [16, 0, 6]
+
 /**
  * Every placed interactable in the Stage 1 slice: all 8 s1 shrines (ids from
- * src/strings, canon order), 3 milestone flagpoles, the Vault, the Registry, plus
- * the onward portal to World 2.
+ * src/strings, canon order), 3 milestone flagpoles, the Vault, the Registry,
+ * the Proving Circle, plus the onward portal to World 2.
  */
 export const STAGE1_LAYOUT: readonly InteractableSpec[] = [
   ...stage1.questions.map((q) => shrineSpec(q.id)),
   ...STAGE1_MILESTONES.map((m, i) => flagpoleSpec(m, i)),
   { id: 'vault', kind: 'vault', position: VAULT_POSITION },
   { id: 'registry', kind: 'registry', position: REGISTRY_POSITION },
+  { id: 'arena', kind: 'arena', position: ARENA_POSITION },
   CAMPFIRE_SPEC,
   ...portalsForStage(1),
 ]

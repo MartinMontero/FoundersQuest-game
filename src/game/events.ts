@@ -4,9 +4,12 @@
 // The UI layer may pass its own WorldEvents into <GameRoot events={...}/> and
 // override any of these.
 
+import { arenaChallenger } from '../core/confrontation'
+import { riskiest } from '../core/metrics'
 import { useFirstLightUiStore } from '../state/firstlight'
 import { useJourneyStore } from '../state/journey'
 import { questStore } from '../state/store'
+import { EARNED_HUNCH_BUMP } from '../state/tunables'
 import { useUiStore } from '../state/ui'
 import { ACT_GATES } from '../strings'
 import { useInteractionStore } from './interaction'
@@ -59,5 +62,17 @@ export const defaultWorldEvents: WorldEvents = {
     useInteractionStore.getState().clearFocus()
     useInteractionStore.getState().setNearest(null)
     useUiStore.getState().openLoop({ name, fromStage: journey.currentStage, toStage })
+  },
+  onArenaEnter(): void {
+    // the circle calls THIS world's challenger (D-A): an open confrontation
+    // resumes first (the ignited thread persists), else the riskiest eligible
+    // guardian — same scoring/bump as the Registry crown. Empty circle is an
+    // honest state: the overlay says so instead of conjuring a foe.
+    const stageId = `s${useJourneyStore.getState().currentStage}`
+    const { data } = questStore.getState()
+    const guardianId = arenaChallenger(data, stageId, (scoped) =>
+      riskiest(scoped, EARNED_HUNCH_BUMP),
+    )
+    useUiStore.getState().enterArena(guardianId)
   },
 }

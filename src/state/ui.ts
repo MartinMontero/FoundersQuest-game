@@ -18,7 +18,16 @@ export type PanelMode =
   | 'panel:legend'
 // 'gate' = an Act-Gate threshold; 'loop' = a named loop's toll-portal. Both are
 // modal (mode !== 'roam' freezes the world), and both carry a payload below.
-export type UiMode = 'roam' | 'trance' | 'gate' | 'loop' | 'reentry' | PanelMode
+// 'arena' = the Proving Circle (A4 confrontation); 'rite' = the Funeral rite.
+export type UiMode =
+  | 'roam'
+  | 'trance'
+  | 'gate'
+  | 'loop'
+  | 'reentry'
+  | 'arena'
+  | 'rite'
+  | PanelMode
 
 export interface ShadowState {
   visible: boolean
@@ -69,6 +78,16 @@ export interface UiState {
   pendingReentryQid: string | null
   openReentry(qid: string): void
   closeReentry(): void
+  /** the guardian being confronted while mode === 'arena'; null = empty circle */
+  arenaGuardianId: string | null
+  /** step into the Proving Circle — null renders the honest empty state (A4) */
+  enterArena(guardianId: string | null): void
+  exitArena(): void
+  /** the belief being buried while mode === 'rite', else null */
+  riteGuardianId: string | null
+  /** open the Funeral rite for an invalidated belief (A4) */
+  enterRite(guardianId: string): void
+  exitRite(): void
   summonShadow(quote: string, action: string): void
   dismissShadow(): void
 }
@@ -126,6 +145,26 @@ export const useUiStore = create<UiState>()((set) => ({
 
   closeReentry(): void {
     set({ mode: 'roam', pendingReentryQid: null })
+  },
+
+  arenaGuardianId: null,
+
+  enterArena(guardianId: string | null): void {
+    set({ mode: 'arena', arenaGuardianId: guardianId })
+  },
+
+  exitArena(): void {
+    set({ mode: 'roam', arenaGuardianId: null })
+  },
+
+  riteGuardianId: null,
+
+  enterRite(guardianId: string): void {
+    set({ mode: 'rite', riteGuardianId: guardianId })
+  },
+
+  exitRite(): void {
+    set({ mode: 'roam', riteGuardianId: null })
   },
 
   summonShadow(quote: string, action: string): void {

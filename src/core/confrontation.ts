@@ -165,6 +165,30 @@ export function finisherAvailable(confrontation: ConfrontationRecord | undefined
   )
 }
 
+/**
+ * Who steps into a world's Proving Circle (D-A: confrontations are per-world).
+ * An already-open confrontation ALWAYS resumes first — the ignited thread and
+ * landed citations persist across sessions. Otherwise the riskiest eligible
+ * guardian of the world answers the call: untested|testing, not First-Light,
+ * scored exactly like metrics.riskiest (weight × (4 − tier) + earned bump)
+ * with the same deterministic tie-break. Null = the circle stands empty.
+ */
+export function arenaChallenger(
+  data: QuestData,
+  stageId: string,
+  riskiestOf: (scoped: QuestData) => { id: string } | null,
+): string | null {
+  const eligible = data.assumptions.filter(
+    (a) =>
+      a.originStageId === stageId &&
+      (a.status === 'untested' || a.status === 'testing') &&
+      a.firstLight !== true,
+  )
+  const resumed = eligible.find((a) => openConfrontation(data, a.id) !== undefined)
+  if (resumed !== undefined) return resumed.id
+  return riskiestOf({ ...data, assumptions: eligible })?.id ?? null
+}
+
 // ---- The funeral queue (derived — the rite writes funerals[], nothing else) ----
 
 /** The funeral record for a guardian, if any (held, skipped, or both). */

@@ -14,13 +14,14 @@
 // tier, where backdrop-filter is dropped.
 
 import type { ReactElement } from 'react'
+import { pendingFunerals, restlessGhosts } from '../core/confrontation'
 import type { EvidenceTier } from '../core/schema'
 import { milestoneIdsForStage } from '../game/contracts'
 import { founderDisplayName, useFounderStore } from '../state/founder'
 import { useJourneyStore } from '../state/journey'
-import { useAction, useEvidenceBanked, useQuestStore, useTierCounts, useTruth } from '../state/store'
+import { useAction, useEvidenceBanked, useQuestStore, useTierCounts, useTrough, useTruth } from '../state/store'
 import { useUiStore } from '../state/ui'
-import { FIRST_LIGHT, STAGES, TIER_CODES, TIER_METALS, UI, coinCount, formatPercent, stageBanner } from '../strings'
+import { FIRST_LIGHT, RITE, STAGES, TIER_CODES, TIER_METALS, UI, coinCount, formatPercent, stageBanner } from '../strings'
 
 const TIERS: readonly EvidenceTier[] = [0, 1, 2, 3, 4]
 
@@ -34,8 +35,19 @@ export function Hud(): ReactElement | null {
   const chartUnlocked = useQuestStore((s) => s.data.chartUnlocked)
   const openPanel = useUiStore((s) => s.openPanel)
   const openRename = useFounderStore((s) => s.openRename)
+  // the funeral ember: pending rites first, then restless ghosts (lay to rest).
+  // NEVER offered in the trough (the rite queues — canon cadence law) and only
+  // from roam, so it can't stomp a trance or an open panel.
+  const roaming = useUiStore((s) => s.mode === 'roam')
+  const inTrough = useTrough()
+  const pendingRiteId = useQuestStore((s) => pendingFunerals(s.data)[0]?.id ?? null)
+  const ghostRiteId = useQuestStore((s) => restlessGhosts(s.data)[0]?.guardianId ?? null)
+  const enterRite = useUiStore((s) => s.enterRite)
   const stage = STAGES.find((s) => s.stage === currentStage)
   if (stage === undefined) return null
+
+  const riteOfferId = pendingRiteId ?? ghostRiteId
+  const riteOffer = roaming && !inTrough && riteOfferId !== null
 
   const truthText = truthValue === null ? UI.hud.truthUnlit : formatPercent(truthValue)
   const actionText = formatPercent(actionValue)
@@ -94,6 +106,20 @@ export function Hud(): ReactElement | null {
               {FIRST_LIGHT.chart.hudLegend}
             </button>
           </div>
+        ) : null}
+
+        {/* the funeral ember — a queued rite (or a restless ghost) awaits */}
+        {riteOffer ? (
+          <button
+            type="button"
+            data-testid="hud-funeral"
+            onClick={() => {
+              if (riteOfferId !== null) enterRite(riteOfferId)
+            }}
+            className="quest-btn quest-btn-gold pointer-events-auto self-start px-2 py-0.5 text-2xs"
+          >
+            {pendingRiteId !== null ? RITE.hud.pending : RITE.hud.ghost}
+          </button>
         ) : null}
 
         {/* Truth leads — a glowing crystal gauge, the "life" slot (game-design §4) */}

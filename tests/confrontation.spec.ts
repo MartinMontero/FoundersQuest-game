@@ -9,6 +9,7 @@ import {
   CITATION_DAMAGE,
   COMPOSURE,
   applyCitation,
+  arenaChallenger,
   argumentSpent,
   argumentStateFrom,
   finisherAvailable,
@@ -18,7 +19,7 @@ import {
   pendingFunerals,
   restlessGhosts,
 } from '../src/core/confrontation'
-import { trough } from '../src/core/metrics'
+import { riskiest, trough } from '../src/core/metrics'
 import { withDefaults } from '../src/core/schema'
 import type {
   Assumption,
@@ -219,6 +220,45 @@ describe('openConfrontation', () => {
     })
     expect(openConfrontation(d, 'g1')?.startedAt).toBe('t2')
     expect(openConfrontation(d, 'g3')).toBeUndefined()
+  })
+})
+
+describe('arenaChallenger — who steps into the circle (D-A: per-world)', () => {
+  const pick = (d: QuestData, stageId: string): string | null =>
+    arenaChallenger(d, stageId, (scoped) => riskiest(scoped))
+
+  it('resumes an open confrontation first — the ignited thread persists', () => {
+    const d = data({
+      assumptions: [
+        guardian({ id: 'risky', importance: 'dies' }),
+        guardian({ id: 'started', importance: 'shrugs', status: 'testing' }),
+      ],
+      confrontations: [{ guardianId: 'started', startedAt: 't0', citations: [] }],
+    })
+    expect(pick(d, 's1')).toBe('started') // resume beats riskier
+  })
+
+  it('otherwise the riskiest eligible guardian of THIS world answers', () => {
+    const d = data({
+      assumptions: [
+        guardian({ id: 'w1-light', importance: 'shrugs' }),
+        guardian({ id: 'w1-heavy', importance: 'dies' }),
+        guardian({ id: 'w2-heavy', importance: 'dies', originStageId: 's2' }),
+      ],
+    })
+    expect(pick(d, 's1')).toBe('w1-heavy')
+    expect(pick(d, 's2')).toBe('w2-heavy')
+  })
+
+  it('resolved, firstLight, and foreign-world guardians never answer — empty circle', () => {
+    const d = data({
+      assumptions: [
+        guardian({ id: 'done', status: 'invalidated' }),
+        guardian({ id: 'fl', firstLight: true }),
+        guardian({ id: 'elsewhere', originStageId: 's3' }),
+      ],
+    })
+    expect(pick(d, 's1')).toBeNull()
   })
 })
 
