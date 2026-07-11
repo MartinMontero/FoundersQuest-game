@@ -29,4 +29,12 @@ in those words. Until confirmed, **A3–A5 are hard-blocked** (A1–A2 are not �
 QA playthrough per SITREP.md serves as the re-judgment).
 
 ## Resolution log
-- (empty)
+- **2026-07-11 · B-1 RESOLVED.** Operator landed all six research files on `main` (`6b64fed`);
+  merged into the working branch; byte-nonempty verified (32.4K/23.6K/39.7K/26.0K/44.2K/37.8K).
+- **2026-07-11 · B-2 RESOLVED.** Operator ruling: `premium-ui-direction.md` is NOT the addendum.
+  The binding art document is `docs/build/art-direction.md` (landed on `main` @ `3d544f6`,
+  merged) — law for all feel checkpoints.
+- **2026-07-11 · B-3 PARTIALLY RESOLVED.** Gate-2 re-pass: PENDING — operator will play before
+  A3 opens. **A3–A5 remain hard-blocked**; A1–A2 authorized and proceeding.
+- **2026-07-11 · D-blocks.** All defaults ratified, no exceptions (operator, verbatim: "all
+  defaults ratified").
