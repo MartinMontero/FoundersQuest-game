@@ -9,6 +9,11 @@
 import { useStore } from 'zustand'
 import { useShallow } from 'zustand/react/shallow'
 import { createStore, type StoreApi } from 'zustand/vanilla'
+import {
+  citationImpact,
+  openConfrontation,
+  type CitationImpact,
+} from '../core/confrontation'
 import { actionFraction, riskiest, tierOf, trough, truth, type ActGateId } from '../core/metrics'
 import { migrateV2IfNeeded } from '../core/migration'
 import type {
@@ -156,6 +161,53 @@ export interface QuestState {
   recordFirstLightArtifact(id: string): void
   /** Hand the Chart over mid-induction (beat 9) so M/L work before completion. */
   unlockChart(): void
+  // ---- The Confrontation loop + Funeral rite (Mind & Myth A4) ----
+  /**
+   * Step into the arena against a guardian: open a confrontations[] record
+   * (canon 02 shape) and move an untested belief to `testing` — entering the
+   * circle IS testing it. Idempotent: one open confrontation per guardian;
+   * resolved and firstLight guardians never re-enter.
+   */
+  startConfrontation(guardianId: string): void
+  /**
+   * Cite a REAL Ledger entry at the guardian. E0/E1 BOUNCE (B2): the store
+   * writes NOTHING — pure feedback, never strengthens the guardian, never
+   * penalizes the founder — and returns 'bounce' for the line. E2+ appends to
+   * the confrontation's citations[] (once per coin) and links the evidence to
+   * the guardian (that link is what derived tier, Truth, and XP read later).
+   * Returns the impact class, or null when nothing could land (no open
+   * confrontation, unknown id, already cited): synthetic ammunition is
+   * impossible because the id must exist in data.evidence.
+   */
+  citeInConfrontation(guardianId: string, evidenceId: string): CitationImpact | null
+  /**
+   * Record the REAL-WORLD verdict against the sealed kill criterion — verdict
+   * before interpretation, write-once. This ignites the golden thread: the
+   * finisher derives as available (core predicate) until the strike is used.
+   * Nothing else changes here — the guardian resolves only at the strike.
+   */
+  recordConfrontationVerdict(guardianId: string, outcome: 'invalidated' | 'validated'): void
+  /**
+   * The finishing strike: stamp resolvedAt, flip the guardian to the recorded
+   * outcome, and resolve calibration rows (held/broke at derived tier≥2).
+   * XP stays DERIVED by metrics (invalidated +15 = the 1.5×, validated +10).
+   * Requires the verdict to be recorded first; idempotent after that.
+   */
+  resolveConfrontation(guardianId: string): void
+  /**
+   * The rite's Committal: hold the funeral for an invalidated belief. Stamps
+   * heldAt + epitaph; a non-empty epitaph is also written to the wisdomCodex.
+   * Holding a previously SKIPPED funeral lays the ghost to rest — heldAt is
+   * added and skippedAt stays (the history is honest). Never in the trough:
+   * the CALLER gates the offer on !trough (the queue is derived, core).
+   */
+  holdFuneral(guardianId: string, epitaph: string): void
+  /**
+   * Skip the funeral (single warning lives in the UI; the skip is logged
+   * here). Write-once — a belief already skipped or buried writes nothing.
+   * Narrative-only consequence: the ghost lingers until a delayed funeral.
+   */
+  skipFuneral(guardianId: string): void
 }
 
 export interface QuestStoreDeps {
@@ -543,6 +595,133 @@ export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState
         const { data } = get()
         if (data.chartUnlocked) return
         commit({ ...data, chartUnlocked: true })
+      },
+
+      startConfrontation(guardianId: string): void {
+        const { data } = get()
+        const target = data.assumptions.find((a) => a.id === guardianId)
+        if (target === undefined || target.firstLight === true) return
+        if (target.status !== 'untested' && target.status !== 'testing') return
+        if (openConfrontation(data, guardianId) !== undefined) return // one open per guardian
+        commit({
+          ...data,
+          confrontations: [
+            ...data.confrontations,
+            { guardianId, startedAt: now(), citations: [] },
+          ],
+          // entering the circle IS testing the belief
+          assumptions: data.assumptions.map((a) =>
+            a.id === guardianId && a.status === 'untested' ? { ...a, status: 'testing' } : a,
+          ),
+        })
+      },
+
+      citeInConfrontation(guardianId: string, evidenceId: string): CitationImpact | null {
+        const { data } = get()
+        const confrontation = openConfrontation(data, guardianId)
+        if (confrontation === undefined) return null
+        // real Ledger entries only — an id not in data.evidence cannot land (02)
+        const entry = data.evidence.find((e) => e.id === evidenceId)
+        if (entry === undefined) return null
+        const impact = citationImpact(entry.tier)
+        // B2: a bounce writes NOTHING — pure feedback, no record, no penalty
+        if (impact === 'bounce') return impact
+        if (confrontation.citations.includes(evidenceId)) return null // a coin spends once
+        commit({
+          ...data,
+          confrontations: data.confrontations.map((c) =>
+            c === confrontation ? { ...c, citations: [...c.citations, evidenceId] } : c,
+          ),
+          // citing = presenting this evidence against this belief: link it, so
+          // derived tier (and with it Truth and XP at resolution) reads honestly
+          evidence: entry.linkedAssumptionIds.includes(guardianId)
+            ? data.evidence
+            : data.evidence.map((e) =>
+                e.id === evidenceId
+                  ? { ...e, linkedAssumptionIds: [...e.linkedAssumptionIds, guardianId] }
+                  : e,
+              ),
+        })
+        return impact
+      },
+
+      recordConfrontationVerdict(
+        guardianId: string,
+        outcome: 'invalidated' | 'validated',
+      ): void {
+        const { data } = get()
+        const confrontation = openConfrontation(data, guardianId)
+        if (confrontation === undefined || confrontation.outcome !== undefined) return
+        commit({
+          ...data,
+          confrontations: data.confrontations.map((c) =>
+            c === confrontation ? { ...c, outcome } : c,
+          ),
+        })
+      },
+
+      resolveConfrontation(guardianId: string): void {
+        const { data } = get()
+        const confrontation = openConfrontation(data, guardianId)
+        // the strike requires the ignited thread: a recorded verdict (finisher)
+        if (confrontation === undefined || confrontation.outcome === undefined) return
+        const outcome = confrontation.outcome
+        const resolvedAt = now()
+        const next: QuestData = {
+          ...data,
+          confrontations: data.confrontations.map((c) =>
+            c === confrontation ? { ...c, resolvedAt } : c,
+          ),
+          assumptions: data.assumptions.map((a) =>
+            a.id === guardianId ? { ...a, status: outcome, resolvedAt } : a,
+          ),
+        }
+        // the gut's record: linked tagged hunches resolve at E2+ (A2 rule)
+        next.calibration = resolveCalibrationRows(
+          next,
+          guardianId,
+          outcome === 'validated' ? 'held' : 'broke',
+          resolvedAt,
+        )
+        commit(next)
+      },
+
+      holdFuneral(guardianId: string, epitaph: string): void {
+        const { data } = get()
+        const target = data.assumptions.find((a) => a.id === guardianId)
+        if (target === undefined || target.status !== 'invalidated') return
+        const existing = data.funerals.find((f) => f.guardianId === guardianId)
+        if (existing?.heldAt !== undefined) return // already laid to rest
+        const heldAt = now()
+        const line = epitaph.trim()
+        commit({
+          ...data,
+          funerals:
+            existing === undefined
+              ? [...data.funerals, { guardianId, heldAt, epitaph: line }]
+              : // a delayed funeral: heldAt joins skippedAt — history stays honest
+                data.funerals.map((f) =>
+                  f === existing ? { ...f, heldAt, epitaph: line } : f,
+                ),
+          wisdomCodex:
+            line === ''
+              ? data.wisdomCodex
+              : [
+                  ...data.wisdomCodex,
+                  { id: makeId('wisdom'), text: line, sourceGuardianId: guardianId, date: heldAt },
+                ],
+        })
+      },
+
+      skipFuneral(guardianId: string): void {
+        const { data } = get()
+        const target = data.assumptions.find((a) => a.id === guardianId)
+        if (target === undefined || target.status !== 'invalidated') return
+        if (data.funerals.some((f) => f.guardianId === guardianId)) return // logged once
+        commit({
+          ...data,
+          funerals: [...data.funerals, { guardianId, skippedAt: now() }],
+        })
       },
     }
   })

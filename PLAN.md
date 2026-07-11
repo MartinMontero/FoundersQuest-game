@@ -54,6 +54,50 @@ in docs/build/mindmyth-canon-diff.md (RATIFIED, all defaults), blockers in BLOCK
   courtesy skip + one-time re-entry prompt + campfire replay, accessibility (no timed reading,
   instant-complete typewriter, reduced-motion, ARIA live region). e2e: full induction + skip
   path. Feel pack: docs/feel-packs/a3/ (FEEL_PACK=1 run).
-- **A4 Confrontation + Funeral rite** — next (research + audit absorbed; Gate-0 defaults cover
-  every audit escalation: bounce-is-feedback B2, no inverse-HP B3, D-A/D-C/D-D rulings).
+- **A4 Confrontation + Funeral rite** — IN BUILD (opened 2026-07-11). Research + audit absorbed;
+  Gate-0 defaults cover every audit escalation: bounce-is-feedback B2, no inverse-HP B3,
+  D-A/D-C/D-D rulings.
 - **A5 The Ego** — after A4.
+
+## A4 build plan (order is law — addendum §7)
+
+1. **Pure core** `src/core/confrontation.ts` — argument state derived, never stored:
+   `argumentStateFrom(importance, citedTiers)` replays the confrontation's citations[]
+   (order-preserving) so a reload restores the exact argument-HP; live composure/poise is
+   session state. Numbers (code constants, R-F style): HP dies 12 / wobbles 8 / shrugs 5;
+   composure shield 4 / 2 / 1; damage E0/E1 **0 (bounce — state returned unchanged,
+   reference-equal)**, E2 = 2 (soaks composure first), E3 = 4, E4 = 6 + shatters the whole
+   shield with overflow to core. `hp === 0` = the argument is SPENT — it never resolves the
+   guardian (B3 no-inverse-HP: only the verdict does). Finisher predicate is pure and
+   deterministic: outcome recorded && not yet resolved (never RNG). Funeral queue derived:
+   invalidated + non-firstLight + no funerals[] record; the rite offer further gates on
+   !trough (queues, never in the trough). Invariant tests per item.
+2. **Store actions** — `startConfrontation` (idempotent; untested→testing),
+   `citeInConfrontation` (real Ledger ids only — synthetic ammunition impossible; E0/E1
+   writes NOTHING (bounce = pure feedback); E2+ appends to citations[] once and links the
+   evidence to the guardian), `recordConfrontationVerdict` (verdict before interpretation;
+   write-once), `resolveConfrontation` (finisher: stamps resolvedAt, flips guardian status,
+   resolves calibration held/broke at derived tier≥2; XP stays derived by metrics — 1.5×
+   already lives there), `holdFuneral` (heldAt + epitaph; wisdom line → codex; laying a
+   skipped ghost to rest KEEPS skippedAt honestly), `skipFuneral` (write-once skippedAt).
+3. **Citation UI** `src/ui/ConfrontationOverlay.tsx` over the live world (no modal-over-
+   darkness): guardian statement + HP/composure readout, the real Ledger list (cited coins
+   spend once), bounce line teaches "this can't move Truth" — nothing more.
+4. **Finisher** — the sealed kill criterion renders as the golden thread; recording the
+   real-world verdict ignites it; the strike stays persistently available until used.
+   Both outcomes authored equal: shatter + funeral vs standing-pillar transformation (D-D).
+5. **Funeral rite** `src/ui/FuneralRiteOverlay.tsx` — Vigil (named plainly) → Eulogy (the
+   REAL evidence, verbatim from the Ledger) → Committal (one deliberate input; tombstone;
+   wisdom line) → XP. Skip = single warning + logged; ghost is narrative-only; delayed
+   funeral lays it to rest. Trough queues the rite (HUD ember chip offers it later).
+6. **Action wrapper LAST** — press/window rhythm: Space-strikes chip poise and open the
+   citation window EARLY; an idle timer opens it regardless (D-C invariant e2e: cite with
+   zero successful strikes). Reduced-motion: no shake, static cues. Citation and the
+   finisher are never skill-locked.
+7. **World** — arena circle set-piece in W1 at [16, 0, 6] (clear of shrines/rim); the
+   manifested guardian reuses the Registry's cel-shaded menhir language scaled by
+   importance (visible primitives stay banned); tombstones + ghost markers by the arena
+   from funerals[]. New interactable kind 'arena' + onArenaEnter event.
+8. **Close** — slice e2e (invalidation branch incl. rite + skip/lay-to-rest; validation
+   branch incl. pillar), feel pack a4 (a rite over a void fails the phase), two clean full
+   runs, SHIP/VERIFICATION, deploy.
