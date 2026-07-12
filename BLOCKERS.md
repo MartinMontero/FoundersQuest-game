@@ -92,10 +92,18 @@ QA playthrough per SITREP.md serves as the re-judgment).
 - **K-13 · Vite 5 EOL** — upstream support ended (2026 dev-server CVEs fixed in
   6.4+ only; dev-only exposure). Canon pins Vite 5; the documented osv ignore list
   is the standing policy. Operator owns any future pin change.
-- **F-8 deps-review table (R-H, pre-ruled):** QR encoder/decoder to be vendored
-  per the recorded R-H ruling; exact name/version/license verified online and
-  listed here before the files land. Candidates: nayuki qrcodegen (MIT, single
-  file) for encode; decoder pick pending license verification (jsQR is
-  Apache-2.0, NOT MIT — R-H says MIT; qr-scanner (MIT) bundles a jsQR fork —
-  license lineage must be verified before vendoring). If no clean MIT decoder
-  verifies, fallback = BarcodeDetector + file/paste only, logged here.
+- **F-8 deps-review table (R-H, pre-ruled) — RESOLVED 2026-07-12:** licenses
+  verified through the npm registry (the one sanctioned channel) before any
+  file landed.
+
+  | package | version | license (registry-verified) | verdict |
+  | --- | --- | --- | --- |
+  | qrcode-generator (Kazuhiko Arase) | 2.0.4 | MIT | **VENDORED** — encode side, `src/vendor/qrcode-generator/` + VENDORED.md provenance (upstream/vendored sha256 recorded; one documented 4-line ESM-compat footer) |
+  | jsqr | 1.4.0 | Apache-2.0 | **REJECTED** — R-H's letter says MIT |
+  | qr-scanner | 1.4.2 | MIT label, decode core derives from jsQR | **REJECTED** — mixed license lineage fails verification |
+
+  Decoder outcome: the pre-logged fallback is taken — scan side uses the
+  native `BarcodeDetector` where the browser provides it (no dependency), and
+  file + paste remain the universal import path on every browser. Camera
+  scanning is UNTESTED in CI (headless has no camera); the encode QR display,
+  file import, and paste import are e2e-tested.

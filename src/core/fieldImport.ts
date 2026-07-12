@@ -164,7 +164,8 @@ export function validateBeam(raw: string, via: ImportVia): ValidationResult {
 /** rule 4's content comparison — local bookkeeping (`beamedAt`) excluded */
 function contentEqual(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
   const strip = (r: Record<string, unknown>): Record<string, unknown> => {
-    const { beamedAt: _omit, ...rest } = r
+    const rest = { ...r }
+    delete rest['beamedAt']
     return rest
   }
   return JSON.stringify(strip(a)) === JSON.stringify(strip(b))
@@ -244,8 +245,9 @@ export function buildBeamEnvelope(
   const attempts = data.fieldJournal.attempts
     .filter((a) => a.outcome !== undefined)
     .map((a) => {
-      const { beamedAt: _omit, ...rest } = a
-      return rest as FieldAttempt
+      const rest: Record<string, unknown> = { ...a }
+      delete rest['beamedAt']
+      return rest as unknown as FieldAttempt
     })
   const slotIds = new Set(attempts.map((a) => a.slotId))
   const slots = data.huntList.slots.filter(
@@ -263,5 +265,48 @@ export function buildBeamEnvelope(
     beamId,
     createdAt,
     payload: { profiles, slots, attempts, evidence, fieldDayLog: [...data.fieldDay.log] },
+  }
+}
+
+// ---- QR frame chunking (spec §8: FQB1:<beamId>:<part>:<of>:<chunk>) ----
+
+/** chunk budget per QR frame — R-G tunable (~1KB per the spec) */
+export const QR_CHUNK_CHARS = 900
+
+/** base64url of the envelope, split into FQB1 frames (pure). */
+export function beamFrames(envelope: BeamEnvelope): string[] {
+  const json = JSON.stringify(envelope)
+  const b64 = btoa(unescape(encodeURIComponent(json)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  const parts: string[] = []
+  for (let i = 0; i < b64.length; i += QR_CHUNK_CHARS) {
+    parts.push(b64.slice(i, i + QR_CHUNK_CHARS))
+  }
+  const of = parts.length
+  return parts.map((chunk, i) => `FQB1:${envelope.beamId}:${i + 1}:${of}:${chunk}`)
+}
+
+/** reassemble scanned FQB1 frames → the envelope JSON string, or a named error */
+export function assembleFrames(frames: readonly string[]): { ok: true; raw: string } | { ok: false; error: string } {
+  const parsed = new Map<number, string>()
+  let beamId: string | null = null
+  let of: number | null = null
+  for (const frame of frames) {
+    const m = /^FQB1:([^:]+):(\d+):(\d+):(.+)$/.exec(frame)
+    if (m === null) continue // not ours — ignore stray scans
+    const [, id, partS, ofS, chunk] = m
+    if (beamId === null) { beamId = id ?? null; of = Number(ofS) }
+    if (id !== beamId) return { ok: false, error: 'rejected: frames from different beams' }
+    parsed.set(Number(partS), chunk ?? '')
+  }
+  if (beamId === null || of === null) return { ok: false, error: 'rejected: no beam frames found' }
+  if (parsed.size < of) return { ok: false, error: `rejected: missing frames (${parsed.size}/${of})` }
+  let b64 = ''
+  for (let i = 1; i <= of; i += 1) b64 += parsed.get(i) ?? ''
+  try {
+    const padded = b64.replace(/-/g, '+').replace(/_/g, '/')
+    return { ok: true, raw: decodeURIComponent(escape(atob(padded))) }
+  } catch {
+    return { ok: false, error: 'rejected: frame payload did not decode' }
   }
 }

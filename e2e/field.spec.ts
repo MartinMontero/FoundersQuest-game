@@ -27,6 +27,17 @@ const FOREIGN_BEAM = {
   },
 }
 
+const FILE_BEAM = {
+  kind: BEAM_KIND, v: 1, beamId: 'beam-file', createdAt: '2026-07-12T11:00:00.000Z',
+  payload: {
+    profiles: [], slots: [], fieldDayLog: [],
+    attempts: [{ id: 'fa-2', slotId: 'fs-2', channel: 'video', startedAt: '2026-07-12T10:00:00.000Z',
+      outcome: 'quote', resolvedAt: '2026-07-12T10:30:00.000Z', evidenceIds: ['fe-2'], origin: 'local' }],
+    evidence: [{ id: 'fe-2', tier: 2, text: '"we tried three tools and went back to the whiteboard"',
+      source: 'video call', linkedAssumptionIds: [], stageId: 's2', date: '2026-07-12' }],
+  },
+}
+
 test('Field Mode: hunt → attempts → lantern → Field Day → beam import round-trips', async ({ page }) => {
   const log = recordRun(page)
   await seedFounderName(page)
@@ -93,6 +104,26 @@ test('Field Mode: hunt → attempts → lantern → Field Day → beam import ro
   await page.getByTestId('field-import-paste').fill(JSON.stringify({ ...FOREIGN_BEAM, sneaky: 1 }))
   await page.getByTestId('field-import-preview').press('Enter')
   await expect(page.getByTestId('field-import-error')).toContainText('unknown key')
+
+  // QR beam (F-8): frames render through the vendored encoder, as an <img>
+  await page.getByTestId('field-beam-qr').press('Enter')
+  await expect(page.getByTestId('field-qr')).toBeVisible()
+  const qrSrc = await page.getByTestId('field-qr').locator('img').getAttribute('src')
+  expect(qrSrc).toMatch(/^data:image\//)
+  await page.getByTestId('field-beam-qr').press('Enter') // toggles back off
+
+  // file transport (F-8): same pipeline, honest via:'file' in the audit record
+  await page.getByTestId('field-import-file').setInputFiles({
+    name: 'beam.json', mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(FILE_BEAM)),
+  })
+  await expect(page.getByTestId('field-import-previewbox')).toBeVisible()
+  await page.getByTestId('field-import-confirm').press('Enter')
+  await expect(page.getByTestId('field-import-done')).toBeVisible()
+  data = (await readQuestData(page)) as QuestData
+  expect(data.evidence.map((e) => e.id)).toContain('fe-2')
+  expect(data.fieldJournal.imports).toHaveLength(2)
+  expect(data.fieldJournal.imports[1]?.via).toBe('file')
 
   await page.keyboard.press('Escape')
   assertCleanRun(log)

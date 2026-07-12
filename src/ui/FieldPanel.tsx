@@ -7,15 +7,19 @@
 
 import { useId, useMemo, useState, type ReactElement } from 'react'
 import {
+  beamFrames,
   buildBeamEnvelope,
   planImport,
   validateBeam,
   type ImportPlan,
+  type ImportVia,
 } from '../core/fieldImport'
+import qrcode from '../vendor/qrcode-generator/qrcode.js'
 import type { AttemptChannel, AttemptOutcome, HuntSlot } from '../core/schema'
 import { useQuestStore, useTrough } from '../state/store'
 import { useUiStore } from '../state/ui'
 import { FIELD, TIER_CODES } from '../strings'
+import { canScanBeams, FieldScan } from './FieldScan'
 import { DialogShell } from './TrancePanel'
 
 const CHANNELS: readonly AttemptChannel[] = ['in-person', 'call', 'video', 'live-chat']
@@ -50,11 +54,14 @@ export function FieldPanel(): ReactElement {
   const [goalDraft, setGoalDraft] = useState('5')
   const [retroDraft, setRetroDraft] = useState('')
   const [beamCopied, setBeamCopied] = useState(false)
+  const [qrFrames, setQrFrames] = useState<string[] | null>(null)
+  const [qrIndex, setQrIndex] = useState(0)
+  const [scanning, setScanning] = useState(false)
   const [pasteDraft, setPasteDraft] = useState('')
   const [importState, setImportState] = useState<
     | { kind: 'idle' }
     | { kind: 'error'; error: string }
-    | { kind: 'preview'; plan: ImportPlan; beamId: string }
+    | { kind: 'preview'; plan: ImportPlan; beamId: string; via: ImportVia }
     | { kind: 'done'; written: number }
   >({ kind: 'idle' })
 
@@ -67,6 +74,60 @@ export function FieldPanel(): ReactElement {
     return map
   }, [data.huntList.slots])
   const unresolved = data.fieldJournal.attempts.filter((a) => a.outcome === undefined)
+
+  const onShowQr = (): void => {
+    if (qrFrames !== null) {
+      setQrFrames(null)
+      return
+    }
+    const envelope = buildBeamEnvelope(
+      data,
+      `beam-${data.fieldJournal.attempts.length}-${data.evidence.length}`,
+      new Date().toISOString(),
+    )
+    setQrFrames(beamFrames(envelope))
+    setQrIndex(0)
+  }
+
+  /** frame → data URL via the vendored MIT encoder (R-H) — no innerHTML */
+  const qrDataUrl = (frame: string): string => {
+    const qr = qrcode(0, 'M')
+    qr.addData(frame)
+    qr.make()
+    return qr.createDataURL(4, 8)
+  }
+
+  /** a fully assembled camera scan — same pipeline as paste, via 'qr' */
+  const onScannedRaw = (raw: string): void => {
+    setScanning(false)
+    const result = validateBeam(raw, 'qr')
+    if (!result.ok) {
+      setImportState({ kind: 'error', error: result.error })
+      return
+    }
+    setImportState({
+      kind: 'preview',
+      plan: planImport(data, result.envelope),
+      beamId: result.envelope.beamId,
+      via: 'qr',
+    })
+  }
+
+  const onImportFile = (file: File): void => {
+    void file.text().then((raw) => {
+      const result = validateBeam(raw, 'file')
+      if (!result.ok) {
+        setImportState({ kind: 'error', error: result.error })
+        return
+      }
+      setImportState({
+        kind: 'preview',
+        plan: planImport(data, result.envelope),
+        beamId: result.envelope.beamId,
+        via: 'file',
+      })
+    })
+  }
 
   const onCopyBeam = (): void => {
     const envelope = buildBeamEnvelope(
@@ -89,11 +150,12 @@ export function FieldPanel(): ReactElement {
       kind: 'preview',
       plan: planImport(data, result.envelope),
       beamId: result.envelope.beamId,
+      via: 'paste',
     })
   }
 
-  const onConfirmImport = (plan: ImportPlan, beamId: string): void => {
-    const audit = applyFieldImport(plan, beamId, 'paste')
+  const onConfirmImport = (plan: ImportPlan, beamId: string, via: ImportVia): void => {
+    const audit = applyFieldImport(plan, beamId, via)
     const written = Object.values(audit.counts).reduce((a, b) => a + b, 0)
     setImportState({ kind: 'done', written })
     setPasteDraft('')
@@ -303,7 +365,63 @@ export function FieldPanel(): ReactElement {
               {FIELD.beam.copied}
             </span>
           ) : null}
+          <button
+            type="button"
+            data-testid="field-beam-qr"
+            onClick={onShowQr}
+            className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
+          >
+            {qrFrames !== null ? FIELD.beam.hideQr : FIELD.beam.showQr}
+          </button>
         </div>
+        {qrFrames !== null && qrFrames.length > 0 ? (
+          <div data-testid="field-qr" className="quest-aside mt-2 flex flex-col items-center gap-1.5 p-3">
+            <img
+              src={qrDataUrl(qrFrames[qrIndex] ?? '')}
+              alt={FIELD.beam.qrFrame(qrIndex + 1, qrFrames.length)}
+              className="h-52 w-52 rounded bg-white p-1 [image-rendering:pixelated]"
+            />
+            <p className="text-2xs text-ink-faint">{FIELD.beam.qrFrame(qrIndex + 1, qrFrames.length)}</p>
+            {qrFrames.length > 1 ? (
+              <span className="flex gap-2">
+                <button type="button" data-testid="field-qr-prev" className="quest-btn quest-btn-quiet px-2 py-0.5 text-2xs"
+                  onClick={() => setQrIndex((i) => (i - 1 + qrFrames.length) % qrFrames.length)}>
+                  {FIELD.beam.qrPrev}
+                </button>
+                <button type="button" data-testid="field-qr-next" className="quest-btn quest-btn-quiet px-2 py-0.5 text-2xs"
+                  onClick={() => setQrIndex((i) => (i + 1) % qrFrames.length)}>
+                  {FIELD.beam.qrNext}
+                </button>
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+        {canScanBeams() ? (
+          <div className="mt-2">
+            <button
+              type="button"
+              data-testid="field-import-scan"
+              onClick={() => setScanning((s) => !s)}
+              className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
+            >
+              {scanning ? FIELD.beam.scanStop : FIELD.beam.scan}
+            </button>
+          </div>
+        ) : null}
+        {scanning ? <FieldScan onRaw={onScannedRaw} onClose={() => setScanning(false)} /> : null}
+        <label className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-soft">
+          {FIELD.beam.fileLabel}
+          <input
+            type="file"
+            accept="application/json"
+            data-testid="field-import-file"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file !== undefined) onImportFile(file)
+            }}
+            className="text-2xs"
+          />
+        </label>
         <label className="mt-3 flex flex-col gap-1">
           <span className="quest-label text-2xs">{FIELD.beam.pasteLabel}</span>
           <textarea
@@ -368,7 +486,7 @@ export function FieldPanel(): ReactElement {
                 <button
                   type="button"
                   data-testid="field-import-confirm"
-                  onClick={() => onConfirmImport(importState.plan, importState.beamId)}
+                  onClick={() => onConfirmImport(importState.plan, importState.beamId, importState.via)}
                   className="quest-btn quest-btn-seal text-sm"
                 >
                   {FIELD.beam.confirm(writeCount(importState.plan))}

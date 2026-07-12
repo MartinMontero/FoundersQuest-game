@@ -3,9 +3,12 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  assembleFrames,
   BEAM_KIND,
+  beamFrames,
   IMPORT_CAP_QR_BYTES,
   planImport,
+  QR_CHUNK_CHARS,
   validateBeam,
   type BeamEnvelope,
 } from '../src/core/fieldImport'
@@ -127,5 +130,52 @@ describe('rule 5 + F-103 — atomic provenance', () => {
     const second = planImport(read(), env)
     expect(second.writes.evidence).toEqual([])
     expect(second.skippedExistingIds).toEqual(['ev-1'])
+  })
+})
+
+describe('QR frames — FQB1 chunk / reassemble (spec §8)', () => {
+  it('round-trips a multi-frame beam, frames given out of order, stray scans ignored', () => {
+    // enough quoted text to force > QR_CHUNK_CHARS of base64url → several frames
+    const coins = Array.from({ length: 3 }, (_, i) => ({
+      ...COIN, id: `ev-${i}`, text: `"${'their exact words '.repeat(40)}${i}"`,
+    }))
+    const env = envelope({ evidence: coins })
+    const frames = beamFrames(env)
+    expect(frames.length).toBeGreaterThan(1)
+    for (const f of frames) {
+      expect(f).toMatch(/^FQB1:beam-1:\d+:\d+:/)
+      expect(f.length).toBeLessThanOrEqual(QR_CHUNK_CHARS + `FQB1:beam-1:${frames.length}:${frames.length}:`.length)
+    }
+    const shuffled = [frames[frames.length - 1], 'https://not-a-beam.example', ...frames.slice(0, -1)]
+    const out = assembleFrames(shuffled as string[])
+    expect(out.ok).toBe(true)
+    if (out.ok) {
+      expect(JSON.parse(out.raw)).toEqual(env)
+      expect(validateBeam(out.raw, 'qr').ok).toBe(true)
+    }
+  })
+
+  it('a missing frame is a named error, never a partial import', () => {
+    const env = envelope({ evidence: [{ ...COIN, text: `"${'w'.repeat(2500)}"` }] })
+    const frames = beamFrames(env)
+    expect(frames.length).toBeGreaterThan(1)
+    const out = assembleFrames(frames.slice(1))
+    expect(out.ok).toBe(false)
+    if (!out.ok) expect(out.error).toContain('missing frames')
+  })
+
+  it('frames from two different beams never merge', () => {
+    const a = beamFrames(envelope())
+    const b = beamFrames({ ...envelope(), beamId: 'beam-2' })
+    const out = assembleFrames([...a, ...b])
+    expect(out.ok).toBe(false)
+    if (!out.ok) expect(out.error).toContain('different beams')
+  })
+
+  it('unicode in quotes survives the base64url trip intact', () => {
+    const env = envelope({ evidence: [{ ...COIN, text: '"café — 現場の声 🎯"' }] })
+    const out = assembleFrames(beamFrames(env))
+    expect(out.ok).toBe(true)
+    if (out.ok) expect(JSON.parse(out.raw).payload.evidence[0].text).toBe('"café — 現場の声 🎯"')
   })
 })

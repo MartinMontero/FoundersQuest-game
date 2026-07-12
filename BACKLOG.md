@@ -78,7 +78,7 @@ surfaces exist. Build to docs/build/a101-field-mode-spec.md's letter:
   injected): no evidence enters by ANY import path without atomic
   fieldJournal.imports registration — ships as a test. Acceptance: all seven
   rules unit-tested; F-103 green; e2e import round-trip incl. dedupe re-import.
-- [ ] **F-8 · QR beam** (§8.1, spec:263-268 + R-H §14.1): canonical path =
+- [x] **F-8 · QR beam** (§8.1, spec:263-268 + R-H §14.1): canonical path =
   phone displays QR → desktop webcam scans; vendored MIT encoder + vendored
   decoder fallback per R-H (vendoring ≠ new service; new DEPENDENCY = Rule 9
   FQ protocol → list exact packages/licenses for approval BEFORE adding).
@@ -86,6 +86,22 @@ surfaces exist. Build to docs/build/a101-field-mode-spec.md's letter:
   files vendored, camera permission copy honest, Permissions-Policy already
   allows camera=(self) (public/_headers:5 — currently unused, F-8 is its
   intended consumer).
+  DONE 2026-07-12 — encode: qrcode-generator 2.0.4 vendored (MIT registry-
+  verified, VENDORED.md provenance + sha256s, one documented ESM-compat
+  footer); FQB1 frame chunk/reassemble pure in fieldImport.ts, 4 unit tests
+  (multi-frame round-trip incl. out-of-order + stray scans, missing-frame
+  named error, cross-beam rejection, unicode). Display: framed QR <img> via
+  createDataURL (no innerHTML), prev/next paging — e2e-tested. Decode: NO
+  clean-MIT library verifies (jsqr Apache-2.0; qr-scanner jsQR-lineage —
+  deps-review table in BLOCKERS), so the pre-logged fallback is taken:
+  native BarcodeDetector camera scan (FieldScan.tsx, feature-gated, zero
+  deps, same validateBeam('qr') pipeline, honest on-device copy, stream
+  teardown) + file import + paste as the universal paths. File + paste +
+  QR display e2e-tested; the camera loop itself is UNTESTED in CI (headless
+  Linux has no camera and no Shape Detection API) — acceptance's "synthetic
+  camera frame" is not reachable in this runner; assembleFrames core is
+  unit-tested instead. Audit provenance fix en route: via now recorded
+  honestly per transport ('paste'/'file'/'qr') instead of hardcoded 'paste'.
 - [ ] **F-9 · PWA/A2HS + iOS ITP mitigations** (§9, spec:272-284): hand-rolled
   service worker (no new deps), A2HS prompt, transfer-first framing for
   eviction risk. Acceptance: SW registers/updates cleanly; no cache poisoning

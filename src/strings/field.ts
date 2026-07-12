@@ -64,6 +64,19 @@ export const FIELD = {
     blankedNote:
       'Some links pointed at beliefs this device does not hold — blanked; re-link at the Registry.',
     importedBadge: 'imported',
+    showQr: 'Show as QR',
+    hideQr: 'Hide QR',
+    qrFrame: (part: number, of: number): string => `frame ${part} of ${of}`,
+    qrPrev: 'Previous frame',
+    qrNext: 'Next frame',
+    fileLabel: 'Or import a beam file',
+    /** camera scan — only offered where the browser has BarcodeDetector */
+    scan: 'Scan a beam (camera)',
+    scanStop: 'Stop scanning',
+    scanHint: 'Frames are read on this device only — nothing is uploaded, nothing leaves.',
+    scanLooking: 'Looking for beam frames…',
+    scanProgress: (got: number, of: number): string => `${got} of ${of} frames caught`,
+    scanDenied: 'Camera declined or unavailable — the file and paste paths always work.',
     counts: (c: Record<string, number>): string =>
       `profiles ${c['profiles'] ?? 0} · slots ${c['slots'] ?? 0} · attempts ${c['attempts'] ?? 0} · evidence ${c['evidence'] ?? 0} · field days ${c['fieldDayLog'] ?? 0}`,
   },
