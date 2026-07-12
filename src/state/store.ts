@@ -15,6 +15,7 @@ import {
   type CitationImpact,
 } from '../core/confrontation'
 import { EGO_SOURCE_ID } from '../core/ego'
+import type { ImportPlan, ImportVia } from '../core/fieldImport'
 import { actionFraction, riskiest, tierOf, trough, truth, type ActGateId } from '../core/metrics'
 import { migrateV2IfNeeded } from '../core/migration'
 import type {
@@ -24,6 +25,7 @@ import type {
   AttemptOutcome,
   CalibrationEntry,
   FieldAttempt,
+  FieldImportRecord,
   HuntProfile,
   HuntSlot,
   EvidenceEntry,
@@ -244,6 +246,15 @@ export interface QuestState {
    * NEVER creates evidence, never grants XP (A3/A4 — invariant-tested).
    */
   resolveAttempt(attemptId: string, outcome: AttemptOutcome): void
+  /**
+   * Apply a VALIDATED import plan in ONE commit (A-101 §8 rules 4+5). This is
+   * the ONLY import path that writes evidence, and it writes the
+   * fieldJournal.imports audit record in the SAME commit — the F-103
+   * derived-provenance invariant is atomic by construction. Imported attempts
+   * are stamped origin:'import' + importedAt + beamId; momentum is NEVER
+   * touched by an import; skipped/conflicted ids are never written.
+   */
+  applyFieldImport(plan: ImportPlan, beamId: string, via: ImportVia): FieldImportRecord
 }
 
 export interface QuestStoreDeps {
@@ -868,6 +879,52 @@ export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState
             ),
           },
         })
+      },
+
+      applyFieldImport(plan: ImportPlan, beamId: string, via: ImportVia): FieldImportRecord {
+        const { data } = get()
+        const importedAt = now()
+        const writtenEvidenceIds = plan.writes.evidence.map((e) => e.id)
+        // rule 5 — the audit record carries the ids actually WRITTEN, only those
+        const audit: FieldImportRecord = {
+          beamId,
+          importedAt,
+          via,
+          counts: {
+            profiles: plan.writes.profiles.length,
+            slots: plan.writes.slots.length,
+            attempts: plan.writes.attempts.length,
+            evidence: plan.writes.evidence.length,
+            fieldDayLog: plan.writes.fieldDayLog.length,
+          },
+          evidenceIds: writtenEvidenceIds,
+        }
+        commit({
+          ...data,
+          huntList: {
+            profiles: [...data.huntList.profiles, ...plan.writes.profiles],
+            slots: [...data.huntList.slots, ...plan.writes.slots],
+          },
+          fieldJournal: {
+            attempts: [
+              ...data.fieldJournal.attempts,
+              ...plan.writes.attempts.map((a) => ({
+                ...a,
+                origin: 'import' as const,
+                importedAt,
+                beamId,
+              })),
+            ],
+            imports: [...data.fieldJournal.imports, audit],
+          },
+          evidence: [...data.evidence, ...plan.writes.evidence],
+          fieldDay: {
+            ...data.fieldDay,
+            log: [...data.fieldDay.log, ...plan.writes.fieldDayLog],
+          },
+          // momentum is deliberately untouched (rule 4) — courage is not importable
+        })
+        return audit
       },
 
       integrateEgo(line: string): void {
