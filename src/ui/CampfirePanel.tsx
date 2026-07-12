@@ -10,7 +10,8 @@ import type { WeatherEntry } from '../core/schema'
 import { useJourneyStore } from '../state/journey'
 import { questStore, useQuestData, useQuestStore } from '../state/store'
 import { useUiStore } from '../state/ui'
-import { FIRST_LIGHT, SIDE_QUESTS, SIDE_QUESTS_RULE, UI, WEATHER_LABELS } from '../strings'
+import { AUDIO, FIRST_LIGHT, SIDE_QUESTS, SIDE_QUESTS_RULE, UI, WEATHER_LABELS } from '../strings'
+import { readAudioSettings, writeAudioSettings } from '../audio/AudioDirector'
 import { DialogShell } from './TrancePanel'
 
 const WEATHER_VALUES: readonly WeatherEntry['value'][] = [1, 2, 3, 4, 5]
@@ -61,6 +62,29 @@ export function CampfirePanel(): ReactElement {
       <h2 id={titleId} className="quest-heading text-xl font-semibold">
         {UI.campfire.title}
       </h2>
+
+      {/* ---- sound furniture (A-1): synthesized, silence-default, own key ---- */}
+      <fieldset className="quest-aside mt-3 p-3">
+        <legend className="quest-label px-1.5 text-2xs">{AUDIO.legend}</legend>
+        <p className="text-2xs text-ink-faint">{AUDIO.hint}</p>
+        <div className="mt-2 flex flex-col gap-1.5">
+          {(['master', 'ambient', 'cues'] as const).map((channel) => (
+            <label key={channel} className="flex items-center gap-2 text-xs text-ink-soft">
+              <span className="w-16">{AUDIO[channel]}</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                defaultValue={Math.round(readAudioSettings()[channel] * 100)}
+                onChange={(e) => writeAudioSettings({ [channel]: Number(e.target.value) / 100 })}
+                data-testid={`campfire-audio-${channel}`}
+                className="w-40 accent-amber-accent-500"
+                aria-label={AUDIO[channel]}
+              />
+            </label>
+          ))}
+        </div>
+      </fieldset>
 
       {/* ---- weather totem: one tap, every reading kept (R-W append) ---- */}
       <fieldset className="quest-aside mt-5 p-4">

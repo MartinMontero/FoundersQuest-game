@@ -170,7 +170,7 @@ verified — recorded honestly as UNTESTED in-container, VERIFICATION Rounds 6-1
 
 ## P1 — Audio (game-design §7, entirely unbuilt)
 
-- [ ] **A-1 · CC0 ambient beds per world + UI cues** (shrine chime, tier ding,
+- [x] **A-1 (DONE 2026-07-12, HONEST SWAP: CC0 asset downloads are egress-blocked in the build container, so beds+cues are PROCEDURAL WebAudio patches — license-free, zero assets/deps; the engine accepts sourced files later. Silence-default master, three independent sliders at the campfire persisted under the settings key, unlock-on-gesture, cues duplicate visual feedback. 4 unit tests; campfire e2e green.) · CC0 ambient beds per world + UI cues** (shrine chime, tier ding,
   celebration sting, funeral bell): silence is the default until the player
   opts in; independent sliders (settings store, own key); never autoplay loud.
   Assets must be CC0 with license notes in the attribution page; asset FILES

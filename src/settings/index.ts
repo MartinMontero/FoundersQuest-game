@@ -17,6 +17,13 @@ export interface SettingsStore {
   remove(key: string): void
 }
 
+/** clamp a stored volume to [0,1]; anything malformed falls back */
+function vol(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(1, Math.max(0, value))
+    : fallback
+}
+
 export interface Settings {
   /** Has the player accepted the fallback-model offer? Default: false. */
   getFallbackAccepted(): boolean
@@ -28,14 +35,27 @@ export interface Settings {
   getFounderName(): string
   /** Persist the founder's name (device-local; never serialized, never sent). */
   setFounderName(name: string): void
+  /** Independent audio sliders (game-design §7) — 0..1, master defaults to 0. */
+  getAudio(): { master: number; ambient: number; cues: number }
+  setAudio(volumes: Partial<{ master: number; ambient: number; cues: number }>): void
 }
 
 interface SettingsShape {
   fallbackAccepted: boolean
   founderName: string
+  /** audio volumes 0..1 — default 0: SILENCE until the player opts in (§7) */
+  audioMaster: number
+  audioAmbient: number
+  audioCues: number
 }
 
-const DEFAULTS: SettingsShape = { fallbackAccepted: false, founderName: '' }
+const DEFAULTS: SettingsShape = {
+  fallbackAccepted: false,
+  founderName: '',
+  audioMaster: 0,
+  audioAmbient: 0.7,
+  audioCues: 0.7,
+}
 
 /** Guarded read: missing key, corrupt JSON, or a foreign shape → defaults. */
 function load(store: SettingsStore): SettingsShape {
@@ -56,6 +76,9 @@ function load(store: SettingsStore): SettingsShape {
   return {
     fallbackAccepted: rec['fallbackAccepted'] === true,
     founderName: typeof rec['founderName'] === 'string' ? rec['founderName'] : '',
+    audioMaster: vol(rec['audioMaster'], DEFAULTS.audioMaster),
+    audioAmbient: vol(rec['audioAmbient'], DEFAULTS.audioAmbient),
+    audioCues: vol(rec['audioCues'], DEFAULTS.audioCues),
   }
 }
 
@@ -79,6 +102,19 @@ export function createSettings(store: SettingsStore): Settings {
     },
     setFounderName(name: string): void {
       save(store, { ...load(store), founderName: name })
+    },
+    getAudio(): { master: number; ambient: number; cues: number } {
+      const s = load(store)
+      return { master: s.audioMaster, ambient: s.audioAmbient, cues: s.audioCues }
+    },
+    setAudio(volumes: Partial<{ master: number; ambient: number; cues: number }>): void {
+      const s = load(store)
+      save(store, {
+        ...s,
+        audioMaster: vol(volumes.master, s.audioMaster),
+        audioAmbient: vol(volumes.ambient, s.audioAmbient),
+        audioCues: vol(volumes.cues, s.audioCues),
+      })
     },
   }
 }

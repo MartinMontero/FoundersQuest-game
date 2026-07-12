@@ -10,6 +10,7 @@
 // action: the deep-link that opens the riskiest guardian in the Registry.
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
+import { AudioDirector } from '../audio/AudioDirector'
 import { riskiest, trough } from '../core/metrics'
 import { useFounderStore } from '../state/founder'
 import type { QuestData } from '../core/schema'
@@ -157,6 +158,7 @@ export function UiRoot(): ReactElement {
       {shadowVisible ? (
         <ShadowOverlay onAction={handleShadowAction} onDismiss={handleShadowDismiss} />
       ) : null}
+      <AudioDirector />
       <DegradedBanner />
     </>
   )
