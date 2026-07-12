@@ -109,7 +109,16 @@ composed places, centrepieces, silhouette language, lighting doing emotional
 work, world REACTS to dramatic beats (the feel audit's #1 systemic gap: every
 celebration is currently a parchment panel over an inert backdrop).
 
-- [ ] **E-0 · Shared groundwork:** capture-tier fix (P0-4) · panel
+- [x] **E-0 · Shared groundwork (2026-07-11):** DONE — capture-tier fix +
+  packs recaptured (P0-4) · panel typography pass (eyebrow rule on every
+  surface; a4/04 counter-contrast + a3/07 legend scroll fixed; chip edge
+  clamping deferred to E-9, recorded) · camera language (arena/ego framing +
+  rite vigil rise, reduced-motion cut preserved) · celebration staging
+  framework (CelebrationFx: shatter/pillar/funeral/integration beats staged
+  in-world) · weather→sky tint (display-only, W1 byte-pinned, unit-tested) ·
+  rogue.glb 3.6MB→186KB · bundle split (app 227KB + engine shelves). DOF/post
+  already tier-gated (PostFx full-tier only); finer DOF rides the world
+  passes. Original scope: capture-tier fix (P0-4) · panel
   material/typography pass across every DOM surface (diegetic stone/parchment
   craft, spacing, ghost-text overlap fix a4/04, tooltip edge-clipping) ·
   camera transition language (world-gate crossing dolly, arena entry, rite
