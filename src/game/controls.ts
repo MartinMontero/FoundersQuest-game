@@ -176,6 +176,12 @@ export function useWorldControls(events: WorldEvents): void {
       }
       // the Cartographer's Chart (M = map, L = legend) — once handed over
       // (completed OR skipped opening both unlock it; nothing is gated)
+      if (e.code === 'KeyC' && !e.repeat) {
+        // the Council temple (C-1) — key, consent, and the by-hand reading
+        e.preventDefault()
+        useUiStore.getState().openPanel('panel:council')
+        return
+      }
       if (e.code === 'KeyF' && !e.repeat) {
         // Field Mode (A-101) — always available; it is the founder's journal side
         e.preventDefault()

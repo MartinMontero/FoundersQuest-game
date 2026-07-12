@@ -18,6 +18,7 @@ import { EGO_SOURCE_ID } from '../core/ego'
 import type { ImportPlan, ImportVia } from '../core/fieldImport'
 import { actionFraction, riskiest, tierOf, trough, truth, type ActGateId } from '../core/metrics'
 import { migrateV2IfNeeded } from '../core/migration'
+import { buildJournalMd } from '../core/serializer'
 import type {
   Answer,
   Assumption,
@@ -255,6 +256,15 @@ export interface QuestState {
    * touched by an import; skipped/conflicted ids are never written.
    */
   applyFieldImport(plan: ImportPlan, beamId: string, via: ImportVia): FieldImportRecord
+  // ---- The Council temple (C-1; live calls stay DARK until B-4 resolves) ----
+  /** One-time stored consent (04) — the cost sentence precedes any send affordance. */
+  setCouncilConsent(consent: boolean): void
+  /**
+   * The pasted-reading path (04; source:'pasted'): the founder carries the
+   * compact journal to their own Claude and pastes the reading back. Snapshots
+   * the journal EXACTLY as it would have been sent; model labeled 'pasted'.
+   */
+  addPastedReading(reading: string): void
   /**
    * Momentum decay tick (A-101 §6): after ONE grace day, -1 per elapsed day —
    * FROZEN in the trough (cadence law: low weather never bleeds courage).
@@ -935,6 +945,33 @@ export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState
           // momentum is deliberately untouched (rule 4) — courage is not importable
         })
         return audit
+      },
+
+      setCouncilConsent(consent: boolean): void {
+        const { data } = get()
+        if (data.councilConsent === consent) return
+        commit({ ...data, councilConsent: consent })
+      },
+
+      addPastedReading(reading: string): void {
+        const { data } = get()
+        const text = reading.trim()
+        if (text === '') return
+        commit({
+          ...data,
+          council: [
+            ...data.council,
+            {
+              id: makeId('reading'),
+              date: now(),
+              reading: text,
+              followups: [],
+              journal: buildJournalMd(data, 'compact'),
+              model: 'pasted',
+              source: 'pasted',
+            },
+          ],
+        })
       },
 
       tickMomentum(today: string): void {

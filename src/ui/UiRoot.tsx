@@ -21,6 +21,7 @@ import { STAGES, UI } from '../strings'
 import { CalibrationPanel } from './CalibrationPanel'
 import { CampfirePanel } from './CampfirePanel'
 import { ChartPanel } from './ChartPanel'
+import { CouncilPanel } from './CouncilPanel'
 import { ConfrontationOverlay } from './ConfrontationOverlay'
 import { DegradedBanner } from './DegradedBanner'
 import { EgoOverlay } from './EgoOverlay'
@@ -146,6 +147,7 @@ export function UiRoot(): ReactElement {
       {mode === 'panel:chart' ? <ChartPanel /> : null}
       {mode === 'panel:legend' ? <LegendPanel /> : null}
       {mode === 'panel:field' ? <FieldPanel /> : null}
+      {mode === 'panel:council' ? <CouncilPanel /> : null}
       {mode === 'reentry' ? <ReentryPrompt /> : null}
       {mode === 'gate' ? <GatePanel /> : null}
       {mode === 'loop' ? <LoopPanel /> : null}
