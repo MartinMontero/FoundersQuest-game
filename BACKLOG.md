@@ -102,10 +102,26 @@ surfaces exist. Build to docs/build/a101-field-mode-spec.md's letter:
   camera frame" is not reachable in this runner; assembleFrames core is
   unit-tested instead. Audit provenance fix en route: via now recorded
   honestly per transport ('paste'/'file'/'qr') instead of hardcoded 'paste'.
-- [ ] **F-9 · PWA/A2HS + iOS ITP mitigations** (§9, spec:272-284): hand-rolled
+- [x] **F-9 · PWA/A2HS + iOS ITP mitigations** (§9, spec:272-284): hand-rolled
   service worker (no new deps), A2HS prompt, transfer-first framing for
   eviction risk. Acceptance: SW registers/updates cleanly; no cache poisoning
   of index.html (documented strategy); e2e smoke.
+  DONE 2026-07-12 — public/sw.js hand-rolled (R-J, zero deps): navigations
+  network-first (fresh index.html always preferred; cached copy is offline
+  fallback only — the documented no-poisoning strategy), /assets/* cache-first
+  (Vite content-hashes = immutable), other GETs network-first; non-GET and
+  cross-origin NEVER intercepted (guard test pins both early returns and that
+  the file never names the Council host). Registration prod-only with
+  updateViaCache:'none' (guard test pins the gate). Manifest + deterministic
+  icons (scripts/make-icons.mjs — hand-rolled PNG over node:zlib, no binary
+  blobs of unknown origin). Campfire "This device" card: A2HS via captured
+  beforeinstallprompt, storage.persist() ask, persisted/not-persisted honesty
+  line, transfer-first copy. Verified: `npm run pwa:smoke` (build + vite
+  preview + real chromium) — SW registered+controlling, manifest 200,
+  OFFLINE reload serves the shell. PASS logged 2026-07-12. The smoke script
+  is runnable on demand, not part of the dev-server e2e suite (the suite
+  deliberately never registers a SW). A2HS prompt flow is UNTESTED in CI
+  (beforeinstallprompt is a browser-UI event headless never fires).
 - [x] **F-10 (VERIFIED already shipped in Phase 1: serializer.ts pushFieldJournal, full+compact, tests/serializer.spec.ts:459) · Serializer '## Field journal' section** (§11, spec:301-312;
   02:101): full + compact modes. Acceptance: serializer tests extended;
   Family-Dinner exclusion untouched (guard stays green).

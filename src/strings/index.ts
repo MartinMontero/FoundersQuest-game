@@ -25,6 +25,7 @@ export { EGO } from './ego'
 export { FIELD } from './field'
 export { TEMPLE } from './temple'
 export { AUDIO } from './audio'
+export { DEVICE } from './pwa'
 // ui.ts is DOM-UI chrome only (Phase 2): tier metal skin, canon vocabulary labels,
 // and authored panel/HUD copy — never question or Council text.
 export {

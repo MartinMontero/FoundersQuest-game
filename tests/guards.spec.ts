@@ -92,4 +92,21 @@ describe('repo guards (canon 02 / CLAUDE.md)', () => {
     expect(headers).toContain("connect-src 'self' https://api.anthropic.com blob:;")
     expect(headers).toContain('frame-ancestors \'none\'')
   })
+
+  it('the service worker never touches the Council path (F-9 / R-J)', () => {
+    const sw = readFileSync(join(ROOT, 'public', 'sw.js'), 'utf8')
+    // the two load-bearing early returns: non-GET and cross-origin pass through
+    expect(sw).toContain("if (request.method !== 'GET') return")
+    expect(sw).toContain('if (url.origin !== self.location.origin) return')
+    // the worker must not even know the hostname — nothing to observe or log
+    expect(sw.toLowerCase()).not.toContain('anthropic')
+  })
+
+  it('service-worker registration is production-gated (dev never sits behind a cache)', () => {
+    const pwa = readFileSync(join(SRC, 'pwa.ts'), 'utf8')
+    const gate = pwa.indexOf('import.meta.env.PROD')
+    const register = pwa.indexOf('serviceWorker.register')
+    expect(gate).toBeGreaterThan(-1)
+    expect(register).toBeGreaterThan(gate) // the gate comes first
+  })
 })

@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "pwa:smoke": "node scripts/pwa-smoke.mjs",
+    "icons": "node scripts/make-icons.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

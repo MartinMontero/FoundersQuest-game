@@ -4,14 +4,15 @@
 // the journal export desk (buildJournalMd — a local download, nothing leaves
 // the device), and the founder's own Dinner Card (dinnerCard, R3). Zero network.
 
-import { useId, useState, type ReactElement } from 'react'
+import { useEffect, useId, useState, useSyncExternalStore, type ReactElement } from 'react'
 import { buildJournalMd } from '../core/serializer'
 import type { WeatherEntry } from '../core/schema'
 import { useJourneyStore } from '../state/journey'
 import { questStore, useQuestData, useQuestStore } from '../state/store'
 import { useUiStore } from '../state/ui'
-import { AUDIO, FIRST_LIGHT, SIDE_QUESTS, SIDE_QUESTS_RULE, UI, WEATHER_LABELS } from '../strings'
+import { AUDIO, DEVICE, FIRST_LIGHT, SIDE_QUESTS, SIDE_QUESTS_RULE, UI, WEATHER_LABELS } from '../strings'
 import { readAudioSettings, writeAudioSettings } from '../audio/AudioDirector'
+import { installOffered, isPersisted, promptInstall, requestPersistence, subscribeInstall } from '../pwa'
 import { DialogShell } from './TrancePanel'
 
 const WEATHER_VALUES: readonly WeatherEntry['value'][] = [1, 2, 3, 4, 5]
@@ -44,6 +45,19 @@ export function CampfirePanel(): ReactElement {
   const [noteSaved, setNoteSaved] = useState(false)
   const [dinner, setDinner] = useState(data.dinnerCard?.text ?? '')
   const [dinnerSaved, setDinnerSaved] = useState(false)
+
+  // this-device honesty (F-9): install offer + the durable-storage promise
+  const installReady = useSyncExternalStore(subscribeInstall, installOffered)
+  const [persisted, setPersisted] = useState<boolean | null>(null)
+  useEffect(() => {
+    void isPersisted().then(setPersisted)
+  }, [])
+  const onInstall = (): void => {
+    void promptInstall()
+      .then(requestPersistence)
+      .then(isPersisted)
+      .then(setPersisted)
+  }
 
   const lastWeather = data.weather[data.weather.length - 1]
 
@@ -202,6 +216,33 @@ export function CampfirePanel(): ReactElement {
           {UI.campfire.exportDownload}
         </button>
         <p className="mt-2 text-2xs text-ink-faint">{UI.campfire.exportHint}</p>
+      </fieldset>
+
+      {/* ---- this device (F-9): install offer + storage honesty, transfer first ---- */}
+      <fieldset className="quest-aside mt-4 p-4">
+        <legend className="quest-label px-1.5 text-2xs">{DEVICE.legend}</legend>
+        <p className="text-2xs text-ink-faint">{DEVICE.hint}</p>
+        {persisted !== null ? (
+          <p data-testid="campfire-persisted" className="mt-1.5 text-2xs text-ink-soft">
+            {persisted ? DEVICE.persisted : DEVICE.notPersisted}
+          </p>
+        ) : null}
+        {installReady ? (
+          <div className="mt-2">
+            <button
+              type="button"
+              data-testid="campfire-install"
+              onClick={onInstall}
+              className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
+            >
+              {DEVICE.install}
+            </button>
+            <p className="mt-1 text-2xs text-ink-faint">{DEVICE.installHint}</p>
+          </div>
+        ) : null}
+        <p data-testid="campfire-transfer-first" className="mt-2 text-2xs text-amber-accent-600">
+          {DEVICE.transferFirst}
+        </p>
       </fieldset>
 
       {/* ---- Dinner Card: the founder's own card that leads the Brief (R3) ---- */}
