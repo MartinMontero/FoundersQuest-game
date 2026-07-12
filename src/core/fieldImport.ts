@@ -225,3 +225,43 @@ export function planImport(data: QuestData, envelope: BeamEnvelope): ImportPlan 
     blankedLinks,
   }
 }
+
+// ---- the encode side: "Beam home" (A-101 §8 — terminal records only, R6) ----
+
+/**
+ * Build the beam envelope from the local record. TERMINAL records only:
+ * hollow/filled slots, resolved attempts, their evidence, Field Day closure
+ * records — open slots, unresolved attempts, and an active Field Day never
+ * travel. Local bookkeeping (`beamedAt`) is stripped. Only evidence
+ * referenced by travelling attempts rides along (the beam is a field-capture
+ * transfer, not a journal export). Pure; the caller supplies beamId/createdAt.
+ */
+export function buildBeamEnvelope(
+  data: QuestData,
+  beamId: string,
+  createdAt: string,
+): BeamEnvelope {
+  const attempts = data.fieldJournal.attempts
+    .filter((a) => a.outcome !== undefined)
+    .map((a) => {
+      const { beamedAt: _omit, ...rest } = a
+      return rest as FieldAttempt
+    })
+  const slotIds = new Set(attempts.map((a) => a.slotId))
+  const slots = data.huntList.slots.filter(
+    (s) => (s.state === 'hollow' || s.state === 'filled') && slotIds.has(s.id),
+  )
+  const profileIds = new Set(slots.map((s) => s.profileId))
+  const profiles = data.huntList.profiles.filter((p) => profileIds.has(p.id))
+  const evidenceIds = new Set(attempts.flatMap((a) => a.evidenceIds))
+  const evidence = data.evidence.filter(
+    (e) => evidenceIds.has(e.id) && e.tier >= 2 && e.tier <= 4,
+  )
+  return {
+    kind: BEAM_KIND,
+    v: BEAM_VERSION,
+    beamId,
+    createdAt,
+    payload: { profiles, slots, attempts, evidence, fieldDayLog: [...data.fieldDay.log] },
+  }
+}

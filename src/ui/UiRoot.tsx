@@ -24,6 +24,7 @@ import { ChartPanel } from './ChartPanel'
 import { ConfrontationOverlay } from './ConfrontationOverlay'
 import { DegradedBanner } from './DegradedBanner'
 import { EgoOverlay } from './EgoOverlay'
+import { FieldPanel } from './FieldPanel'
 import { FounderNaming } from './FounderNaming'
 import { FuneralRiteOverlay } from './FuneralRiteOverlay'
 import { GatePanel } from './GatePanel'
@@ -144,6 +145,7 @@ export function UiRoot(): ReactElement {
       {mode === 'panel:calibration' ? <CalibrationPanel /> : null}
       {mode === 'panel:chart' ? <ChartPanel /> : null}
       {mode === 'panel:legend' ? <LegendPanel /> : null}
+      {mode === 'panel:field' ? <FieldPanel /> : null}
       {mode === 'reentry' ? <ReentryPrompt /> : null}
       {mode === 'gate' ? <GatePanel /> : null}
       {mode === 'loop' ? <LoopPanel /> : null}

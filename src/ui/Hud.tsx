@@ -22,7 +22,7 @@ import { founderDisplayName, useFounderStore } from '../state/founder'
 import { useJourneyStore } from '../state/journey'
 import { useAction, useEvidenceBanked, useQuestStore, useTierCounts, useTrough, useTruth } from '../state/store'
 import { useUiStore } from '../state/ui'
-import { EGO, FIRST_LIGHT, RITE, STAGES, TIER_CODES, TIER_METALS, UI, coinCount, formatPercent, stageBanner } from '../strings'
+import { EGO, FIELD, FIRST_LIGHT, RITE, STAGES, TIER_CODES, TIER_METALS, UI, coinCount, formatPercent, stageBanner } from '../strings'
 
 const TIERS: readonly EvidenceTier[] = [0, 1, 2, 3, 4]
 
@@ -106,6 +106,15 @@ export function Hud(): ReactElement | null {
               className="quest-btn quest-btn-quiet px-2 py-0.5 text-2xs"
             >
               {FIRST_LIGHT.chart.hudLegend}
+            </button>
+            <button
+              type="button"
+              data-testid="hud-field"
+              title={FIELD.title}
+              onClick={() => openPanel('panel:field')}
+              className="quest-btn quest-btn-quiet px-2 py-0.5 text-2xs"
+            >
+              {FIELD.hudButton}
             </button>
           </div>
         ) : null}

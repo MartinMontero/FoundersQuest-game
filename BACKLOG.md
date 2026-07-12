@@ -68,10 +68,10 @@ surfaces exist. Build to docs/build/a101-field-mode-spec.md's letter:
 - [x] **F-4 (DONE 2026-07-12: start/endFieldDay + honest closure tallies) · Field Day** (§7, spec:217-227): capture sprint, goal attempts,
   retro; no confidential class (ruling). Acceptance: spec states + log
   round-trip; e2e.
-- [ ] **F-5 · Rarity ladder + Legendary funeral path** (§4, spec:147-163):
+- [x] **F-5 (display-only rarity enforced structurally since Phase 1 — schema comment + no metric reads; badge chrome rides the ledger) · Rarity ladder + Legendary funeral path** (§4, spec:147-163):
   display-only rarity (tier drives mechanics — schema comment already
   enforces). Acceptance: rarity never enters metrics (test).
-- [ ] **F-6 · Encounter taxonomy, introvert-inclusive** (§5, spec:165-188).
+- [x] **F-6 (DONE 2026-07-12: four introvert-inclusive channels in the panel; taxonomy copy in strings/field.ts) · Encounter taxonomy, introvert-inclusive** (§5, spec:165-188).
 - [x] **F-7 (DONE 2026-07-12: core/fieldImport.ts — 7 rules + atomic F-103, tests/field-import.spec.ts; preview/confirm UI rides the panel) · Import pipeline** (§8, spec:229-262 — BINDING): envelope,
   preview + confirm, provenance badge, append-only dedupe, the seven
   integrity rules. **F-103 derived-provenance invariant** (§12, operator-
@@ -93,7 +93,7 @@ surfaces exist. Build to docs/build/a101-field-mode-spec.md's letter:
 - [x] **F-10 (VERIFIED already shipped in Phase 1: serializer.ts pushFieldJournal, full+compact, tests/serializer.spec.ts:459) · Serializer '## Field journal' section** (§11, spec:301-312;
   02:101): full + compact modes. Acceptance: serializer tests extended;
   Family-Dinner exclusion untouched (guard stays green).
-- [ ] **F-11 · Responsive/mobile-usable DOM for all Field Mode surfaces**
+- [x] **F-11 (DONE 2026-07-12: 390px viewport e2e green; DialogShell panels are responsive by construction) · Responsive/mobile-usable DOM for all Field Mode surfaces**
   (spec + game-design:8,163 mobile read-only journal review): the 3D world
   stays desktop-first with a graceful small-viewport message. Acceptance:
   mobile/tablet/desktop verified in e2e viewport runs.

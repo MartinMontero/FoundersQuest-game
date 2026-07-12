@@ -176,6 +176,12 @@ export function useWorldControls(events: WorldEvents): void {
       }
       // the Cartographer's Chart (M = map, L = legend) — once handed over
       // (completed OR skipped opening both unlock it; nothing is gated)
+      if (e.code === 'KeyF' && !e.repeat) {
+        // Field Mode (A-101) — always available; it is the founder's journal side
+        e.preventDefault()
+        useUiStore.getState().openPanel('panel:field')
+        return
+      }
       if ((e.code === 'KeyM' || e.code === 'KeyL') && !e.repeat) {
         if (questStore.getState().data.chartUnlocked) {
           useUiStore.getState().openPanel(e.code === 'KeyM' ? 'panel:chart' : 'panel:legend')
