@@ -292,7 +292,7 @@ test('feel pack a5: threshold monolith, offer, denial, projection, fusion, integ
 
 test('feel pack worlds: spawn + set-piece sightline for every world', async ({ page }) => {
   test.skip(PHASE !== 'worlds', 'world shots run under FEEL_PACK_PHASE=worlds')
-  test.setTimeout(600_000)
+  test.setTimeout(1_200_000)
   mkdirSync(DIR, { recursive: true })
 
   await seedFounderName(page)
@@ -304,16 +304,14 @@ test('feel pack worlds: spawn + set-piece sightline for every world', async ({ p
     await waitForWorldReady(page)
     await page.waitForTimeout(2200) // rogue + dressing settle
     await page.screenshot({ path: `${DIR}/w${stage}-1-spawn.png` })
-    // face the set-piece quarter (west-northwest): yaw the camera, then step
-    for (let i = 0; i < 5; i += 1) {
-      await page.keyboard.down('KeyQ')
-      await page.waitForTimeout(220)
-      await page.keyboard.up('KeyQ')
-    }
+    // approach the landmark: camera spawns facing -z; W+A drives northwest —
+    // straight toward the SETPIECE_ANCHOR quarter (~35u in ~8s of run)
     await page.keyboard.down('KeyW')
-    await page.waitForTimeout(1600)
+    await page.keyboard.down('KeyA')
+    await page.waitForTimeout(7500)
     await page.keyboard.up('KeyW')
-    await page.waitForTimeout(500)
+    await page.keyboard.up('KeyA')
+    await page.waitForTimeout(600)
     await page.screenshot({ path: `${DIR}/w${stage}-2-setpiece-side.png` })
   }
 })
