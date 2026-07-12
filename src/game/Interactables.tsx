@@ -38,6 +38,7 @@ import { useJourneyStore } from '../state/journey'
 import { SPEC_BY_ID, activeTargetId, useInteractionStore } from './interaction'
 import { PALETTE } from './materials'
 import { skyForStage } from './worldPalette'
+import { SETPIECE_ANCHOR, setPieceForStage } from './setpieces'
 import { Pillar } from './models'
 import { IS_AUTOMATION, LOW_POWER } from './perf'
 import { useSafeFrame } from './useSafeFrame'
@@ -1170,8 +1171,15 @@ export interface InteractablesProps {
 
 export function Interactables({ reduced }: InteractablesProps): JSX.Element {
   const stage = useJourneyStore((s) => s.currentStage)
+  // each world's bespoke landmark (E-2..E-8) — pure scenery beside the layout
+  const SetPiece = setPieceForStage(stage)
   return (
     <group>
+      {SetPiece !== null ? (
+        <group position={[SETPIECE_ANCHOR[0], SETPIECE_ANCHOR[1], SETPIECE_ANCHOR[2]]}>
+          <SetPiece reduced={reduced} />
+        </group>
+      ) : null}
       {layoutForStage(stage).map((spec) => {
         switch (spec.kind) {
           case 'shrine':
