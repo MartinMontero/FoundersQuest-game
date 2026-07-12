@@ -119,3 +119,56 @@ describe('A-101 accounting contract', () => {
     expect(s().startAttempt(slotId, 'call')).toBeNull() // no double-log
   })
 })
+
+describe('momentum decay (§6) + Field Day (§7)', () => {
+  it('one grace day, then -1 per day; never below 0; idempotent per tick day', () => {
+    const { store, read } = makeStore({
+      momentum: { value: 5, lastAttemptDate: '2026-07-08T09:00:00.000Z', lastTickDate: null },
+    })
+    const s = store.getState
+    s().tickMomentum('2026-07-09') // 1 day = the grace day → no decay
+    expect(read().momentum.value).toBe(5)
+    s().tickMomentum('2026-07-12') // 4 days since attempt → -3
+    expect(read().momentum.value).toBe(2)
+    s().tickMomentum('2026-07-12') // same day again → nothing (anchored on lastTickDate)
+    expect(read().momentum.value).toBe(2)
+    s().tickMomentum('2026-08-12') // long absence → floors at 0, never negative
+    expect(read().momentum.value).toBe(0)
+  })
+
+  it('the trough FREEZES decay — low weather never bleeds courage', () => {
+    const { store, read } = makeStore({
+      momentum: { value: 4, lastAttemptDate: '2026-07-01T09:00:00.000Z', lastTickDate: null },
+      weather: [
+        { id: 'w1', date: '2026-07-09', value: 1 },
+        { id: 'w2', date: '2026-07-10', value: 2 },
+        { id: 'w3', date: '2026-07-11', value: 1 },
+      ],
+    })
+    store.getState().tickMomentum('2026-07-12')
+    expect(read().momentum.value).toBe(4)
+  })
+
+  it('Field Day: attempts count in; closure tallies filled/hollow honestly', () => {
+    const { store, read } = makeStore()
+    const s = store.getState
+    s().addHuntProfile('p')
+    s().startFieldDay(5)
+    s().startFieldDay(3) // already running → no-op
+    expect(read().fieldDay.current?.goalAttempts).toBe(5)
+    const [slotA, slotB] = read().huntList.slots
+    const a1 = s().startAttempt(slotA?.id ?? '', 'call')
+    const a2 = s().startAttempt(slotB?.id ?? '', 'in-person')
+    s().resolveAttempt(a1?.id ?? '', 'quote')
+    s().resolveAttempt(a2?.id ?? '', 'no-show')
+    s().endFieldDay('  good day  ')
+    const data = read()
+    expect(data.fieldDay.current).toBeNull()
+    expect(data.fieldDay.log).toEqual([{
+      id: expect.stringContaining('fieldday'), date: NOW.slice(0, 10), goalAttempts: 5,
+      attemptCount: 2, filled: 1, hollow: 1, retro: 'good day',
+    }])
+    s().endFieldDay() // nothing running → no-op
+    expect(read().fieldDay.log).toHaveLength(1)
+  })
+})

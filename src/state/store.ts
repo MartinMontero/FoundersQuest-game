@@ -255,6 +255,16 @@ export interface QuestState {
    * touched by an import; skipped/conflicted ids are never written.
    */
   applyFieldImport(plan: ImportPlan, beamId: string, via: ImportVia): FieldImportRecord
+  /**
+   * Momentum decay tick (A-101 §6): after ONE grace day, -1 per elapsed day —
+   * FROZEN in the trough (cadence law: low weather never bleeds courage).
+   * Never below 0; never a streak; idempotent per day (lastTickDate).
+   */
+  tickMomentum(today: string): void
+  /** Field Day (§7): open a capture sprint. No-op if one is already running. */
+  startFieldDay(goalAttempts: number): void
+  /** Close the running Field Day into fieldDay.log with honest tallies. */
+  endFieldDay(retro?: string): void
 }
 
 export interface QuestStoreDeps {
@@ -925,6 +935,69 @@ export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState
           // momentum is deliberately untouched (rule 4) — courage is not importable
         })
         return audit
+      },
+
+      tickMomentum(today: string): void {
+        const { data } = get()
+        const m = data.momentum
+        if (m.value === 0 || m.lastAttemptDate === null) return
+        if (trough(data)) return // cadence law: the trough freezes decay
+        const day = (iso: string): number => Date.parse(iso.slice(0, 10))
+        const anchor = Math.max(
+          day(m.lastAttemptDate),
+          m.lastTickDate !== null ? day(m.lastTickDate) : 0,
+        )
+        const elapsed = Math.floor((day(today) - anchor) / 86_400_000)
+        // one grace day (R-G), then -1 per day beyond it
+        const decay = Math.max(0, elapsed - 1)
+        if (decay === 0) return
+        commit({
+          ...data,
+          momentum: {
+            ...m,
+            value: Math.max(0, m.value - decay),
+            lastTickDate: today,
+          },
+        })
+      },
+
+      startFieldDay(goalAttempts: number): void {
+        const { data } = get()
+        if (data.fieldDay.current !== null && data.fieldDay.current.endedAt === undefined) return
+        const startedAt = now()
+        commit({
+          ...data,
+          fieldDay: {
+            ...data.fieldDay,
+            current: {
+              id: makeId('fieldday'),
+              date: startedAt.slice(0, 10),
+              goalAttempts,
+              attemptIds: [],
+              startedAt,
+            },
+          },
+        })
+      },
+
+      endFieldDay(retro?: string): void {
+        const { data } = get()
+        const day = data.fieldDay.current
+        if (day === null || day.endedAt !== undefined) return
+        const attempts = data.fieldJournal.attempts.filter((a) => day.attemptIds.includes(a.id))
+        const entry = {
+          id: day.id,
+          date: day.date,
+          goalAttempts: day.goalAttempts,
+          attemptCount: day.attemptIds.length,
+          filled: attempts.filter((a) => a.outcome === 'quote').length,
+          hollow: attempts.filter((a) => a.outcome !== undefined && a.outcome !== 'quote').length,
+          ...(retro !== undefined && retro.trim() !== '' ? { retro: retro.trim() } : {}),
+        }
+        commit({
+          ...data,
+          fieldDay: { current: null, log: [...data.fieldDay.log, entry] },
+        })
       },
 
       integrateEgo(line: string): void {
