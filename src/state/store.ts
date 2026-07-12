@@ -20,7 +20,12 @@ import { migrateV2IfNeeded } from '../core/migration'
 import type {
   Answer,
   Assumption,
+  AttemptChannel,
+  AttemptOutcome,
   CalibrationEntry,
+  FieldAttempt,
+  HuntProfile,
+  HuntSlot,
   EvidenceEntry,
   EvidenceTier,
   HunchProvenance,
@@ -223,6 +228,22 @@ export interface QuestState {
    * once; requires a non-empty line (one deliberate input).
    */
   integrateEgo(line: string): void
+  // ---- Field Mode (A-101; the A1-A4 accounting contract is LAW) ----
+  /** Hunt list: add a PROFILE (never a person) + its starter open cold slots. */
+  addHuntProfile(label: string): HuntProfile
+  /**
+   * Log an attempt BEFORE its outcome (A-101 §3 A1 — structural: the record
+   * is created unresolvable). Writes EXACTLY: the attempt, the slot flip
+   * open→attempted, the momentum increment, and the running Field Day counter.
+   * Returns null if the slot is not open.
+   */
+  startAttempt(slotId: string, channel: AttemptChannel): FieldAttempt | null
+  /**
+   * Resolve an attempt: outcome + resolvedAt; the slot fills ('quote') or
+   * goes hollow (any rejection — a rejection still fills the slot, A-101).
+   * NEVER creates evidence, never grants XP (A3/A4 — invariant-tested).
+   */
+  resolveAttempt(attemptId: string, outcome: AttemptOutcome): void
 }
 
 export interface QuestStoreDeps {
@@ -749,6 +770,103 @@ export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState
           assumptions: data.assumptions.map((a) =>
             a.id === assumptionId ? { ...a, status: 'testing' } : a,
           ),
+        })
+      },
+
+      addHuntProfile(label: string): HuntProfile {
+        const { data } = get()
+        const profile: HuntProfile = {
+          id: makeId('profile'),
+          label,
+          fromQid: 's1-l1',
+          createdAt: now(),
+        }
+        // R-G tunable: 2 open cold slots per new profile (numbers never canon)
+        const slots: HuntSlot[] = [0, 1].map(() => ({
+          id: makeId('slot'),
+          profileId: profile.id,
+          kind: 'cold',
+          state: 'open',
+          createdAt: profile.createdAt,
+        }))
+        commit({
+          ...data,
+          huntList: {
+            profiles: [...data.huntList.profiles, profile],
+            slots: [...data.huntList.slots, ...slots],
+          },
+        })
+        return profile
+      },
+
+      startAttempt(slotId: string, channel: AttemptChannel): FieldAttempt | null {
+        const { data } = get()
+        const slot = data.huntList.slots.find((x) => x.id === slotId)
+        if (slot === undefined || slot.state !== 'open') return null
+        const startedAt = now()
+        // A1 — created UNRESOLVED by construction: no outcome field exists here
+        const attempt: FieldAttempt = {
+          id: makeId('attempt'),
+          slotId,
+          channel,
+          startedAt,
+          evidenceIds: [],
+          origin: 'local',
+        }
+        const day = data.fieldDay.current
+        commit({
+          ...data,
+          fieldJournal: {
+            ...data.fieldJournal,
+            attempts: [...data.fieldJournal.attempts, attempt],
+          },
+          huntList: {
+            ...data.huntList,
+            slots: data.huntList.slots.map((x) =>
+              x.id === slotId
+                ? { ...x, state: 'attempted', attemptedAt: startedAt, attemptId: attempt.id }
+                : x,
+            ),
+          },
+          // §6: courage is banked the moment you TRY — capped, never a streak
+          momentum: {
+            ...data.momentum,
+            value: Math.min(7, data.momentum.value + 1),
+            lastAttemptDate: startedAt,
+          },
+          fieldDay:
+            day !== null && day.endedAt === undefined
+              ? {
+                  ...data.fieldDay,
+                  current: { ...day, attemptIds: [...day.attemptIds, attempt.id] },
+                }
+              : data.fieldDay,
+        })
+        return attempt
+      },
+
+      resolveAttempt(attemptId: string, outcome: AttemptOutcome): void {
+        const { data } = get()
+        const attempt = data.fieldJournal.attempts.find((x) => x.id === attemptId)
+        if (attempt === undefined || attempt.outcome !== undefined) return
+        const resolvedAt = now()
+        // a 'quote' fills the slot; every rejection still resolves it — HOLLOW
+        // is honest Action-side credit, never shame (A2; anti-punitive law)
+        const slotState = outcome === 'quote' ? 'filled' : 'hollow'
+        commit({
+          ...data,
+          fieldJournal: {
+            ...data.fieldJournal,
+            attempts: data.fieldJournal.attempts.map((x) =>
+              x.id === attemptId ? { ...x, outcome, resolvedAt } : x,
+            ),
+          },
+          huntList: {
+            ...data.huntList,
+            slots: data.huntList.slots.map((x) =>
+              x.attemptId === attemptId ? { ...x, state: slotState, resolvedAt } : x,
+            ),
+          },
         })
       },
 
