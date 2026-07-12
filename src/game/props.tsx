@@ -31,6 +31,7 @@ import {
   STAGE1_LAYOUT,
 } from './contracts'
 import { PALETTE } from './materials'
+import { useWorldSky } from './useWorldSky'
 import { IS_AUTOMATION } from './perf'
 
 const PLATEAU_RADIUS = 24
@@ -147,6 +148,7 @@ function useGroundGeometry(): BufferGeometry {
  * shadows, so the plateau reads as real textured earth, not a plane. */
 function GroundDiskTextured(): JSX.Element {
   const geometry = useGroundGeometry()
+  const sky = useWorldSky() // each world's earth: multiply tint over the shared rock (E-1..E-8)
   const [map, normalMap, armMap] = useTexture([
     '/textures/ground/grassrock_diff.jpg',
     '/textures/ground/grassrock_nor.jpg',
@@ -168,7 +170,7 @@ function GroundDiskTextured(): JSX.Element {
         metalnessMap={armMap}
         roughness={1.0}
         metalness={0.0}
-        color="#c8b89c"
+        color={sky.ground}
       />
     </mesh>
   )
@@ -179,9 +181,16 @@ function GroundDiskTextured(): JSX.Element {
  * PBR texture is one of the cuts that lets the movement journey run at speed). */
 function GroundDiskPlain(): JSX.Element {
   const geometry = useGroundGeometry()
+  const sky = useWorldSky()
   const material = useMemo(
-    () => new MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0 }),
-    [],
+    () =>
+      new MeshStandardMaterial({
+        vertexColors: true,
+        roughness: 0.95,
+        metalness: 0,
+        color: sky.ground, // multiplies the vertex colours — the world's earth
+      }),
+    [sky.ground],
   )
   return <mesh geometry={geometry} material={material} position={[0, 0.02, 0]} receiveShadow />
 }
@@ -202,6 +211,8 @@ const KEEPOUT: readonly [number, number, number][] = [
   [BACK_POSITION[0], 1.7, BACK_POSITION[2]],
   [LOOP_POSITION[0], 1.7, LOOP_POSITION[2]],
   [CAMPFIRE_POSITION[0], 1.7, CAMPFIRE_POSITION[2]],
+  // the per-world set-piece stage (E-2..E-8) — a generous clear footprint
+  [-16, 6.0, -12],
 ]
 
 function clearOf(x: number, z: number, pad: number): boolean {

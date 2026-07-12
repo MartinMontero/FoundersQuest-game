@@ -23,6 +23,8 @@ export interface WorldSky {
   background: string
   /** signature accent — the world's set-piece / rune tint */
   accent: string
+  /** multiply tint over the shared ground texture — each world's earth (E-1..E-8) */
+  ground: string
 }
 
 // World 1 — the Swirling Nebula (violet/indigo). Pinned to PALETTE so W1 is
@@ -34,8 +36,11 @@ const W1: WorldSky = {
   aurora: PALETTE.aurora,
   fog: PALETTE.fog,
   background: PALETTE.space,
-  // the original shrine rune glow — keeps World 1 byte-unchanged (A5)
+  // the original shrine rune glow — keeps World 1's sky byte-unchanged (A5)
   accent: PALETTE.teal,
+  // §5 W1 is indigo/violet — the audit flagged the shared tan earth; the sky
+  // stays byte-pinned, the EARTH now takes the nebula's cast (E-1)
+  ground: '#a596c8',
 }
 
 /**
@@ -53,6 +58,7 @@ export const WORLD_SKIES: Readonly<Record<number, WorldSky>> = {
     aurora: '#3a5a72',
     fog: '#1a2432',
     background: '#070b12',
+    ground: '#7d8a96',
     accent: '#7f93ab',
   },
   3: {
@@ -62,6 +68,7 @@ export const WORLD_SKIES: Readonly<Record<number, WorldSky>> = {
     aurora: '#c9852f',
     fog: '#38181a',
     background: '#100608',
+    ground: '#b08a72',
     accent: '#ff7a3c',
   },
   4: {
@@ -71,6 +78,7 @@ export const WORLD_SKIES: Readonly<Record<number, WorldSky>> = {
     aurora: '#2f7a6a',
     fog: '#123028',
     background: '#04100e',
+    ground: '#7f9490',
     accent: '#57c2a6',
   },
   5: {
@@ -80,6 +88,7 @@ export const WORLD_SKIES: Readonly<Record<number, WorldSky>> = {
     aurora: '#9fc4d0',
     fog: '#6a7684',
     background: '#2a333d',
+    ground: '#a9adb8',
     accent: '#cfe0ea',
   },
   6: {
@@ -89,6 +98,7 @@ export const WORLD_SKIES: Readonly<Record<number, WorldSky>> = {
     aurora: '#a86a3a',
     fog: '#2e1e14',
     background: '#0e0805',
+    ground: '#cfc4b0',
     accent: '#d98f52',
   },
   7: {
@@ -98,6 +108,7 @@ export const WORLD_SKIES: Readonly<Record<number, WorldSky>> = {
     aurora: '#e0a0a0',
     fog: '#3a3a48',
     background: '#12141f',
+    ground: '#c2ab8e',
     accent: '#f2c079',
   },
   8: {
@@ -107,6 +118,7 @@ export const WORLD_SKIES: Readonly<Record<number, WorldSky>> = {
     aurora: '#6fc0d8',
     fog: '#4a6a80',
     background: '#0a2030',
+    ground: '#b9a5a0',
     accent: '#7fd0e8',
   },
 }
@@ -173,5 +185,6 @@ export function tintSky(sky: WorldSky, mean: number | null): WorldSky {
     background: hexLerp(sky.background, toward, t),
     fog: hexLerp(sky.fog, toward, t),
     horizon: hexLerp(sky.horizon, toward, t),
+    ground: hexLerp(sky.ground, toward, t * 0.6),
   }
 }

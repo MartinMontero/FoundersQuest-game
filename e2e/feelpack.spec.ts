@@ -285,3 +285,35 @@ test('feel pack a5: threshold monolith, offer, denial, projection, fusion, integ
   await page.waitForTimeout(400)
   await page.screenshot({ path: `${DIR}/08-integration.png` })
 })
+
+
+// ---- the per-world feel gate (E-1..E-8): one spawn shot + one set-piece-side
+// ---- shot per world, on the constrained tier (rigged rogue, real palette)
+
+test('feel pack worlds: spawn + set-piece sightline for every world', async ({ page }) => {
+  test.skip(PHASE !== 'worlds', 'world shots run under FEEL_PACK_PHASE=worlds')
+  test.setTimeout(600_000)
+  mkdirSync(DIR, { recursive: true })
+
+  await seedFounderName(page)
+  for (let stage = 1; stage <= 8; stage += 1) {
+    await page.addInitScript((n) => {
+      window.localStorage.setItem('founders-quest:journey', String(n))
+    }, stage)
+    await page.goto('/?render=constrained')
+    await waitForWorldReady(page)
+    await page.waitForTimeout(2200) // rogue + dressing settle
+    await page.screenshot({ path: `${DIR}/w${stage}-1-spawn.png` })
+    // face the set-piece quarter (west-northwest): yaw the camera, then step
+    for (let i = 0; i < 5; i += 1) {
+      await page.keyboard.down('KeyQ')
+      await page.waitForTimeout(220)
+      await page.keyboard.up('KeyQ')
+    }
+    await page.keyboard.down('KeyW')
+    await page.waitForTimeout(1600)
+    await page.keyboard.up('KeyW')
+    await page.waitForTimeout(500)
+    await page.screenshot({ path: `${DIR}/w${stage}-2-setpiece-side.png` })
+  }
+})
