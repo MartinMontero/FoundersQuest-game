@@ -42,6 +42,27 @@ export const CONFRONTATION = {
     shatter: 'Payment. The composure shatters outright — nothing argues with money spent.',
   },
 
+  /** per-world minion register (research §minions) — the challenger's voice */
+  minions: {
+    1: 'An everyone-has-this-problem wraith — it multiplies on generalities.',
+    2: 'A politeness-contaminated golem — armored against hunches and kind words.',
+    3: 'An it-will-work-when-built phantom — solid only in the future tense.',
+    4: 'A novelty-effect mirage — dazzling first, hollow on repeat.',
+    5: 'A compliment-throwing mimic — its praise heals it, not you.',
+    6: 'A gold-plating construct — every polish hides the uncut question.',
+    7: 'A unit-economics leviathan — only Gold pierces that hide.',
+  } as Record<number, string>,
+
+  /** M-1: telegraphed bias-attack patterns (research §4) — named BEFORE they
+   *  land, so reading the pattern is the skill. Presentation only: the
+   *  citation window still auto-opens (D-C untouched). */
+  telegraphs: [
+    'It winds up a compliment projectile — pleasant, glowing, empty.',
+    'It raises a cherry-picked shield — only the agreeing voices.',
+    'It digs in to double its next swing — escalation of commitment.',
+    'It readies a survivor-story wall — the failures hidden behind wins.',
+  ],
+
   /** the guardian's pre-written bias defenses (counterattack beats, wrapper) */
   counters: [
     'It rallies: “Everyone I ask agrees with me.” — it cherry-picks, and the window closes.',

@@ -886,9 +886,52 @@ function ProvingCircle({
       })}
       {/* the challenger, if any belief stands challenge */}
       {challenger !== null ? <ChallengerFigure assumption={challenger} reduced={reduced} /> : null}
-      {/* graveside: tombstones for the mourned, wisps for the unmourned */}
+      {/* M-6 (D-D): every VALIDATED belief of this world stands as a proven
+          pillar beside the circle — calm, golden, load-bearing */}
+      {Array.from(stageBeliefs.values())
+        .filter((a) => a.status === 'validated')
+        .map((a, i) => (
+          <group key={a.id} position={[3.6 + i * 0.9, 0, 1.4 + (i % 2) * 0.6]}>
+            <mesh position={[0, 0.9, 0]}>
+              <cylinderGeometry args={[0.18, 0.24, 1.8, 7]} />
+              <meshStandardMaterial
+                color={PALETTE.amberBright}
+                emissive={PALETTE.amber}
+                emissiveIntensity={0.5}
+                roughness={0.6}
+                metalness={0.15}
+              />
+            </mesh>
+            <mesh position={[0, 1.95, 0]}>
+              <octahedronGeometry args={[0.16, 0]} />
+              <meshStandardMaterial
+                color={PALETTE.amberBright}
+                emissive={PALETTE.amberBright}
+                emissiveIntensity={1.1}
+                roughness={0.5}
+                metalness={0.2}
+              />
+            </mesh>
+          </group>
+        ))}
+      {/* graveside: tombstones for the mourned, wisps for the unmourned.
+          M-5: a mourned grave holds a small candle — the peace where the
+          ghost's unrest was (no per-guardian fog system exists to lift;
+          ghost-removal on lay-to-rest is the living half of that promise) */}
       {held.map((f, i) => (
-        <Tombstone key={f.guardianId} position={[-3.6 - i * 0.75, 0, 1.4 + (i % 2) * 0.6]} />
+        <group key={f.guardianId} position={[-3.6 - i * 0.75, 0, 1.4 + (i % 2) * 0.6]}>
+          <Tombstone position={[0, 0, 0]} />
+          <mesh position={[0.28, 0.08, 0.22]}>
+            <cylinderGeometry args={[0.035, 0.045, 0.16, 6]} />
+            <meshStandardMaterial
+              color={PALETTE.amberBright}
+              emissive={PALETTE.amber}
+              emissiveIntensity={1.4}
+              roughness={0.5}
+              metalness={0}
+            />
+          </mesh>
+        </group>
       ))}
       {ghosts.map((f, i) => (
         <GhostWisp

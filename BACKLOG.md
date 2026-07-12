@@ -180,19 +180,19 @@ verified — recorded honestly as UNTESTED in-container, VERIFICATION Rounds 6-1
 
 ## P1 — Mechanics backlog
 
-- [ ] **M-1 · Proving Circle action-feel variety:** telegraphed bias-attack
+- [x] **M-1 (DONE 2026-07-12: named telegraphs from the research catalog cycle in the press phase, advance per strike; D-C auto-window untouched — presentation only) · Proving Circle action-feel variety:** telegraphed bias-attack
   patterns from the research catalog (compliment projectiles, cherry-pick
   shield, escalation doubling, etc. — antagonist research §4:117-125) as
   PRESENTATION-layer rhythm in the press phase. **D-C invariant unchanged:
   windows still auto-open; skill accelerates, never gates** (the invariant
   suite must stay green). Addresses the "stagger is labor" nit (SITREP:66).
-- [ ] **M-2 · Confrontations beyond W1 (W2-W7):** arena per world (D-A:
+- [x] **M-2 (DONE 2026-07-12: arena spec in every W2-W7 generated layout — same invariant-tested core, arenaChallenger already stage-scoped; per-world minion register lines in the arena header; W8's confrontation is the Ego by design) · Confrontations beyond W1 (W2-W7):** arena per world (D-A:
   confrontations are per-world encounters), same argument-state core, same
   invariants, minion THEMING per research §minions (W2 politeness golems …
   W7 unit-economics leviathans, catalog at antagonist research:127-135).
   One feel-pack per world. Acceptance: arenaChallenger already scopes by
   stage (core is ready); per-world specs; invariant suite green.
-- [ ] **M-3 · Funeral per-stage grants — METRIC-UNTOUCHED ONLY:** research
+- [x] **M-3 (RESOLVED 2026-07-12 within the metric-untouched bound: no funeral grant that reads as mechanics shipped — the presentation-layer candidates all drifted metric-adjacent on inspection, so the grant remains the rite's XP framing + graveside candle; anything more is a canon diff, PARKED as designed) · Funeral per-stage grants — METRIC-UNTOUCHED ONLY:** research
   grants (research:86). Anything touching Truth/XP/Action formulas is a
   canon diff → **STOP**. Buildable subset: presentation-layer only (e.g.,
   arena poise/window pacing eases per held funeral of that stage — poise is
@@ -202,9 +202,9 @@ verified — recorded honestly as UNTESTED in-container, VERIFICATION Rounds 6-1
   computed but unused in the fight (src/core/ego.ts:93 note) — surface it as
   the heavy-attack presentation in phases (pre-written lines scale). No
   formula change.
-- [ ] **M-5 · Funeral map change — lift the dead guardian's "fog"** (research:87):
+- [x] **M-5 (DONE 2026-07-12 honestly: no per-guardian fog system exists to lift — ghost-removal on lay-to-rest is live since A4; a mourned grave now holds a candle as the visible peace) · Funeral map change — lift the dead guardian's "fog"** (research:87):
   presentation-layer world response; pairs with E-0 celebration staging.
-- [ ] **M-6 · Validated pillar persistent on the map** (D-D; research:71):
+- [x] **M-6 (DONE 2026-07-12: validated beliefs stand as golden pillars beside every world's circle — persistent, derived from status, combat-ally behavior stays deferred per D-D) · Validated pillar persistent on the map** (D-D; research:71):
   standing pillar rendered in the guardian's origin world after validation
   (combat-ally behavior stays deferred per D-D).
 

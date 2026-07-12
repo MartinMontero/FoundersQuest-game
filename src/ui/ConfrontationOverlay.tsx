@@ -235,6 +235,9 @@ function Confrontation({ guardian }: { guardian: Assumption }): ReactElement {
             {CONFRONTATION.eyebrow}
           </p>
           <p className="mt-0.5 text-sm text-ink-soft">{CONFRONTATION.challenge.opens}</p>
+          <p data-testid="arena-minion" className="mt-0.5 text-2xs italic text-ink-faint">
+            {CONFRONTATION.minions[Number(guardian.originStageId.slice(1))] ?? ''}
+          </p>
           <blockquote
             data-testid="arena-statement"
             className="mt-1 border-l-2 border-amber-accent-500/60 pl-2 text-sm font-semibold text-ink"
@@ -310,6 +313,13 @@ function Confrontation({ guardian }: { guardian: Assumption }): ReactElement {
                       {CONFRONTATION.counters[counter]}
                     </p>
                   ) : null}
+                  {/* M-1: the NAMED telegraph — read the pattern, then answer it.
+                      Advances per strike; the auto-window never waits on it (D-C). */}
+                  <p data-testid="arena-telegraph" className="mt-1 text-xs text-teal-rune-800">
+                    {CONFRONTATION.telegraphs[
+                      (argument.composureMax - poise) % CONFRONTATION.telegraphs.length
+                    ]}
+                  </p>
                   <p className="mt-2 text-xs italic leading-relaxed text-ink-faint">
                     {CONFRONTATION.wrapper.pressHint}
                   </p>

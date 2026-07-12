@@ -264,9 +264,11 @@ function generatedLayout(stage: number): InteractableSpec[] {
     CAMPFIRE_SPEC,
     ...portalsForStage(stage),
     ...loopPortalsForStage(stage),
-    ...(stage === STAGES.length
-      ? [{ id: 'ego-gate', kind: 'ego', position: EGO_POSITION } as InteractableSpec]
-      : []),
+    // D-A: confrontations are PER-WORLD encounters — every world 2..7 gets its
+    // Proving Circle (W1 is hand-placed; W8's confrontation is the Ego itself)
+    ...(stage < STAGES.length
+      ? [{ id: 'arena', kind: 'arena', position: ARENA_POSITION } as InteractableSpec]
+      : [{ id: 'ego-gate', kind: 'ego', position: EGO_POSITION } as InteractableSpec]),
   ]
 }
 
