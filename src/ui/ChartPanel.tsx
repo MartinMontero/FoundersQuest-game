@@ -9,6 +9,7 @@
 // this session — never live AI (D-E).
 
 import { useId, useRef, type ReactElement } from 'react'
+import { tierOf } from '../core/metrics'
 import { useJourneyStore } from '../state/journey'
 import { useQuestStore } from '../state/store'
 import { useUiStore } from '../state/ui'
@@ -43,9 +44,19 @@ function roadPath(): string {
 /** session-only: the Cartographer's pre-written greet shows once per session */
 let greetShown = false
 
+/** a belief pip's state — display-only, derived the same way Truth is (02) */
+type PipState = 'proven' | 'word' | 'open'
+
+/** cap per pip row; the overflow is a "+n" tail so W7/W8 can never crowd */
+const PIP_CAP = 5
+
+/** keep label/pip groups inside the 800-wide viewBox at the road's ends */
+const clampX = (x: number): number => Math.min(Math.max(x, 52), 748)
+
 export function ChartPanel(): ReactElement {
   const currentStage = useJourneyStore((s) => s.currentStage)
   const assumptions = useQuestStore((s) => s.data.assumptions)
+  const evidence = useQuestStore((s) => s.data.evidence)
   const closePanel = useUiStore((s) => s.closePanel)
   const titleId = useId()
   const greet = useRef(!greetShown)
@@ -57,6 +68,25 @@ export function ChartPanel(): ReactElement {
     if (a.status !== 'invalidated') continue
     const stage = Number.parseInt(a.originStageId.slice(1), 10)
     if (Number.isFinite(stage)) tombstones.set(stage, (tombstones.get(stage) ?? 0) + 1)
+  }
+
+  // per-world pips (E-9) — same derivations the Truth bar uses, per origin
+  // world: proven = resolved at derived tier≥2 (moved Truth); word = resolved
+  // below E2 (stands on the founder's word); open = still untested/testing.
+  // firstLight tutorial beliefs stay out, exactly as they stay out of Truth.
+  const beliefPips = new Map<number, PipState[]>()
+  for (const a of assumptions) {
+    if (a.firstLight === true) continue
+    const stage = Number.parseInt(a.originStageId.slice(1), 10)
+    if (!Number.isFinite(stage)) continue
+    const resolved = a.status === 'validated' || a.status === 'invalidated'
+    const state: PipState = resolved ? (tierOf(a, evidence) >= 2 ? 'proven' : 'word') : 'open'
+    beliefPips.set(stage, [...(beliefPips.get(stage) ?? []), state])
+  }
+  const coinsAt = new Map<number, number>()
+  for (const e of evidence) {
+    const stage = Number.parseInt(e.stageId.slice(1), 10)
+    if (Number.isFinite(stage)) coinsAt.set(stage, (coinsAt.get(stage) ?? 0) + 1)
   }
 
   return (
@@ -105,8 +135,8 @@ export function ChartPanel(): ReactElement {
             }}
           />
 
-          {/* the trough label under the dip (W4–W6) */}
-          <text x="460" y="245" textAnchor="middle" className="fill-[#7a6a50]" fontSize="12" fontStyle="italic">
+          {/* the trough label under the dip (W4–W6) — below every pip row */}
+          <text x="460" y="288" textAnchor="middle" className="fill-[#7a6a50]" fontSize="12" fontStyle="italic">
             {FIRST_LIGHT.chart.troughLabel}
           </text>
 
@@ -130,13 +160,38 @@ export function ChartPanel(): ReactElement {
             )
           })}
 
-          {/* the eight waypoints */}
+          {/* the eight waypoints — two-line sublabels on STAGGERED baselines
+              (odd worlds high, even worlds low) so neighbours can never
+              collide (E-9: the W7/W8 crowding fix), x-clamped at the road's
+              ends so W1/W8 text stays inside the parchment */}
           {STAGES.map((stage, i) => {
             const p = ROAD_POINTS[i]
             if (p === undefined) return null
             const walked = stage.stage <= currentStage
             const here = stage.stage === currentStage
             const stones = tombstones.get(stage.stage) ?? 0
+            const tx = clampX(p.x)
+            // odd worlds sit lower — keeps W8's label clear of the final climb
+            const drop = stage.stage % 2 === 1 ? 14 : 0
+
+            // the pip row: beliefs born here (sorted proven→word→open), then
+            // coins gathered here — both capped with an honest "+n" tail
+            const order: Record<PipState, number> = { proven: 0, word: 1, open: 2 }
+            const pips = [...(beliefPips.get(stage.stage) ?? [])].sort((a, b) => order[a] - order[b])
+            const shownPips = pips.slice(0, PIP_CAP)
+            const pipOverflow = pips.length - shownPips.length
+            const coins = coinsAt.get(stage.stage) ?? 0
+            const shownCoins = Math.min(coins, PIP_CAP)
+            const coinOverflow = coins - shownCoins
+            const tailW = (n: number): number => (n > 0 ? 14 : 0)
+            const rowW =
+              shownPips.length * 7 + tailW(pipOverflow) +
+              (shownPips.length > 0 && shownCoins > 0 ? 8 : 0) +
+              shownCoins * 7 + tailW(coinOverflow)
+            const rowX = tx - rowW / 2
+            const rowY = p.y + 21 // clears the r16 here-ring
+            const coinsX = rowX + shownPips.length * 7 + tailW(pipOverflow) + (shownPips.length > 0 ? 8 : 0)
+
             return (
               <g key={stage.stage} data-testid={`chart-world-${stage.stage}`} opacity={walked ? 1 : 0.45}>
                 <circle cx={p.x} cy={p.y} r={here ? 11 : 8} fill={here ? '#f2b64a' : walked ? '#8c7659' : '#b3a68f'} stroke="#6b4f2e" strokeWidth="1.5" />
@@ -146,9 +201,58 @@ export function ChartPanel(): ReactElement {
                 <text x={p.x} y={p.y - (here ? 24 : 18)} textAnchor="middle" fontSize="13" fontWeight="600" className="fill-[#2c2216]">
                   {stage.world}
                 </text>
-                <text x={p.x} y={p.y + 28} textAnchor="middle" fontSize="10" className="fill-[#7a6a50]">
-                  {stage.name} · {stage.epithet}
+                <text x={tx} y={p.y + 34 + drop} textAnchor="middle" fontSize="9.5" className="fill-[#7a6a50]">
+                  <tspan x={tx}>{stage.name}</tspan>
+                  <tspan x={tx} dy="11" fontStyle="italic">{stage.epithet}</tspan>
                 </text>
+
+                {/* per-world Truth/Action pips (E-9) — derived, display-only */}
+                {rowW > 0 ? (
+                  <g data-testid={`chart-pips-${stage.stage}`}>
+                    <title>
+                      {FIRST_LIGHT.chart.pipsTitle(
+                        pips.filter((s) => s === 'proven').length,
+                        pips.filter((s) => s === 'word').length,
+                        pips.filter((s) => s === 'open').length,
+                        coins,
+                      )}
+                    </title>
+                    {shownPips.map((state, j) => (
+                      <circle
+                        key={`p${j}`}
+                        cx={rowX + j * 7 + 2.5}
+                        cy={rowY}
+                        r="2.5"
+                        fill={state === 'open' ? 'none' : '#bd7d21'}
+                        fillOpacity={state === 'word' ? 0.35 : 1}
+                        stroke="#6b4f2e"
+                        strokeWidth="0.8"
+                      />
+                    ))}
+                    {pipOverflow > 0 ? (
+                      <text x={rowX + shownPips.length * 7 + 2} y={rowY + 3} fontSize="8" className="fill-[#7a6a50]">
+                        +{pipOverflow}
+                      </text>
+                    ) : null}
+                    {Array.from({ length: shownCoins }, (_, j) => (
+                      <rect
+                        key={`c${j}`}
+                        x={coinsX + j * 7}
+                        y={rowY - 2.25}
+                        width="4.5"
+                        height="4.5"
+                        fill="#116b62"
+                        opacity="0.85"
+                      />
+                    ))}
+                    {coinOverflow > 0 ? (
+                      <text x={coinsX + shownCoins * 7 + 2} y={rowY + 3} fontSize="8" className="fill-[#116b62]">
+                        +{coinOverflow}
+                      </text>
+                    ) : null}
+                  </g>
+                ) : null}
+
                 {stones > 0 ? (
                   <g data-testid={`chart-tombstones-${stage.stage}`}>
                     <text x={p.x + 16} y={p.y + 6} fontSize="12" className="fill-[#4c3d29]">
@@ -167,6 +271,9 @@ export function ChartPanel(): ReactElement {
         {FIRST_LIGHT.chart.youAreHere}
         {' — '}
         {STAGES.find((s) => s.stage === currentStage)?.world ?? ''}
+      </p>
+      <p data-testid="chart-pips-legend" className="mt-1 text-2xs text-ink-faint">
+        {FIRST_LIGHT.chart.pipsLegend}
       </p>
 
       {/* the D-H consent boundary, verbatim — free/offline Chart vs the paid Council */}

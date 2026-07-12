@@ -315,3 +315,63 @@ test('feel pack worlds: spawn + set-piece sightline for every world', async ({ p
     await page.screenshot({ path: `${DIR}/w${stage}-2-setpiece-side.png` })
   }
 })
+
+// ---- E-9 gate: the Chart with a LIVED record at the crowded end (W7/W8) —
+// ---- staggered two-line labels + per-world Truth/Action pips, no collisions
+
+const E9_RECORD = {
+  chartUnlocked: true,
+  assumptions: [
+    // W1: one proven kill, one open — pips ● ○ + a tombstone
+    { id: 'g1', statement: 'Everyone has this', originStageId: 's1', importance: 'dies',
+      status: 'invalidated', killCriterion: 'k', createdAt: '2026-07-01T00:00:00.000Z' },
+    { id: 'g2', statement: 'They want a dashboard', originStageId: 's1', importance: 'hurts',
+      status: 'untested', killCriterion: 'k', createdAt: '2026-07-01T00:00:00.000Z' },
+    // W7: seven beliefs — the pip cap + "+n" tail under the crowded label
+    ...Array.from({ length: 7 }, (_, i) => ({
+      id: `g7-${i}`, statement: `W7 belief ${i}`, originStageId: 's7',
+      importance: 'hurts', status: i < 2 ? 'validated' : 'untested',
+      killCriterion: 'k', createdAt: '2026-07-01T00:00:00.000Z',
+    })),
+    // W8: one resolved on the founder's word alone — the half pip ◐
+    { id: 'g8', statement: 'The price holds', originStageId: 's8', importance: 'dies',
+      status: 'validated', killCriterion: 'k', createdAt: '2026-07-01T00:00:00.000Z' },
+  ],
+  evidence: [
+    { id: 'ev1', tier: 3, text: 'watched them do it', source: 'visit', linkedAssumptionIds: ['g1'],
+      stageId: 's1', date: '2026-07-02' },
+    ...Array.from({ length: 8 }, (_, i) => ({
+      id: `ev7-${i}`, tier: 2, text: `"quote ${i}"`, source: 'interview',
+      linkedAssumptionIds: i < 2 ? [`g7-${i}`] : [], stageId: 's7', date: '2026-07-03',
+    })),
+  ],
+}
+
+test('feel pack e9: chart at W7 and W8 — labels clear, pips honest', async ({ page }) => {
+  test.skip(PHASE !== 'e9', 'e9 shots run under FEEL_PACK_PHASE=e9')
+  mkdirSync(DIR, { recursive: true })
+
+  await seedFounderName(page)
+  await page.addInitScript(
+    ([storageKey, seedJson]) => {
+      const raw = window.localStorage.getItem(storageKey as string)
+      const data = raw === null ? {} : (JSON.parse(raw) as Record<string, unknown>)
+      window.localStorage.setItem(
+        storageKey as string,
+        JSON.stringify({ ...data, ...(JSON.parse(seedJson as string) as object) }),
+      )
+    },
+    ['founders-quest:v3', JSON.stringify(E9_RECORD)] as const,
+  )
+  for (const stage of [7, 8] as const) {
+    await page.addInitScript((n) => {
+      window.localStorage.setItem('founders-quest:journey', String(n))
+    }, stage)
+    await page.goto('/?render=constrained')
+    await waitForWorldReady(page)
+    await page.keyboard.press('KeyM')
+    await page.waitForTimeout(400)
+    await page.screenshot({ path: `${DIR}/chart-w${stage}.png` })
+    await page.keyboard.press('Escape')
+  }
+})

@@ -113,6 +113,11 @@ export const FIRST_LIGHT = {
     /** HUD button labels once the Chart is handed over */
     hudChart: 'Chart (M)',
     hudLegend: 'Legend (L)',
+    /** per-world pips (E-9) — beliefs born there, coins gathered there */
+    pipsLegend:
+      '● settled with proof · ◐ settled on your word · ○ still open — beliefs born in each world. ▪ coins gathered there.',
+    pipsTitle: (proven: number, word: number, open: number, coins: number): string =>
+      `${proven} settled with proof · ${word} on your word · ${open} open · ${coins} ${coins === 1 ? 'coin' : 'coins'} gathered`,
   },
 
   /** the Legend (L) — 7 HUD elements, plain glosses; depth behind "more" */

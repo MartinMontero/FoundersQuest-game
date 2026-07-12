@@ -19,8 +19,8 @@
 
 import { useRef } from 'react'
 import { Float, Html } from '@react-three/drei'
-import { DoubleSide } from 'three'
-import type { Group, Mesh, PointLight } from 'three'
+import { DoubleSide, Vector3 } from 'three'
+import type { Camera, Group, Mesh, Object3D, PointLight } from 'three'
 import { arenaChallenger } from '../core/confrontation'
 import { IMPORTANCE_WEIGHT, riskiest, tierOf } from '../core/metrics'
 import type { Answer, Assumption, EvidenceEntry, EvidenceTier } from '../core/schema'
@@ -1007,6 +1007,28 @@ function EgoGate({
 
 // ---- the shared highlight: ground ring + name chip + prompt chip ----
 
+/** chip half-width + margin (w-56 = 224px) and a bottom reserve, used to
+ *  CLAMP the projected chip inside the viewport (E-9, a3/06: a chip near the
+ *  screen edge used to run half off-screen). Same projection drei uses by
+ *  default, with the screen-space clamp added. */
+const CHIP_CLAMP_X = 120
+const CHIP_CLAMP_TOP = 24
+const CHIP_CLAMP_BOTTOM = 96
+const chipProject = new Vector3()
+function clampChipPosition(
+  el: Object3D,
+  camera: Camera,
+  size: { width: number; height: number },
+): [number, number] {
+  chipProject.setFromMatrixPosition(el.matrixWorld).project(camera)
+  const x = ((chipProject.x + 1) / 2) * size.width
+  const y = ((1 - chipProject.y) / 2) * size.height
+  return [
+    Math.min(Math.max(x, CHIP_CLAMP_X), size.width - CHIP_CLAMP_X),
+    Math.min(Math.max(y, CHIP_CLAMP_TOP), size.height - CHIP_CLAMP_BOTTOM),
+  ]
+}
+
 /** chip anchor height per kind (the vault hovers, so its chip sits higher) */
 function chipHeight(spec: InteractableSpec): number {
   switch (spec.kind) {
@@ -1134,6 +1156,7 @@ function HighlightRing({ reduced }: { reduced: boolean }): JSX.Element | null {
         center
         zIndexRange={[5, 0]}
         wrapperClass="pointer-events-none"
+        calculatePosition={clampChipPosition}
       >
         <div className="pointer-events-none w-56 select-none rounded border border-amber-300/50 bg-slate-950/85 px-2 py-1 text-center">
           <p className="line-clamp-2 text-2xs leading-snug text-slate-100">{chipLabel(spec)}</p>

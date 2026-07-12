@@ -186,9 +186,24 @@ celebration is currently a parchment panel over an inert backdrop).
   moment, currently absent** (game-design:87-91; SITREP:210), Ego threshold
   elevated from "flat black slab" (feel audit a5/01), Ego world-embodiment
   during the fight phases.
-- [ ] **E-9 · Chart + HUD polish:** W7/W8 label crowding fix (SITREP:70) ·
+- [x] **E-9 · Chart + HUD polish:** W7/W8 label crowding fix (SITREP:70) ·
   per-world Truth/Action pips (SITREP:70-71) · legend truncation fix (a3/07)
   · chart label collision (a3/06) · HUD spacing/typography pass.
+  DONE 2026-07-12 — Chart waypoints rebuilt: two-line sublabels (name /
+  italic epithet) on staggered baselines (even high, odd low — W8's label
+  clears the final climb), x-clamped at the road's ends; trough label moved
+  below every row. Per-world pips: ● settled-with-proof / ◐ on-your-word /
+  ○ open (derived exactly as Truth is — tierOf≥2, firstLight excluded) +
+  teal ▪ per coin gathered there, both capped at 5 with honest "+n" tails;
+  legend line under the chart; <title> tooltip per world. Chip edge-clamp
+  (a3/06 deferred piece): drei Html calculatePosition override clamps the
+  interactable chip inside the viewport. Legend scroll was already fixed in
+  E-0; HUD typography reviewed — E-0's pass stands, no further change
+  needed. Feel gate: docs/feel-packs/e9/chart-w{7,8}.png with a seeded
+  lived record (7 beliefs + 8 coins at W7 exercising the caps) — labels
+  clear, pips honest, captured on the constrained tier. Chip clamp is
+  code-reviewed + typechecked but visually UNTESTED headless (needs a
+  screen-edge walk in the human QA pass).
 - [ ] **E-10 · First Light v2:** Raven presence upgrade ONLY within CC0 —
   audit confirmed no CC0 rigged raven exists (D36) → stylized in-engine
   build or sigil evolution · Chart unfurl animation (reduced-motion gated).
