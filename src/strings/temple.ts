@@ -10,7 +10,7 @@ export const TEMPLE = {
 
   key: {
     heading: 'Your key',
-    placeholder: 'sk-ant-…',
+    placeholder: 'paste your Anthropic key',
     save: 'Keep on this device',
     saved: 'A key is kept on this device.',
     remove: 'Remove key',
