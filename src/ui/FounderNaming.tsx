@@ -69,7 +69,6 @@ function NamingCard({
     document.addEventListener('keydown', onKeyDown)
     return (): void => document.removeEventListener('keydown', onKeyDown)
     // dismiss is stable per open (renaming doesn't change mid-dialog)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [renaming])
 
   // one title for both moods (operator copy); only the actions differ by mood

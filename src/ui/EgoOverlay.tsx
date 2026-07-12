@@ -164,6 +164,7 @@ function Fight(): ReactElement {
   const markTesting = useQuestStore((s) => s.markTesting)
   const integrateEgo = useQuestStore((s) => s.integrateEgo)
   const exitEgo = useUiStore((s) => s.exitEgo)
+  const celebrate = useUiStore((s) => s.celebrate)
 
   // the Ego forms from the record as the fight opens; hpMax is pinned so the
   // phase thresholds stay stable while untested beliefs get returned mid-fight
@@ -242,6 +243,7 @@ function Fight(): ReactElement {
     if (line.trim() === '') return
     integrateEgo(line)
     setIntegrated(true)
+    celebrate('integration') // warm dawn — it sits down beside you (E-0)
   }
 
   if (integrated) {

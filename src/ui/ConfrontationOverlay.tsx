@@ -130,6 +130,7 @@ function Confrontation({ guardian }: { guardian: Assumption }): ReactElement {
   const resolve = useQuestStore((s) => s.resolveConfrontation)
   const exitArena = useUiStore((s) => s.exitArena)
   const enterRite = useUiStore((s) => s.enterRite)
+  const celebrate = useUiStore((s) => s.celebrate)
   const trough = useTrough()
   const trapRef = useFocusTrap()
 
@@ -218,6 +219,9 @@ function Confrontation({ guardian }: { guardian: Assumption }): ReactElement {
     if (outcome === undefined) return
     resolve(guardian.id)
     setStruck(outcome)
+    // the world reacts (E-0): ember catharsis or golden proof, staged beside
+    // the founder — both outcomes celebrated equal (D-D)
+    celebrate(outcome === 'invalidated' ? 'shatter' : 'pillar')
   }
 
   const criterion = guardian.killCriterion.trim()

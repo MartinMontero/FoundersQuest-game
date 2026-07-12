@@ -32,6 +32,7 @@ import { WorldColliders } from './WorldColliders'
 import { FpsSampler } from './useFps'
 import { useReducedMotion } from './useReducedMotion'
 import { useSafeFrame } from './useSafeFrame'
+import { CelebrationFx } from './CelebrationFx'
 import { useWorldSky } from './useWorldSky'
 
 const PLATEAU_RADIUS = 24
@@ -188,6 +189,7 @@ export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
       <Interactables reduced={reduced} />
       <ShadowTwin reduced={reduced} />
       <CameraRig reduced={reduced} />
+      <CelebrationFx reduced={reduced} />
       <Physics paused={paused} timeStep={1 / 60}>
         <Ground />
         {/* solid boundaries for the props/trees/monuments — the founder walks

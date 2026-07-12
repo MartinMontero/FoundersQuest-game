@@ -31,6 +31,9 @@ export type UiMode =
   | 'ego'
   | PanelMode
 
+/** the dramatic beats the world reacts to (E-0 celebration staging) */
+export type CelebrationKind = 'shatter' | 'pillar' | 'funeral' | 'integration'
+
 export interface ShadowState {
   visible: boolean
   /** the founder's own words, quoted back — drawn locally, zero network */
@@ -93,6 +96,11 @@ export interface UiState {
   /** the W8 Launch Threshold (A5) — the overlay decides offer/fight/trough */
   enterEgo(): void
   exitEgo(): void
+  /** the live celebration beat, if one is staging (E-0) — ephemeral, never stored */
+  celebration: { kind: CelebrationKind; seq: number } | null
+  /** stage a dramatic beat in the WORLD (light + particles; reduced-motion = glow only) */
+  celebrate(kind: CelebrationKind): void
+  clearCelebration(): void
   summonShadow(quote: string, action: string): void
   dismissShadow(): void
 }
@@ -178,6 +186,16 @@ export const useUiStore = create<UiState>()((set) => ({
 
   exitEgo(): void {
     set({ mode: 'roam' })
+  },
+
+  celebration: null,
+
+  celebrate(kind: CelebrationKind): void {
+    set((s) => ({ celebration: { kind, seq: (s.celebration?.seq ?? 0) + 1 } }))
+  },
+
+  clearCelebration(): void {
+    set({ celebration: null })
   },
 
   summonShadow(quote: string, action: string): void {

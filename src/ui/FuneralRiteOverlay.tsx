@@ -42,6 +42,7 @@ function Rite({ guardian }: { guardian: Assumption }): ReactElement {
   const holdFuneral = useQuestStore((s) => s.holdFuneral)
   const skipFuneral = useQuestStore((s) => s.skipFuneral)
   const exitRite = useUiStore((s) => s.exitRite)
+  const celebrate = useUiStore((s) => s.celebrate)
   const trapRef = useFocusTrap()
 
   // Esc steps away without holding OR skipping — the funeral stays pending
@@ -71,6 +72,7 @@ function Rite({ guardian }: { guardian: Assumption }): ReactElement {
   const onSeal = (): void => {
     holdFuneral(guardian.id, line)
     setStep('grant')
+    celebrate('funeral') // the world exhales — the grave is sealed (E-0)
   }
 
   const onSkip = (): void => {
