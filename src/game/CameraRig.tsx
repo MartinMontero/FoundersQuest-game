@@ -6,6 +6,7 @@
 
 import { useRef } from 'react'
 import { Vector3 } from 'three'
+import { questStore } from '../state/store'
 import { useUiStore } from '../state/ui'
 import { ARENA_POSITION, EGO_POSITION, STAGE1_LAYOUT } from './contracts'
 import { getMoveInput } from './controls'
@@ -14,6 +15,12 @@ import { useSafeFrame } from './useSafeFrame'
 
 const FOLLOW_DISTANCE = 6
 const FOLLOW_HEIGHT = 2.2
+/** Z-2 cold-open framing: while First Light is live the follow camera stands
+ *  wider and higher (an establishing shot) and — motion permitting — drifts in
+ *  a slow orbit. Completion/skip eases back to standard via the normal damp. */
+const OPENING_EXTRA_DISTANCE = 2.2
+const OPENING_EXTRA_HEIGHT = 0.7
+const OPENING_DRIFT = 0.045 // rad/s — one full circle ≈ 2.3 min; a drift, not a spin
 const LOOK_HEIGHT = 1.4
 const YAW_SPEED = 1.6 // rad/s
 const FOLLOW_DAMP = 4 // 1/s — exponential smoothing rates
@@ -100,11 +107,23 @@ export function CameraRig({ reduced }: CameraRigProps): null {
       )
       targetLook.current.set(playerWorldPos.x, playerWorldPos.y + 1.0, playerWorldPos.z)
     } else {
+      // Z-2: the cold-open establishing shot — wider, higher, slowly orbiting
+      // while the First Light overlay holds the world (the overlay traps input,
+      // so the drift is the only motion). The wider FRAME stays under reduced
+      // motion (it is a composition, not a movement); only the drift is gated.
+      const quest = questStore.getState().data
+      const openingLive =
+        quest.openingCompletedAt === null && quest.openingSkippedAt === null
+      if (openingLive && ui.mode === 'roam' && !reduced) {
+        cameraYaw.value += OPENING_DRIFT * delta
+      }
+      const distance = openingLive ? FOLLOW_DISTANCE + OPENING_EXTRA_DISTANCE : FOLLOW_DISTANCE
+      const height = openingLive ? FOLLOW_HEIGHT + OPENING_EXTRA_HEIGHT : FOLLOW_HEIGHT
       const yaw = cameraYaw.value
       targetPos.current.set(
-        playerWorldPos.x + Math.sin(yaw) * FOLLOW_DISTANCE,
-        playerWorldPos.y + FOLLOW_HEIGHT,
-        playerWorldPos.z + Math.cos(yaw) * FOLLOW_DISTANCE,
+        playerWorldPos.x + Math.sin(yaw) * distance,
+        playerWorldPos.y + height,
+        playerWorldPos.z + Math.cos(yaw) * distance,
       )
       targetLook.current.set(
         playerWorldPos.x,

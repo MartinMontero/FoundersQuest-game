@@ -38,6 +38,8 @@ declare global {
   interface Window {
     /** dev/e2e builds only — the capsule's live position (plateau/void assertions) */
     __fq_player?: { x: number; y: number; z: number }
+    /** dev/e2e builds only — Z-6 fault hook: drop the capsule into the void */
+    __fq_drop?: boolean
   }
 }
 
@@ -92,6 +94,16 @@ export function Player({ reduced }: PlayerProps): JSX.Element {
   useSafeFrame((_, delta) => {
     const rb = body.current
     if (rb === null) return
+
+    // Z-6 fault hook (DEV builds only — the e2e suite runs the dev server):
+    // setting window.__fq_drop teleports the capsule into the void so the
+    // kill-plane respawn below stops being an UNTESTED claim. No production
+    // path sets it; the flag clears itself after one use.
+    if (import.meta.env.DEV && window.__fq_drop === true) {
+      window.__fq_drop = false
+      rb.setTranslation({ x: 0, y: VOID_Y - 5, z: 0 }, true)
+      rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
+    }
 
     // safety net: if the capsule ever escapes the rim, return it to spawn —
     // a fall into the void must never strand the player (adversarial review 1)

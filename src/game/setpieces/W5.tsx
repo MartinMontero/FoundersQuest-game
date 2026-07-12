@@ -14,10 +14,18 @@
 // is index-hashed (no Math.random) so every boot and screenshot is identical.
 // Motion runs through useSafeFrame and settles fully static under `reduced`.
 // Light count is CONSTANT (two point lights, full tier only) — no recompiles.
+// The lake surface is TIER-SPLIT, and honest about it: the full tier carries a
+// true planar reflection (drei's MeshReflectorMaterial — one extra scene render
+// into a 512px target, sharp, no blur pass) so the mirrors stand in the water
+// for real. Constrained and automation draw the SAME plane as a plain dark
+// translucent standard material — the software rasteriser cannot afford a
+// second scene pass, and the feel pack shoots the constrained tier, so its
+// shots show the plain plane: expected, not a regression. Zero lights added.
 
 import { useRef } from 'react'
+import { MeshReflectorMaterial } from '@react-three/drei'
 import type { Group } from 'three'
-import { LOW_POWER } from '../perf'
+import { FULL_POWER, LOW_POWER } from '../perf'
 import { useSafeFrame } from '../useSafeFrame'
 import { skyForStage } from '../worldPalette'
 
@@ -328,10 +336,36 @@ export function SetPieceW5({ reduced }: { reduced: boolean }): JSX.Element {
   return (
     <group>
       {/* ---- the still black lake: the ONE allowed material break — glossy,
-           metal-leaning, so it reads as standing water, not stone ---- */}
+           metal-leaning, so it reads as standing water, not stone. One plane,
+           two truths (see header): the full tier gets the real reflection
+           pass; constrained/automation get plain dark translucent water — the
+           feel pack shoots constrained, so its shot shows the plain plane, by
+           design. The surface floats just above the ground so the two never
+           z-fight; the causeway pavers all clear it. ---- */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]} receiveShadow>
         <circleGeometry args={[5.2, 36]} />
-        <meshStandardMaterial color={WATER} roughness={0.15} metalness={0.4} />
+        {FULL_POWER ? (
+          // modest true mirror: 512px target, blur left at [0,0] so the blur
+          // pass never runs, depth fade off — the cheapest honest reflection
+          <MeshReflectorMaterial
+            color={WATER}
+            mirror={0.6}
+            mixStrength={0.9}
+            resolution={512}
+            depthScale={0}
+            roughness={0.15}
+            metalness={0.4}
+          />
+        ) : (
+          // the plain-water stand-in, tinted with the world's own night sky
+          <meshStandardMaterial
+            color={SKY.background}
+            transparent
+            opacity={0.85}
+            roughness={0.15}
+            metalness={0.4}
+          />
+        )}
       </mesh>
       {/* the water's edge, rimmed in the world's pale accent */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.025, 0]}>

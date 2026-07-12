@@ -84,7 +84,7 @@ test('First Light: the 11 beats produce real artifacts and hand over the Chart',
   // beat 9 — the Legend hands over; closing it advances
   await page.getByTestId('opening-continue').press('Enter') // opens the Legend
   await expect(page.getByTestId('legend-panel')).toBeVisible()
-  await expect(page.getByTestId('legend-truth')).toContainText('Only Deed and Gold')
+  await expect(page.getByTestId('legend-truth')).toContainText('Only Word and above')
   await page.keyboard.press('Escape')
 
   // beat 10 — the Chart: road, position, consent line; closing advances

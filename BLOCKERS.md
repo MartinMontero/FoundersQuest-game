@@ -107,3 +107,16 @@ QA playthrough per SITREP.md serves as the re-judgment).
   file + paste remain the universal import path on every browser. Camera
   scanning is UNTESTED in CI (headless has no camera); the encode QR display,
   file import, and paste import are e2e-tested.
+
+- **K-14 · F-12 voice capture — PARKED (constitutional, 2026-07-12):** the
+  backlog entry pre-authorized "browser SpeechRecognition only if it adds no
+  dep/service, else PARK." The "else" fires: the Web Speech API's
+  SpeechRecognition is not on-device in shipping browsers — Chrome sends the
+  microphone audio to Google's speech servers, Safari to Apple's. A founder
+  dictating journal text would have their words leave the device to a
+  service that is not on the sanctioned list (Anthropic API, Cloudflare
+  Pages, GitHub) and sits entirely outside the consent architecture. No
+  vendored library changes this — the network call lives inside the browser
+  API. Typed capture stays primary (it already is, per spec §10). If a true
+  on-device recognition API ships in browsers later, this can reopen as a
+  fresh proposal; nothing in the current build blocks that future.

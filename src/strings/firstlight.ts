@@ -5,6 +5,17 @@
 // in the asks. The mentor is the Raven (D-H) — it NEVER claims Council or
 // Cartographer authorship, and the Chart carries the consent line verbatim.
 
+/** one Legend entry — gloss always visible; "more" one fold down; "deeper" (optional)
+ *  exactly one fold further. The cap is structural: there is no fourth field. */
+export interface LegendEntry {
+  readonly id: string
+  readonly name: string
+  readonly gloss: string
+  readonly more: string
+  /** the capped third level — present only where canon has more to say */
+  readonly deeper?: string
+}
+
 export const FIRST_LIGHT = {
   /** Beat 1 — the invitation (required-but-escapable door; quiet, findable skip). */
   invitation: {
@@ -38,7 +49,10 @@ export const FIRST_LIGHT = {
     ],
     tiersIntro: [
       'Five kinds of knowing, five coins: Whisper — a hunch. Rumor — you heard it somewhere. Word — they said it to you. Deed — you watched them do it. Gold — they paid.',
-      'Only Deed and Gold — seen and paid — move the Truth bar. Hunches never move it, no matter who whispers them.',
+      // canon-accuracy fix (Z-1 review): Truth moves at E2 AND ABOVE — Word,
+      // said to YOU verbatim, counts (canon 01/02). The old line said "only
+      // Deed and Gold", understating the law the game actually enforces.
+      'Only Word and above — said to you, seen, or paid — move the Truth bar. Hunches and hearsay never move it, no matter who whispers them.',
     ],
     classifyAsk:
       'Try it. A founder tells me: “People will pay for this — my friends all said so.” Which coin is that?',
@@ -120,7 +134,8 @@ export const FIRST_LIGHT = {
       `${proven} settled with proof · ${word} on your word · ${open} open · ${coins} ${coins === 1 ? 'coin' : 'coins'} gathered`,
   },
 
-  /** the Legend (L) — 7 HUD elements, plain glosses; depth behind "more" */
+  /** the Legend (L) — 7 HUD elements, plain glosses; depth behind "more", one capped
+   *  level more behind "deeper" (only where canon has more to say; vault skips it) */
   legend: {
     title: 'The Legend',
     entries: [
@@ -129,30 +144,53 @@ export const FIRST_LIGHT = {
         name: 'The five coins (E0–E4)',
         gloss: 'Whisper: a hunch. Rumor: you heard it. Word: they said it to you. Deed: you saw them do it. Gold: they paid.',
         more: 'Tier codes never change. A guardian’s tier is derived from the evidence linked to it — never declared. Only E2 and above can ever move Truth.',
+        // deeper restates canon 02 §Computed metrics (tierOf(a) = MAX tier of linked evidence,
+        // else 0) and canon 01 §System laws (tiers derived from linked entries, never self-declared)
+        deeper:
+          'One belief, one coin: it carries the single best piece of evidence tied to it, so ten Rumors never stack into one Deed. The coin lives on the evidence; the belief only borrows it.',
       },
       {
         id: 'truth',
         name: 'The Truth bar',
-        gloss: 'Only Deed and Gold — seen and paid — move this bar. Hunches never move it, no matter who whispers them.',
+        gloss: 'Only Word and above — said to you, seen, or paid — move this bar. Hunches and hearsay never move it, no matter who whispers them.',
         more: 'Truth can sit at 0% while evidence banks. That is not a bug: evidence banked means the verdict is still ahead — it comes at the Mirror, World 5. Banked is not proven.',
+        // deeper restates canon 02 §Computed metrics (Truth = Σ weight(resolved with tier≥2) /
+        // Σ weight; weights dies=3, wobbles=2, shrugs=1 — resolved counts validated AND
+        // invalidated) and canon 01 §System laws (only E2+ moves Truth)
+        deeper:
+          'Truth is weighted by stakes: a belief the plan dies on counts three, one that wobbles it two, a shrug one. Only beliefs resolved on E2-or-better evidence move it — and a clean kill moves it just as far as a confirmation.',
       },
       {
         id: 'action',
         name: 'The Action bar',
         gloss: 'What you’ve done — milestones, self-reported. It moves easily. That’s the danger.',
         more: 'Action never feeds Truth or XP. When Action runs far ahead of Truth, the Shadow stirs.',
+        // deeper restates canon 01 §System laws (dual progress: Truth leads; Action —
+        // milestones, self-reported — follows)
+        deeper:
+          'Truth leads; Action follows — that order is law. Milestones are self-reported: checked, not proven. A full Action bar over a flat Truth bar measures motion, not knowing.',
       },
       {
         id: 'shadow',
         name: 'The Shadow',
         gloss: 'When you do much but know little — high Action, low Truth — a rival stirs. Not to punish you. To remind you.',
         more: 'The Shadow holds fire in the trough (when your last three weather readings average low). It quotes only your own words back to you.',
+        // deeper restates canon 01 §System laws (gates warn, never block; overrides require a
+        // written reason, are logged to the trail, and appear in exports)
+        deeper:
+          'Nothing on this road ever bars your way — gates warn, never block. Walking past one asks a written reason, kept in your trail and carried in your exports. The Shadow keeps the same law: a mirror, never a wall.',
       },
       {
         id: 'weather',
         name: 'The Weather Trail',
         gloss: 'Your mood, logged at the campfire. The road dips in the middle for everyone. When it dips, the game eases off.',
         more: 'Every tap is kept. The trough is read from your last three readings — it suppresses pressure, never adds it.',
+        // deeper restates canon 01 §System laws (cadence: pressure belongs on the upswing,
+        // never in the trough; the Shadow holds fire at rain-or-worse) and canon 02
+        // §Computed metrics (trough = mean of last ≤3 weather values ≤ 2; suppresses the
+        // Shadow, surfaces Side Quests)
+        deeper:
+          'Pressure belongs on the upswing, never in the trough. When your last three readings average rain-or-worse, the Shadow holds fire and side quests step forward — the game eases until the road climbs again.',
       },
       {
         id: 'vault',
@@ -165,9 +203,15 @@ export const FIRST_LIGHT = {
         name: 'XP',
         gloss: 'You earn more for killing a belief than confirming one. Fifteen for a kill, ten for a confirm. Wrong maps get you lost.',
         more: 'Only beliefs resolved with E2+ evidence pay. Side quests pay five. XP never moves Truth.',
+        // deeper restates canon 01 §System laws (invalidation pays 1.5× validation) and
+        // canon 01 §Question design laws #8 (killed assumptions make the map truer)
+        deeper:
+          'The rate is law, not tuning: a kill pays one-and-a-half times a confirmation, always. Being proven wrong pays better than being proven right, because a dead belief makes the map truer.',
       },
-    ],
+    ] as readonly LegendEntry[],
     moreLabel: 'more',
     lessLabel: 'less',
+    deeperLabel: 'even deeper',
+    shallowerLabel: 'enough',
   },
 } as const

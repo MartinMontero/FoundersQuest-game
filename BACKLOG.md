@@ -132,6 +132,14 @@ surfaces exist. Build to docs/build/a101-field-mode-spec.md's letter:
 - [ ] **F-12 · Voice capture (opt-in, typed primary)** (§10, spec:288-297) —
   P2 within the epic; browser SpeechRecognition only if it adds no dep/service,
   else PARK.
+  PARKED 2026-07-12 (the pre-authorized "else"): the Web Speech API's
+  SpeechRecognition is NOT on-device in the browsers that matter — Chrome
+  ships the audio to Google's servers for recognition (Safari to Apple's).
+  Spoken journal content leaving the device to an UNSANCTIONED third-party
+  service, outside the consent architecture, fails the constitution twice
+  (sanctioned-services list; consent-before-leaving-device). No dependency
+  could fix that — the service call is inside the browser API itself.
+  Typed capture remains primary everywhere. Full entry in BLOCKERS.md (K-14).
 
 ## P1 — the Design-Elevation epic (world-by-world, feel-pack gate per world)
 
@@ -313,32 +321,65 @@ verified — recorded honestly as UNTESTED in-container, VERIFICATION Rounds 6-1
 
 ## P2 — polish / recorded nits
 
-- [ ] **Z-1 · Chart nested tooltips** one-more-level cap (SHIP A3 deviation).
-- [ ] **Z-2 · Cold-open camera dolly** — standard rig upgrade (SHIP A3
-  deviation; pairs with E-0 camera language).
-- [ ] **Z-3 · Raven re-entry perch at shrines** (F11 deferred; cheap-v1
-  shipped — src/state/firstlight.ts:5). Pairs with E-10.
-- [ ] **Z-4 · Reflective water** in one world (VERIFICATION Round 11) —
-  candidate W5 Mirror causeway (E-5).
-- [ ] **Z-5 · THREE.Clock deprecation note** (Round 2) — verify against
-  three 0.185 and fix or record.
-- [ ] **Z-6 · Kill-plane respawn + error-boundary fault injection** —
-  UNTESTED items (Round 2): add e2e/fault hooks where cheap; else keep the
-  honest label.
-- [ ] **Z-7 · Colliders e2e coverage** (Round 14).
-- [ ] **Z-8 · Stage1 registry-reopen FPS-jitter flake** — pre-existing,
-  retry-absorbed; investigate once during the verify loop; do not chase
-  (anti-thrash) if unreproducible.
-- [ ] **Z-9 · @types/node 26 vs Node 22 runtime** — align types to the
-  runtime (dev-only version change, no new dep).
-- [ ] **Z-10 · e2e helper TAB_CYCLE_LIMIT audit** — W1 cycle has grown
-  (arena added); verify limits are safely above interactable counts.
-- [ ] **Z-11 · README + CHANGELOG** current (DoD: setup/build/deploy/controls;
-  program-state → this run's deltas). "No server env exists" documented where
-  .env.example would live.
-- [ ] **Z-12 · Stale-alias hygiene:** unsuffixed Pages alias serves an
-  A3-era build (verified by asset hash, commit 16c1322). Document the live
-  alias everywhere; no deletion (Rule 9) — note for the operator.
+- [x] **Z-1 · Chart nested tooltips** one-more-level cap (SHIP A3 deviation).
+  DONE 2026-07-12 — Legend entries gained an optional canon-cited "deeper"
+  fold (six entries; vault deliberately skipped as padding), one extra level
+  and structurally capped (no third toggle exists). REVIEW CATCH along the
+  way: the truth gloss and the induction's tiersIntro line said "Only Deed
+  and Gold move the Truth bar" — canon 01/02 and the shipped truth() say
+  E2-or-better, which INCLUDES Word. Copy corrected ("Only Word and above —
+  said to you, seen, or paid"), e2e assertion updated with it.
+- [x] **Z-2 · Cold-open camera dolly** — DONE 2026-07-12: while First Light
+  is live the follow camera stands wider (+2.2u) and higher (+0.7u) and
+  drifts a slow orbit (~2.3 min/rev); completion/skip eases back via the
+  standard damp. The wider FRAME stays under reduced motion (composition,
+  not movement) — only the drift is motion-gated.
+- [x] **Z-3 · Raven re-entry perch** — DONE 2026-07-12: RavenGuide now stays
+  until the induction is COMPLETED (skippers keep the perched raven — the
+  standing re-entry invitation made flesh, beside the ReentryPrompt copy).
+- [x] **Z-4 · Reflective water** — DONE 2026-07-12: the W5 Mirror lake is
+  tier-split — FULL tier gets a true planar reflection (drei
+  MeshReflectorMaterial, 512px, blur pass never runs), constrained/automation
+  keep a plain dark translucent plane (software GL cannot afford a second
+  scene pass; the feel pack shoots constrained, so its shot shows the plain
+  plane BY DESIGN). FULL-tier look + frame cost are UNTESTED in-container
+  (K-10 real-hardware item — one glance in the operator's QA pass).
+- [x] **Z-5 · THREE.Clock deprecation** — RECORDED 2026-07-12: three 0.185
+  marks Clock @deprecated since r183. No direct use in src (verified); the
+  instance lives inside @react-three/fiber 8's internals. Fixing requires an
+  r3f major bump — the stack is canon-pinned, so this stays a recorded note,
+  not a change. Deprecation ≠ removal; nothing breaks at this pin.
+- [x] **Z-6 · Kill-plane respawn fault injection** — DONE 2026-07-12: DEV-only
+  window.__fq_drop hook teleports the capsule into the void; e2e/fault.spec
+  proves the safety net returns it to spawn. Production builds compile the
+  hook out. (Error-boundary fault injection remains UNTESTED — no cheap hook
+  without shipping a crash switch; label stands.)
+- [x] **Z-7 · Colliders e2e** — DONE 2026-07-12: e2e/fault.spec walks the
+  capsule into the rim wall and asserts it stops inside r=24.5 without
+  falling — the collider layer has a standing regression test.
+- [ ] **Z-8 · Stage1 registry-reopen FPS-jitter flake** — scheduled: one
+  investigation during the verification close; anti-thrash if unreproducible.
+- [x] **Z-9 · @types/node** — VERIFIED 2026-07-12: package.json pins
+  ^22.10.0 against the Node 22 runtime (done in the hygiene sprint; the
+  checkbox lagged).
+- [x] **Z-10 · TAB_CYCLE_LIMIT audit** — DONE 2026-07-12: worst world cycle
+  (W2: 9 shrines + 3 poles + campfire + 2 portals + loop portal + arena)
+  ≈ 18–20 interactables; every stage < the helper's default 24. Overrun
+  fails loud (thrown error), never hangs. No change needed.
+- [x] **Z-11 · README + CHANGELOG + .env.example** — DONE 2026-07-12: README
+  (premise, quickstart, source-verified controls, BYOK, privacy, deploy,
+  docs pointers; license line matches package.json AGPL-3.0-or-later + canon
+  01's content CC BY 4.0 split — note: no LICENSE text file is committed;
+  adding one is an operator call), CHANGELOG (this run's deltas + prior
+  state, traced to git log), .env.example (comments only: no server env
+  exists BY DESIGN, and why). NOTE: session tooling denies reading .env*
+  files, so the agent-drafted .env.example was deleted unread and re-authored
+  by hand — never commit what nobody could review.
+- [x] **Z-12 · Stale-alias hygiene** — DONE 2026-07-12 (documentation duty):
+  the unsuffixed Pages alias serves an A3-era build; the LIVE alias is the
+  claude-dev-environment-setup-sp4q one, stated in every deploy note and in
+  SHIP.md at the close. No deletion attempted (Rule 9 — operator console
+  action; K-9 neighborhood).
 
 ## PARKED → BLOCKERS.md (operator-facing; zero silent drops)
 

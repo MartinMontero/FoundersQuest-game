@@ -5,10 +5,11 @@
 // ravens — cone body, sphere head, cone beak — at ~1.5x scale, perched on a
 // dead snag beside the threshold shrine (s1-th), visible from spawn looking
 // toward the dialogue frame. Exactly two distinguishing tells: a tiny amber
-// eye and a small rolled chart at its feet. It exists ONLY while First Light
-// is live (openingCompletedAt and openingSkippedAt both null); the moment the
-// induction completes or is skipped it renders null — the dialogue already
-// says it flies ahead, and the W2 rookery carries the corvid continuity.
+// eye and a small rolled chart at its feet. It perches until the induction is
+// COMPLETED — for a skipper it stays (Z-3: the standing re-entry invitation
+// made flesh; the ReentryPrompt copy offers the return). On completion it
+// renders null — the dialogue already says it flies ahead, and the W2 rookery
+// carries the corvid continuity.
 // Pure scenery: no store writes, no interaction, no text, ZERO new lights.
 // Idle bob (≤0.05u) + occasional head tilt derive from clock.elapsedTime only
 // (deterministic — no Math.random, no Date.now) and go dead still under
@@ -57,10 +58,10 @@ const FACE_SPAWN_YAW = 0.19
 const PERCH_Y = 1.64
 
 export function RavenGuide(): JSX.Element | null {
-  // First Light live = neither completed nor skipped; either stamp ends it
-  const live = useQuestStore(
-    (s) => s.data.openingCompletedAt === null && s.data.openingSkippedAt === null,
-  )
+  // The raven stays until the induction is COMPLETED (Z-3: for a skipper it
+  // keeps the perch — the standing re-entry invitation made flesh; the
+  // ReentryPrompt copy already offers the return). Completion alone ends it.
+  const live = useQuestStore((s) => s.data.openingCompletedAt === null)
   const reduced = useReducedMotion()
   const bird = useRef<Group>(null)
   const head = useRef<Group>(null)
