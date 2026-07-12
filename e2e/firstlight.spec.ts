@@ -119,6 +119,13 @@ test('First Light: the 11 beats produce real artifacts and hand over the Chart',
   await expect(page.getByTestId('hud-chart')).toBeVisible()
   await page.keyboard.press('KeyM')
   await expect(page.getByTestId('chart-panel')).toBeVisible()
+  // E-10: the road unrolls like parchment — asserted by computed style (the
+  // 650ms animation outruns software-GL screenshot latency, so the feel pack
+  // records only the settled frame; this is the machine check that it runs)
+  const unfurl = await page
+    .getByTestId('chart-road')
+    .evaluate((el) => getComputedStyle(el).animationName)
+  expect(unfurl).toContain('quest-unfurl')
   await page.keyboard.press('Escape')
 
   expect(log.consoleErrors).toEqual([])

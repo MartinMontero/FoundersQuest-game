@@ -110,8 +110,9 @@ export function ChartPanel(): ReactElement {
         </p>
       ) : null}
 
-      {/* the road — one winding line, dipping W4–W6 (D-K) */}
-      <div className="quest-aside mt-4 overflow-x-auto p-2">
+      {/* the road — one winding line, dipping W4–W6 (D-K); unrolls like
+          parchment on open (E-10), instant under reduced motion */}
+      <div data-testid="chart-road" className="quest-aside mt-4 overflow-x-auto p-2 motion-safe:animate-quest-unfurl">
         <svg
           viewBox="0 0 800 300"
           role="img"

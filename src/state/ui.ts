@@ -18,6 +18,7 @@ export type PanelMode =
   | 'panel:legend'
   | 'panel:field'
   | 'panel:council'
+  | 'panel:credits'
 // 'gate' = an Act-Gate threshold; 'loop' = a named loop's toll-portal. Both are
 // modal (mode !== 'roam' freezes the world), and both carry a payload below.
 // 'arena' = the Proving Circle (A4 confrontation); 'rite' = the Funeral rite;

@@ -204,11 +204,35 @@ celebration is currently a parchment panel over an inert backdrop).
   clear, pips honest, captured on the constrained tier. Chip clamp is
   code-reviewed + typechecked but visually UNTESTED headless (needs a
   screen-edge walk in the human QA pass).
-- [ ] **E-10 · First Light v2:** Raven presence upgrade ONLY within CC0 —
+- [x] **E-10 · First Light v2:** Raven presence upgrade ONLY within CC0 —
   audit confirmed no CC0 rigged raven exists (D36) → stylized in-engine
   build or sigil evolution · Chart unfurl animation (reduced-motion gated).
-- [ ] **E-11 · Attribution page** (game-design:215): in-game credits for CC0/
+  DONE 2026-07-12 — the Cartographer is now PHYSICALLY in the world for the
+  induction: src/game/RavenGuide.tsx, stylized in-engine (W2 rookery
+  silhouette at 2.2x — first capture at 1.5x read as a speck, recaptured),
+  perched on a dead snag spawn-ward of the threshold shrine, amber eye +
+  rolled chart tells, deterministic clock-only bob/head-tilt, static under
+  reduced motion, zero new lights, box stand-in on the automation tier,
+  self-gated to openingCompletedAt/SkippedAt both null (it "flies ahead"
+  when First Light ends — the W2 ravens carry continuity). Chart unfurl:
+  650ms clip-path parchment unroll, motion-safe only; machine-checked by
+  computed-style assertion in firstlight e2e (the animation outruns
+  software-GL screenshot latency, so the feel pack records the settled
+  frame). Feel gate: docs/feel-packs/e10/ (raven at first light over the
+  live world, settled chart, credits page).
+- [x] **E-11 · Attribution page** (game-design:215): in-game credits for CC0/
   KayKit assets; per-pack license verification where marked VERIFY-ONLINE.
+  DONE 2026-07-12 — src/ui/CreditsPanel.tsx + src/strings/credits.ts
+  (mirrors CREDITS.md + VENDORED.md exactly; changing those files means
+  updating credits.ts in the same commit), opened from the campfire desk
+  (campfire-credits). Sections: models/environment/textures + honest
+  audio line (all sound procedural, nothing to license) + vendored-code
+  section (qrcode-generator 2.0.4 MIT — plainly marked as the one
+  non-CC0 entry, DENSO WAVE trademark line verbatim). CREDITS.md gained
+  the same audio + vendored-code sections. No VERIFY-ONLINE marks were
+  outstanding — every pack already carried its verified license from
+  vendoring time. e2e: campfire spec opens the page and asserts author,
+  MIT token, and trademark line.
 
 Per-world gate: feel pack captured on the FIXED tier, self-audited vs §4 +
 elevation criteria; a failing world is not done. ≥30fps on modest hardware

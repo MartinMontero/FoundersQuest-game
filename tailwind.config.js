@@ -123,6 +123,11 @@ export default {
             boxShadow: '0 0 0 2px rgba(245,201,116,0.9), 0 0 20px rgba(242,182,74,0.65)',
           },
         },
+        // the Chart unrolls like parchment, top to bottom (E-10) — enter only
+        'quest-unfurl': {
+          '0%': { clipPath: 'inset(0 0 96% 0)', opacity: '0.5' },
+          '100%': { clipPath: 'inset(0 0 0% 0)', opacity: '1' },
+        },
       },
       animation: {
         // paired with motion-safe: — never runs under prefers-reduced-motion
@@ -131,6 +136,8 @@ export default {
         'quest-sigil': 'quest-sigil 2.6s ease-in-out infinite',
         // paired with motion-safe: on the banked Truth track
         'quest-truth-glow': 'quest-truth-glow 2.8s ease-in-out infinite',
+        // paired with motion-safe: — the Chart's parchment unroll (E-10)
+        'quest-unfurl': 'quest-unfurl 650ms cubic-bezier(0.25,0.8,0.3,1)',
       },
       zIndex: {
         // QuestStyles z-layer ladder — components use these names, never ad-hoc numbers.

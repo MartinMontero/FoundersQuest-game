@@ -63,6 +63,15 @@ test('Campfire hub: weather appends, a field note + Dinner Card save, a side que
   // the journal export desk exists (its markdown is unit-tested via buildJournalMd)
   await expect(page.getByTestId('campfire-export')).toBeVisible()
 
+  // the attribution page (E-11): opens from the desk, honest about the one
+  // non-CC0 entry (MIT vendored encoder), closes back to the world
+  await page.getByTestId('campfire-credits').press('Enter')
+  await expect(page.getByTestId('credits-panel')).toBeVisible()
+  await expect(page.getByTestId('credits-models')).toContainText('Kay Lousberg')
+  await expect(page.getByTestId('credits-code')).toContainText('MIT')
+  await expect(page.getByTestId('credits-code-notes')).toContainText('DENSO WAVE')
+  await page.getByTestId('credits-close').press('Enter')
+
   const data = await readData(page)
   expect(data.weather.map((w) => w.value)).toEqual([1, 4]) // both taps kept, in order
   expect(data.fieldNotes['s2']).toBe(NOTE)

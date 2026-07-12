@@ -10,7 +10,7 @@ import type { WeatherEntry } from '../core/schema'
 import { useJourneyStore } from '../state/journey'
 import { questStore, useQuestData, useQuestStore } from '../state/store'
 import { useUiStore } from '../state/ui'
-import { AUDIO, DEVICE, FIRST_LIGHT, SIDE_QUESTS, SIDE_QUESTS_RULE, UI, WEATHER_LABELS } from '../strings'
+import { AUDIO, CREDITS, DEVICE, FIRST_LIGHT, SIDE_QUESTS, SIDE_QUESTS_RULE, UI, WEATHER_LABELS } from '../strings'
 import { readAudioSettings, writeAudioSettings } from '../audio/AudioDirector'
 import { installOffered, isPersisted, promptInstall, requestPersistence, subscribeInstall } from '../pwa'
 import { DialogShell } from './TrancePanel'
@@ -38,6 +38,7 @@ export function CampfirePanel(): ReactElement {
   const completeSideQuest = useQuestStore((s) => s.completeSideQuest)
   const setDinnerCard = useQuestStore((s) => s.setDinnerCard)
   const closePanel = useUiStore((s) => s.closePanel)
+  const openPanel = useUiStore((s) => s.openPanel)
   const titleId = useId()
 
   const stageId = `s${stage}`
@@ -207,14 +208,25 @@ export function CampfirePanel(): ReactElement {
       {/* ---- journal export desk: a local Markdown download ---- */}
       <fieldset className="quest-aside mt-4 p-4">
         <legend className="quest-label px-1.5 text-2xs">{UI.campfire.exportLegend}</legend>
-        <button
-          type="button"
-          data-testid="campfire-export"
-          onClick={() => downloadJournal(buildJournalMd(data, 'full'))}
-          className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
-        >
-          {UI.campfire.exportDownload}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            data-testid="campfire-export"
+            onClick={() => downloadJournal(buildJournalMd(data, 'full'))}
+            className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
+          >
+            {UI.campfire.exportDownload}
+          </button>
+          {/* the attribution page (E-11) lives on the same desk — it is paper */}
+          <button
+            type="button"
+            data-testid="campfire-credits"
+            onClick={() => openPanel('panel:credits')}
+            className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
+          >
+            {CREDITS.title}
+          </button>
+        </div>
         <p className="mt-2 text-2xs text-ink-faint">{UI.campfire.exportHint}</p>
       </fieldset>
 

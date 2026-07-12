@@ -347,6 +347,61 @@ const E9_RECORD = {
   ],
 }
 
+// ---- E-10/E-11 gate: the Cartographer's raven present at First Light, the
+// ---- chart mid-unfurl, and the credits page — all on the constrained tier
+
+test('feel pack e10: raven at the threshold, chart unfurl, credits page', async ({ page }) => {
+  test.skip(PHASE !== 'e10', 'e10 shots run under FEEL_PACK_PHASE=e10')
+  test.setTimeout(600_000) // three full world boots on software GL
+  mkdirSync(DIR, { recursive: true })
+
+  // 1: the raven during the DIALOGUE (letterboxed, world visible — the
+  // invitation card blurs the backdrop, so the shot comes after accepting)
+  await seedFounderName(page, 'Tester', { freshOpening: true })
+  await page.goto('/?render=constrained')
+  await waitForWorldReady(page)
+  await page.waitForTimeout(2500) // rogue + raven settle
+  await page.getByTestId('opening-accept').press('Enter')
+  await page.waitForTimeout(1400) // typewriter inks; camera holds the world
+  await page.screenshot({ path: `${DIR}/01-raven-at-first-light.png` })
+
+  // 2: the settled chart (the 650ms unfurl itself outruns software-GL
+  // screenshot latency — its presence is asserted by computed style in the
+  // firstlight e2e instead; the shot records the destination frame)
+  await page.evaluate(() => {
+    const raw = window.localStorage.getItem('founders-quest:v3')
+    const data = raw === null ? {} : (JSON.parse(raw) as Record<string, unknown>)
+    window.localStorage.setItem(
+      'founders-quest:v3',
+      JSON.stringify({
+        ...data,
+        openingCompletedAt: '2026-07-11T00:00:00.000Z',
+        openingBeatProgress: null,
+        chartUnlocked: true,
+        invitationSeen: true,
+      }),
+    )
+  })
+  await page.reload()
+  await waitForWorldReady(page)
+  await page.keyboard.press('KeyM')
+  await page.waitForTimeout(1000)
+  await page.screenshot({ path: `${DIR}/02-chart-settled.png` })
+  await page.keyboard.press('Escape')
+
+  // 3: the credits page — from the campfire desk (W2: W1 has no campfire)
+  await page.addInitScript(() => {
+    window.localStorage.setItem('founders-quest:journey', '2')
+  })
+  await page.reload()
+  await waitForWorldReady(page)
+  await tabToTarget(page, 'campfire')
+  await page.keyboard.press('KeyE')
+  await page.getByTestId('campfire-credits').press('Enter')
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: `${DIR}/03-credits.png` })
+})
+
 test('feel pack e9: chart at W7 and W8 — labels clear, pips honest', async ({ page }) => {
   test.skip(PHASE !== 'e9', 'e9 shots run under FEEL_PACK_PHASE=e9')
   mkdirSync(DIR, { recursive: true })

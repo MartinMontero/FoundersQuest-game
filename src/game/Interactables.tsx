@@ -28,6 +28,7 @@ import { EARNED_HUNCH_BUMP } from '../state/tunables'
 import { useQuestStore, useRiskiest } from '../state/store'
 import { useUiStore } from '../state/ui'
 import { STAGES, WORLD_COPY } from '../strings'
+import { RavenGuide } from './RavenGuide'
 import {
   REGISTRY_POSITION,
   layoutForStage,
@@ -1241,6 +1242,8 @@ export function Interactables({ reduced }: InteractablesProps): JSX.Element {
   const SetPiece = setPieceForStage(stage)
   return (
     <group>
+      {/* the Cartographer's raven — First Light only, self-gated (E-10) */}
+      {stage === 1 ? <RavenGuide /> : null}
       {SetPiece !== null ? (
         <group position={[SETPIECE_ANCHOR[0], SETPIECE_ANCHOR[1], SETPIECE_ANCHOR[2]]}>
           <SetPiece reduced={reduced} />

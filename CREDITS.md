@@ -25,6 +25,18 @@ fetched at runtime — every asset ships in the static bundle, same-origin, so t
   **Poly Haven** (albedo + OpenGL normal + packed AO/rough/metal). **CC0.** The
   tiled plateau ground.
 
+## Audio
+No audio assets ship: every ambient bed and UI cue is **procedural WebAudio,
+synthesized in code** (silence is the default until the player opts in at the
+campfire). Nothing to license.
+
+## Vendored code
+- **`src/vendor/qrcode-generator/`** — qrcode-generator **2.0.4** by
+  **Kazuhiko Arase**. **MIT** (not CC0 — license header retained in the file;
+  provenance + checksums in the folder's `VENDORED.md`). Encodes the Field-Mode
+  beam QR frames. 'QR Code' is a registered trademark of DENSO WAVE
+  INCORPORATED.
+
 ## Sourcing note (this build environment)
 The CC0 asset marketplaces (kaykit.itch.io, polyhaven.com, quaternius.com,
 poly.pizza, jsDelivr) are **egress-blocked in the build container**;
