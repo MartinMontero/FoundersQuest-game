@@ -33,6 +33,11 @@ export const EGO = {
     ghostLine: 'It summons what you never laid to rest.',
     ledgerHint: 'Cite what you hold. The phase decides what can land.',
     ledgerEmpty: 'You hold no evidence at all. It smiles with your mouth.',
+    /** M-4 — the heavy attack, scaled by the DERIVED Action-Truth divergence */
+    pressureNone: 'It circles, finding no opening — your Action never outran your Truth.',
+    pressureLow: 'It presses: “You moved faster than you knew.” The gap is small. It knows it.',
+    pressureHigh:
+      'It swings the whole distance at you: “LOOK how far you ran ahead of what you tested.” The heaviest thing it holds is your own gap.',
     cite: 'Cite',
     cited: 'Cited',
     /** B2 holds against the Ego too — the bounce teaches, nothing more */

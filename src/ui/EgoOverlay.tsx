@@ -293,6 +293,16 @@ function Fight(): ReactElement {
         ) : null}
       </div>
 
+      {/* M-4: the heavy attack IS the founder's own divergence, spoken (derived,
+          never stored; pre-written lines only — D-E) */}
+      <p data-testid="ego-pressure" className="mt-1 text-2xs italic text-ink-faint">
+        {ego.divergence <= 0.01
+          ? EGO.fight.pressureNone
+          : ego.divergence < 0.4
+            ? EGO.fight.pressureLow
+            : EGO.fight.pressureHigh}
+      </p>
+
       {/* the phase — its title and the Ego's pre-written line */}
       <h2 data-testid="ego-phase" className="quest-heading mt-3 text-lg font-semibold">
         {phaseCopy.title}

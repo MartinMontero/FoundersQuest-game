@@ -51,28 +51,28 @@ silent drops (DoD).
 Schema keys landed (huntList/fieldJournal/momentum/fieldDay — 02:81); zero
 surfaces exist. Build to docs/build/a101-field-mode-spec.md's letter:
 
-- [ ] **F-1 · Hunt list + slot lifecycle** (§2, spec:93-127): profiles
+- [x] **F-1 (DONE 2026-07-12: addHuntProfile + slot lifecycle, tests/field.spec.ts) · Hunt list + slot lifecycle** (§2, spec:93-127): profiles
   (never persons), cold/warm-intro slots, spawned-by-attempt evolution,
   open→attempted→hollow|filled states. Acceptance: spec §2 states round-trip
   in founders-quest:v3; unit + e2e.
-- [ ] **F-2 · Field journal — attempts logged BEFORE outcome** (§3 accounting
+- [x] **F-2 (DONE 2026-07-12: A1-A4 each unit-tested; logged-before-outcome structural) · Field journal — attempts logged BEFORE outcome** (§3 accounting
   contract A1-A4, spec:130-143 — BINDING): `startedAt` precedes outcome
   structurally (an attempt cannot be created resolved); a rejection still
   fills the slot; tiers stay the only Truth path. Acceptance: the A1-A4
   invariants each ship as a unit test.
-- [ ] **F-3 · Momentum lantern** (§6, spec:191-214): 0–7, decay tick, trough
+- [x] **F-3 (DONE 2026-07-12: tickMomentum grace+decay, trough freeze tested; lantern renderer rides the panel) · Momentum lantern** (§6, spec:191-214): 0–7, decay tick, trough
   freeze (cadence law), NO breakable streak; desktop lantern renderer
   (game-design:37). Display chrome §14.5 is OPEN → resolve within the ruling
   or park. Acceptance: momentum never touches Truth/XP/Action (test), trough
   freezes decay (test).
-- [ ] **F-4 · Field Day** (§7, spec:217-227): capture sprint, goal attempts,
+- [x] **F-4 (DONE 2026-07-12: start/endFieldDay + honest closure tallies) · Field Day** (§7, spec:217-227): capture sprint, goal attempts,
   retro; no confidential class (ruling). Acceptance: spec states + log
   round-trip; e2e.
 - [ ] **F-5 · Rarity ladder + Legendary funeral path** (§4, spec:147-163):
   display-only rarity (tier drives mechanics — schema comment already
   enforces). Acceptance: rarity never enters metrics (test).
 - [ ] **F-6 · Encounter taxonomy, introvert-inclusive** (§5, spec:165-188).
-- [ ] **F-7 · Import pipeline** (§8, spec:229-262 — BINDING): envelope,
+- [x] **F-7 (DONE 2026-07-12: core/fieldImport.ts — 7 rules + atomic F-103, tests/field-import.spec.ts; preview/confirm UI rides the panel) · Import pipeline** (§8, spec:229-262 — BINDING): envelope,
   preview + confirm, provenance badge, append-only dedupe, the seven
   integrity rules. **F-103 derived-provenance invariant** (§12, operator-
   injected): no evidence enters by ANY import path without atomic
@@ -90,7 +90,7 @@ surfaces exist. Build to docs/build/a101-field-mode-spec.md's letter:
   service worker (no new deps), A2HS prompt, transfer-first framing for
   eviction risk. Acceptance: SW registers/updates cleanly; no cache poisoning
   of index.html (documented strategy); e2e smoke.
-- [ ] **F-10 · Serializer '## Field journal' section** (§11, spec:301-312;
+- [x] **F-10 (VERIFIED already shipped in Phase 1: serializer.ts pushFieldJournal, full+compact, tests/serializer.spec.ts:459) · Serializer '## Field journal' section** (§11, spec:301-312;
   02:101): full + compact modes. Acceptance: serializer tests extended;
   Family-Dinner exclusion untouched (guard stays green).
 - [ ] **F-11 · Responsive/mobile-usable DOM for all Field Mode surfaces**
@@ -198,7 +198,7 @@ verified — recorded honestly as UNTESTED in-container, VERIFICATION Rounds 6-1
   arena poise/window pacing eases per held funeral of that stage — poise is
   session presentation, not a metric). If even that reads metric-adjacent
   during build: PARK to BLOCKERS.
-- [ ] **M-4 · Ego divergence-scaled heavy attacks:** derived divergence is
+- [x] **M-4 (DONE 2026-07-12: ego-pressure line scaled by derived divergence, pre-written D-E strings; ego e2e green) · Ego divergence-scaled heavy attacks:** derived divergence is
   computed but unused in the fight (src/core/ego.ts:93 note) — surface it as
   the heavy-attack presentation in phases (pre-written lines scale). No
   formula change.
