@@ -30,14 +30,14 @@ silent drops (DoD).
   clean (`gitleaks detect --no-git` and `gitleaks detect`, no leaks found).
   CI already scans history (fetch-depth 0). Acceptance: every close run
   records both. DONE — keep in the verify loop.
-- [ ] **P0-3 · §3 banned outcome LIVE in product: stock textarea resize grip.**
+- [x] **P0-3 (DONE 2026-07-11: resize:none law + guard; packs recaptured) · §3 banned outcome LIVE in product: stock textarea resize grip.**
   Feel-pack review: a3/05-trance-frame.png shows the default browser resize
   grip on the trance textarea — art-direction §3 bans default-browser
   controls; the Mission text repeats it ("zero default-browser controls
   anywhere"). This is in the shipped UI, not just the record. Acceptance:
   `resize-none` (or styled equivalent) on every textarea; feel-shot re-capture
   confirms; a static grep-style check keeps it out.
-- [ ] **P0-4 · Banned capsule protagonist in the archived feel record.**
+- [x] **P0-4 (DONE 2026-07-11: constrained-tier capture; all packs recaptured, rogue in frame) · Banned capsule protagonist in the archived feel record.**
   Root cause found: the capture/automation tier skips rogue.glb and renders
   the CapsuleAvatar fallback (src/game/Player.tsx:174); 10 of 23 archived
   shots show a visible-primitive protagonist → auto-fail §4.3/§4.8
