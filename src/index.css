@@ -100,12 +100,28 @@
   .quest-heading {
     font-family: theme('fontFamily.display');
     color: theme('colors.ink.DEFAULT');
-    letter-spacing: 0.005em;
+    letter-spacing: 0.012em;
+    text-wrap: balance;
   }
   .quest-eyebrow {
     font-family: theme('fontFamily.display');
     text-transform: uppercase;
     letter-spacing: 0.22em;
+  }
+  /* the crafted rule under every panel's eyebrow — one hairline, ink fading
+     to nothing, with a small diamond stud at its head (E-0 typography pass:
+     deliberate craft on every diegetic surface, zero markup changes) */
+  .quest-eyebrow::after {
+    content: '';
+    display: block;
+    height: 1px;
+    margin-top: 0.4rem;
+    background: linear-gradient(
+      90deg,
+      rgba(107, 79, 46, 0.5),
+      rgba(107, 79, 46, 0.08) 62%,
+      transparent
+    );
   }
   /* the mechanic note as a margin annotation — italic, faint, a small ink rule */
   .quest-note {

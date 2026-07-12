@@ -58,6 +58,9 @@ export default {
           400: '#3fd9c8',
           500: '#22b3a3',
           600: '#178a7e',
+          /* ink-side rungs — teal that reads on parchment (E-0 typography) */
+          700: '#116b62',
+          800: '#0d5049',
         },
       },
       fontFamily: {

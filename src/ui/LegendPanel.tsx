@@ -32,7 +32,7 @@ export function LegendPanel(): ReactElement {
         {FIRST_LIGHT.legend.title}
       </h2>
 
-      <ul className="mt-4 flex flex-col gap-2">
+      <ul className="mt-4 flex max-h-[62vh] flex-col gap-2 overflow-y-auto pr-1">
         {FIRST_LIGHT.legend.entries.map((entry) => {
           const open = openId === entry.id
           return (

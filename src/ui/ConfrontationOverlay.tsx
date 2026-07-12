@@ -303,11 +303,14 @@ function Confrontation({ guardian }: { guardian: Assumption }): ReactElement {
               {pressing ? (
                 <section data-testid="arena-press" className="mt-3">
                   {counter !== null ? (
-                    <p aria-live="polite" className="text-sm italic text-teal-200/90">
+                    <p
+                      aria-live="polite"
+                      className="border-l-2 border-teal-rune-700/50 pl-2 text-sm italic text-teal-rune-800"
+                    >
                       {CONFRONTATION.counters[counter]}
                     </p>
                   ) : null}
-                  <p className="mt-1 text-xs italic text-ink-faint">
+                  <p className="mt-2 text-xs italic leading-relaxed text-ink-faint">
                     {CONFRONTATION.wrapper.pressHint}
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-4">
