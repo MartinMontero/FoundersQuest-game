@@ -115,3 +115,63 @@ export const WORLD_SKIES: Readonly<Record<number, WorldSky>> = {
 export function skyForStage(stage: number): WorldSky {
   return WORLD_SKIES[stage] ?? W1
 }
+
+// ---- weather → sky tint (E-0; SITREP backlog item, now in scope) ----
+// The founder's logged weather colours the world's AIR: low readings mute and
+// grey the sky toward overcast; high readings warm it. Display only — the
+// same last-≤3-by-date window the trough reads, but this NEVER feeds any
+// metric or mechanic (the trough's mechanics stay in core/metrics.ts).
+
+interface WeatherLike {
+  date: string
+  value: 1 | 2 | 3 | 4 | 5
+}
+
+/** mean of the last ≤3 readings by date (display twin of the trough window) */
+export function weatherMean(weather: readonly WeatherLike[]): number | null {
+  if (weather.length === 0) return null
+  const chronological = [...weather].sort((x, y) =>
+    x.date < y.date ? -1 : x.date > y.date ? 1 : 0,
+  )
+  const window = chronological.slice(-3)
+  let sum = 0
+  for (const w of window) sum += w.value
+  return sum / window.length
+}
+
+function channel(hex: string, i: number): number {
+  return parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16)
+}
+
+/** linear blend of two #rrggbb colours, t in [0,1] */
+export function hexLerp(a: string, b: string, t: number): string {
+  const mix = (i: number): string =>
+    Math.round(channel(a, i) + (channel(b, i) - channel(a, i)) * t)
+      .toString(16)
+      .padStart(2, '0')
+  return `#${mix(0)}${mix(1)}${mix(2)}`
+}
+
+/** overcast grey the low skies lean toward · warm light the high skies lean toward */
+const OVERCAST = '#3b4148'
+const CLEARLIGHT = '#ffe9c4'
+/** tint strength at the extremes (mean 1 or 5); 3 = neutral, untinted */
+const TINT_MAX = 0.28
+
+/**
+ * Tint a world's sky by the founder's weather. mean 3 (or no readings) returns
+ * the sky UNCHANGED (reference-equal — W1's byte-pinned identity survives).
+ * Low means blend background/fog/horizon toward overcast; high means toward
+ * warm light. Zenith/glow/aurora/accent stay — the world keeps its identity.
+ */
+export function tintSky(sky: WorldSky, mean: number | null): WorldSky {
+  if (mean === null || mean === 3) return sky
+  const toward = mean < 3 ? OVERCAST : CLEARLIGHT
+  const t = (Math.abs(mean - 3) / 2) * TINT_MAX
+  return {
+    ...sky,
+    background: hexLerp(sky.background, toward, t),
+    fog: hexLerp(sky.fog, toward, t),
+    horizon: hexLerp(sky.horizon, toward, t),
+  }
+}

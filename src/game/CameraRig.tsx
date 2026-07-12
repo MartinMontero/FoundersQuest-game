@@ -7,7 +7,7 @@
 import { useRef } from 'react'
 import { Vector3 } from 'three'
 import { useUiStore } from '../state/ui'
-import { STAGE1_LAYOUT } from './contracts'
+import { ARENA_POSITION, EGO_POSITION, STAGE1_LAYOUT } from './contracts'
 import { getMoveInput } from './controls'
 import { cameraYaw, playerWorldPos } from './refs'
 import { useSafeFrame } from './useSafeFrame'
@@ -55,12 +55,21 @@ export function CameraRig({ reduced }: CameraRigProps): null {
       if (yawInput !== 0) cameraYaw.value += yawInput * YAW_SPEED * delta
     }
 
-    const shrine = ui.mode === 'trance' && ui.activeQid !== null
-      ? SHRINE_POSITION.get(ui.activeQid)
-      : undefined
+    // the camera's dramatic focus by mode (E-0 camera language): the shrine in
+    // trance; the Proving Circle in arena; the Launch Threshold facing the Ego.
+    // Same over-shoulder grammar everywhere — one language, three sentences.
+    const focus =
+      ui.mode === 'trance' && ui.activeQid !== null
+        ? { at: SHRINE_POSITION.get(ui.activeQid), backoff: TRANCE_BACKOFF, height: TRANCE_HEIGHT, lookUp: 1.0 }
+        : ui.mode === 'arena'
+          ? { at: ARENA_POSITION, backoff: 5, height: 2.4, lookUp: 1.2 }
+          : ui.mode === 'ego'
+            ? { at: EGO_POSITION, backoff: 6.5, height: 2.8, lookUp: 2.2 }
+            : undefined
+    const shrine = focus?.at
 
     let damp = FOLLOW_DAMP
-    if (shrine !== undefined) {
+    if (focus !== undefined && shrine !== undefined) {
       damp = TRANCE_DAMP
       // over-shoulder: stand off from the shrine toward the player
       let dx = playerWorldPos.x - shrine[0]
@@ -74,11 +83,22 @@ export function CameraRig({ reduced }: CameraRigProps): null {
         dz /= length
       }
       targetPos.current.set(
-        shrine[0] + dx * TRANCE_BACKOFF,
-        shrine[1] + TRANCE_HEIGHT,
-        shrine[2] + dz * TRANCE_BACKOFF,
+        shrine[0] + dx * focus.backoff,
+        shrine[1] + focus.height,
+        shrine[2] + dz * focus.backoff,
       )
-      targetLook.current.set(shrine[0], shrine[1] + 1.0, shrine[2])
+      targetLook.current.set(shrine[0], shrine[1] + focus.lookUp, shrine[2])
+    } else if (ui.mode === 'rite') {
+      // the vigil: the world quiets — the camera rises and steps back, holding
+      // the mourner in frame from above. Reduced motion cuts, as everywhere.
+      damp = TRANCE_DAMP
+      const yaw = cameraYaw.value
+      targetPos.current.set(
+        playerWorldPos.x + Math.sin(yaw) * 7.5,
+        playerWorldPos.y + 4.5,
+        playerWorldPos.z + Math.cos(yaw) * 7.5,
+      )
+      targetLook.current.set(playerWorldPos.x, playerWorldPos.y + 1.0, playerWorldPos.z)
     } else {
       const yaw = cameraYaw.value
       targetPos.current.set(

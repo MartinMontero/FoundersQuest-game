@@ -13,7 +13,8 @@ import { useJourneyStore } from '../state/journey'
 import { useUiStore } from '../state/ui'
 import { makeSoftSprite, PALETTE } from './materials'
 import { LOW_POWER } from './perf'
-import { skyForStage, type WorldSky } from './worldPalette'
+import type { WorldSky } from './worldPalette'
+import { useWorldSky } from './useWorldSky'
 
 // fewer stars under automation / software-GL (overdraw is costly there)
 const PARTICLE_COUNT = LOW_POWER ? 520 : 1600
@@ -283,9 +284,10 @@ export interface NebulaProps {
 export function Nebula({ reduced }: NebulaProps): JSX.Element {
   const swirl = useRef<Points>(null)
   const stars = useMemo(buildStars, [])
-  // each world wears its own sky (LOOP cycle 4); keyed remount swaps it cleanly
+  // each world wears its own sky (LOOP cycle 4), tinted by the founder's
+  // logged weather (E-0); keyed remount swaps it cleanly
   const stage = useJourneyStore((s) => s.currentStage)
-  const sky = skyForStage(stage)
+  const sky = useWorldSky()
 
   useSafeFrame((_, delta) => {
     if (reduced) return // static particles under prefers-reduced-motion

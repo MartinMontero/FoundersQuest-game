@@ -10,7 +10,6 @@ import { Canvas, type RootState } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import { CuboidCollider, CylinderCollider, Physics, RigidBody } from '@react-three/rapier'
 import { ACESFilmicToneMapping, type Mesh, NoToneMapping } from 'three'
-import { useJourneyStore } from '../state/journey'
 import { useUiStore } from '../state/ui'
 import { WORLD_COPY } from '../strings'
 import { AssetBoundary } from './AssetBoundary'
@@ -33,7 +32,7 @@ import { WorldColliders } from './WorldColliders'
 import { FpsSampler } from './useFps'
 import { useReducedMotion } from './useReducedMotion'
 import { useSafeFrame } from './useSafeFrame'
-import { skyForStage } from './worldPalette'
+import { useWorldSky } from './useWorldSky'
 
 const PLATEAU_RADIUS = 24
 /** rim wall radius — just inside the disk so the capsule can never step off it */
@@ -127,7 +126,7 @@ export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
   // the sky draws (full tier only; null keeps God Rays out of the chain)
   const [sun, setSun] = useState<Mesh | null>(null)
   // each world's own air: background + fog colour track the current world (cycle 4)
-  const sky = skyForStage(useJourneyStore((s) => s.currentStage))
+  const sky = useWorldSky() // world identity + the founder's weather in the air (E-0)
   return (
     <>
       <color attach="background" args={[sky.background]} />
