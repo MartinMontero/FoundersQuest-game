@@ -271,6 +271,31 @@ interface VaultProps {
   reduced: boolean
 }
 
+/** a standing torch for the Proving Circle: the vendored KayKit lit torch
+ *  (its sculpted flame removed in favor of our LIVING shader flame) + a small
+ *  glow. Zero lights — the arena's drama lighting stays as authored. */
+function ArenaTorch(): JSX.Element {
+  const { scene } = useGLTF(asset('models/props/torch_lit.glb'))
+  const flame = useFlame()
+  const torch = useMemo(() => {
+    const clone = scene.clone(true)
+    clone.traverse((node) => {
+      if (node instanceof Mesh) node.castShadow = true
+    })
+    return clone
+  }, [scene])
+  return (
+    <group>
+      <Clone object={torch} scale={1.05} />
+      <mesh material={flame} position={[0, 1.25, 0]}>
+        <coneGeometry args={[0.13, 0.42, 8, 4, true]} />
+      </mesh>
+      <GlowSprite position={[0, 1.3, 0]} color="#f2b64a" scale={0.8} opacity={0.5} pulse />
+      <ContactShadow position={[0, 0.02, 0]} radius={0.4} opacity={0.7} />
+    </group>
+  )
+}
+
 /** the vendored KayKit chest — wooden and chained shut while sealed, gold
  *  once the founder unseals it in World 3 (CC0 — CREDITS.md) */
 function VaultChest({ locked }: { locked: boolean }): JSX.Element {
@@ -423,17 +448,12 @@ function GuardianFigure({
   return (
     <group position={position}>
       <group ref={group} scale={scale} rotation={[0.05, facing, 0.03]}>
-        {/* the menhir body — a tapered, hooded standing stone */}
-        <mesh position={[0, 0.75, 0]}>
-          <cylinderGeometry args={[0.16, 0.34, 1.5, 5]} />
-          <meshStandardMaterial
-            color={tint}
-            emissive={crowned ? PALETTE.ember : tint}
-            emissiveIntensity={crowned ? 0.6 : 0.1}
-            roughness={0.72} metalness={0.05}
-          />
-        </mesh>
-        {/* the hood */}
+        {/* the menhir body — a REAL sculpted standing stone, tier-tinted
+            (art-elevation: no more flat five-sided cone) */}
+        <group scale={[0.55, 1.5, 0.55]}>
+          <Rock index={(assumption.id.length % 7) + 1} position={[0, 0.52, 0]} tint={tint} />
+        </group>
+        {/* the carved hood cap */}
         <mesh position={[0, 1.55, 0]}>
           <sphereGeometry args={[0.24, 12, 12]} />
           <meshStandardMaterial
@@ -443,6 +463,7 @@ function GuardianFigure({
             roughness={0.72} metalness={0.05}
           />
         </mesh>
+        <ContactShadow position={[0, 0.025, 0]} radius={0.55} opacity={0.8} />
         {crowned ? (
           <>
             {/* the warning crown */}
@@ -469,10 +490,7 @@ function GuardianFigure({
         ) : null}
       </group>
       {crowned ? (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
-          <ringGeometry args={[0.5 * scale, 0.62 * scale, 24]} />
-          <meshBasicMaterial color={PALETTE.ember} transparent opacity={0.7} />
-        </mesh>
+        <GlowRing position={[0, 0.04, 0]} color={PALETTE.ember} radius={0.7 * scale} opacity={0.7} />
       ) : null}
     </group>
   )
@@ -507,11 +525,8 @@ function RegistryCircle({ reduced }: { reduced: boolean }): JSX.Element {
 
   return (
     <group position={[cx, cy, cz]}>
-      {/* the inscribed ground circle */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <ringGeometry args={[2.9, 3.15, 48]} />
-        <meshBasicMaterial color={PALETTE.teal} transparent opacity={0.5} />
-      </mesh>
+      {/* the inscribed ground circle — luminous, not painted */}
+      <GlowRing position={[0, 0.03, 0]} color={PALETTE.teal} radius={3.3} opacity={0.5} pulse={false} />
       {/* the central altar */}
       <mesh position={[0, 0.1, 0]}>
         <cylinderGeometry args={[0.5, 0.62, 0.2, 12]} />
@@ -536,16 +551,17 @@ function RegistryCircle({ reduced }: { reduced: boolean }): JSX.Element {
           />
         </>
       ) : null}
-      {/* the outer standing stones */}
+      {/* the outer standing stones — real sculpted menhirs (art-elevation:
+          the flat purple cones of the operator's exhibit 1 are gone) */}
       {CIRCLE_STONES.map((stone, i) => (
-        <mesh
+        <group
           key={i}
-          position={[Math.cos(stone.angle) * 3.05, stone.height / 2, Math.sin(stone.angle) * 3.05]}
+          position={[Math.cos(stone.angle) * 3.05, 0, Math.sin(stone.angle) * 3.05]}
           rotation={[0.04, stone.angle, ((i % 3) - 1) * 0.05]}
+          scale={[0.5, stone.height, 0.5]}
         >
-          <cylinderGeometry args={[0.18, 0.28, stone.height, 5]} />
-          <meshStandardMaterial color={PALETTE.stoneCool} roughness={0.72} metalness={0.05} />
-        </mesh>
+          <Rock index={i + 1} position={[0, 0.45, 0]} tint={PALETTE.stoneCool} />
+        </group>
       ))}
       {standing.map((assumption, index) => {
         const angle = (index / Math.max(standing.length, 1)) * Math.PI * 2
@@ -886,16 +902,12 @@ function ProvingCircle({
 
   return (
     <group position={[cx, cy, cz]}>
-      {/* the inscribed proving ring — double circle, ember-lit */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <ringGeometry args={[2.6, 2.85, 48]} />
-        <meshBasicMaterial color={PALETTE.ember} transparent opacity={0.45} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <ringGeometry args={[1.9, 2.0, 48]} />
-        <meshBasicMaterial color={PALETTE.ember} transparent opacity={0.25} />
-      </mesh>
-      {/* four brazier posts */}
+      {/* the inscribed proving ring — luminous double circle (art-elevation:
+          the operator's exhibit 2 "painted arcs" are gone; light marks it) */}
+      <GlowRing position={[0, 0.03, 0]} color={PALETTE.ember} radius={3.0} opacity={0.45} pulse={false} />
+      <GlowRing position={[0, 0.03, 0]} color={PALETTE.ember} radius={2.1} opacity={0.25} pulse={false} />
+      {/* four TORCHES ring the circle — real fire posts, not bare sticks with
+          floating gems (vendored KayKit torch + a living flame + its glow) */}
       {[0, 1, 2, 3].map((i) => {
         const angle = (i / 4) * Math.PI * 2 + Math.PI / 4
         return (
@@ -903,20 +915,7 @@ function ProvingCircle({
             key={i}
             position={[Math.cos(angle) * 2.72, 0, Math.sin(angle) * 2.72]}
           >
-            <mesh position={[0, 0.55, 0]}>
-              <cylinderGeometry args={[0.09, 0.14, 1.1, 6]} />
-              <meshStandardMaterial color={PALETTE.stoneWarm} roughness={0.82} metalness={0.05} />
-            </mesh>
-            <mesh position={[0, 1.18, 0]}>
-              <octahedronGeometry args={[0.13, 0]} />
-              <meshStandardMaterial
-                color={PALETTE.ember}
-                emissive={PALETTE.ember}
-                emissiveIntensity={1.1}
-                roughness={0.72}
-                metalness={0.05}
-              />
-            </mesh>
+            <ArenaTorch />
           </group>
         )
       })}
