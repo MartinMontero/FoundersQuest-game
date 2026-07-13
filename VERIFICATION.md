@@ -2,6 +2,52 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
+## Round 16 — Backlog Build-Out + Design Elevation: the closing loop (2026-07-13)
+
+**Exit rule:** two consecutive fully-clean full runs. **Met** — runs A and B below are
+byte-identical trees (commit `f3f5358`), every gate exit-code 0, ZERO flaky retries in either.
+
+**The full-run gauntlet (each run, in order):** clean `dist` rebuild → `eslint .` → `tsc
+--noEmit` → `vitest run` → `playwright test` (full, serial) → gitleaks TREE → gitleaks
+HISTORY (all commits) → osv-scanner (offline DB) → `npm run pwa:smoke` (build + preview +
+real chromium: SW registered/controlling, manifest 200, OFFLINE reload serves the shell).
+
+| gate | run A | run B |
+| --- | --- | --- |
+| build / lint / tsc | 0 / 0 / 0 | 0 / 0 / 0 |
+| vitest | **445/445** | **445/445** |
+| e2e (serial) | **35 passed**, 6 skipped*, 0 retries, 13.7m | **35 passed**, 6 skipped*, 0 retries, 13.8m |
+| gitleaks tree + history | clean / clean | clean / clean |
+| osv (offline) | clean (documented K-13 policy) | clean |
+| pwa:smoke | PASS | PASS |
+
+*the 6 skips are the FEEL_PACK phases — they only run with `FEEL_PACK=1` and their captures
+are archived under `docs/feel-packs/{a3,a4,a5,worlds,e9,e10}/`.
+
+**Run 1 (before the pair) failed honestly — two repeatable catches, one root:** the First
+Light invitation offered itself in states only seeds construct (pristine record at W2 in
+gate.spec; fresh-memory session in storage-degraded.spec) and trapped Tab beneath it.
+Product hardening: the invitation is now stage-gated to World 1 (`f3f5358` — the induction
+is a W1 artifact; real players cannot reach later worlds without an invitation decision).
+The degraded spec now walks the real skip path (skip invitation → decline the one-time
+re-entry offer → straight into the trance, per the A3 design). gate.spec needed no change.
+
+**New standing checks this run:** e2e/fault.spec (kill-plane respawn via the DEV `__fq_drop`
+hook + rim-wall collider walk — two former UNTESTED labels now machine-checked) · QR frame
+round-trip unit tests (out-of-order, missing-frame, cross-beam, unicode) · SW guard tests
+(non-GET/cross-origin early returns pinned; sw.js may never name the Council host;
+registration prod-gated) · chart-unfurl computed-style assertion · credits-page e2e.
+
+**Z-8 (stage-1 registry-reopen FPS flake):** did not reproduce — zero retries across runs A
+and B (and run 1's two failures were the invitation root cause, not jitter). Closed
+unreproduced per the anti-thrash rule.
+
+**UNTESTED from this container (honest list, all operator-eyes items):** camera QR scanning
+(headless has no camera/Shape Detection API — assembly core unit-tested), the A2HS install
+prompt (browser UI event), W5 full-tier reflection look + frame cost (software GL cannot run
+the full tier; K-10), real-hardware FPS (K-10), live-render eyeballs (agent-proxy tunnel
+resets persist).
+
 ## Round 15 — staff no-clip lean + naming-card copy (2026-07-10)
 
 Operator live-check follow-ups. **(1) Staff clipped the hood.** Measured the grip bone at group-local

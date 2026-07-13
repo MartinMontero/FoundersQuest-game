@@ -109,3 +109,70 @@ Feel pack archived: docs/feel-packs/a5/ (8 shots).
 control-inversion) and per-world minions deferred — the slice ships the evidence ladder,
 not the bullet-hell; the capstone rides the wisdomCodex (sourceGuardianId 'ego') rather
 than a new schema key — deliberate, to stay inside the Gate-0-approved canon diff.
+
+---
+
+# SHIP — Backlog Build-Out + Design Elevation run (2026-07-12/13) — CLOSED
+
+Two mandates, both met: (1) the ENTIRE recorded backlog built out or parked with
+operator-facing reasons — zero silent drops; (2) the design elevation — every world a
+composed place, the world reacting to dramatic beats, zero default-browser chrome.
+Exit rule satisfied: TWO consecutive fully-clean full runs (VERIFICATION Round 16).
+
+## What shipped, by epic
+- **Hygiene + E-0 groundwork:** capture-tier fix, panel typography (eyebrow rule
+  everywhere), camera language (arena/ego framing, rite vigil rise), celebration staging
+  (CelebrationFx — shatter/pillar/funeral/integration staged IN-world), weather→sky tint
+  (display-only, W1 byte-pinned).
+- **E-1..E-8 world elevation:** per-world earth tints + seven bespoke landmarks (W2
+  fellowship rookery … W8 rocket gantry), feel-pack gate per world, archived shots.
+- **Mechanics batch:** the Proving Circle in EVERY world 2–7 (one layout change — the
+  core was stage-scoped by design), per-world minion register + telegraphed bias attacks
+  (presentation-only; D-C untouched), validated-pillar and candle graveside honors.
+- **Audio (A-1, honest swap):** CC0 downloads are egress-blocked in the container, so the
+  beds + cues are PROCEDURAL WebAudio patches — license-free, zero deps. Silence-default
+  master, three campfire sliders (own settings key), unlock-on-gesture, cues duplicate
+  visual feedback (never audio-only).
+- **Council temple (C-1):** consent room first (canon copy verbatim), key room (BYOK —
+  consent precedes storage, visible remove, key never in v3), live rite honestly DARK
+  (B-4 unresolved — no fabricated Council text), pasted-reading path with provenance.
+- **Field Mode (F-1..F-11):** the complete A-101 layer — Hunt List (profiles never
+  persons), the Lantern (cap 7, trough-frozen), Field Days, the beam (copy/paste + file +
+  QR): vendored MIT encoder (deps-review in BLOCKERS — jsqr/qr-scanner REJECTED on
+  license), FQB1 frame chunking, native-BarcodeDetector scan fallback, all seven import
+  rules as tests, F-103 atomic audit provenance (via records the true transport — a
+  hardcoded-'paste' bug was caught and fixed), 390px mobile e2e.
+- **PWA (F-9):** hand-rolled sw.js (R-J — navigations network-first so a stale shell can
+  never poison the app; non-GET/cross-origin NEVER intercepted, guard-tested down to
+  "sw.js may not name the Council host"), manifest + reproducible code-generated icons,
+  campfire "This device" card (A2HS, storage.persist(), transfer-first honesty).
+- **Chart + First Light v2 + credits (E-9/E-10/E-11):** two-line staggered waypoint
+  labels (W7/W8 crowding fixed), per-world Truth/Action pips (derived exactly as Truth
+  is), chip viewport clamp; the Cartographer's raven PHYSICALLY present through the
+  induction (in-engine, CC0-clean) + chart parchment unfurl (motion-gated); in-game
+  attribution page mirroring CREDITS.md/VENDORED.md.
+- **P2 sweep:** legend "deeper" folds (canon-cited, structurally capped), cold-open
+  establishing drift, raven re-entry perch, W5 reflective water (tier-split, honest),
+  fault e2e (kill-plane + rim wall), README/CHANGELOG/.env.example (no-server-env BY
+  DESIGN), Clock-deprecation + tab-limit audits recorded.
+
+## Canon-accuracy catches (the review working as intended)
+1. The induction and legend taught "only Deed and Gold move the Truth bar" — canon and
+   the shipped truth() say E2-or-better, which INCLUDES Word. Copy corrected everywhere.
+2. The First Light invitation could offer itself outside World 1 in seed-only states —
+   now stage-gated (verification run 1's catch; f3f5358).
+3. An import confirmed from a file was audited as 'paste' — provenance now truthful.
+
+## Parked (BLOCKERS.md, operator-facing)
+K-1..K-13 standing + **K-14 NEW:** F-12 voice capture parked on constitutional grounds —
+browser SpeechRecognition ships audio to vendor servers (unsanctioned service, outside
+the consent architecture). Typed capture stays primary.
+
+## Deploy
+Live alias (stated per the stale-alias lesson, Z-12; the deploy output is the
+authority — hash-verified: alias serves assets/index-BKrVXuwQ.js, byte-matching
+the local dist, with the canon CSP live; sw.js/manifest/icons all 200):
+**https://claude-dev-environment-setup.founders-quest-game.pages.dev**
+The unsuffixed founders-quest-game.pages.dev alias still serves an A3-era build — no
+deletion attempted (Rule 9; operator console action). Hash-verify recorded below the
+deploy in VERIFICATION/SITREP.

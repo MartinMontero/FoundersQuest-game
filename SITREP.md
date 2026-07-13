@@ -1,3 +1,99 @@
+# SITREP — Backlog Build-Out + Design Elevation (2026-07-13)
+
+**Play it here:** https://claude-dev-environment-setup.founders-quest-game.pages.dev
+(hash-verified against this exact build; the OLD unsuffixed founders-quest-game.pages.dev
+link still serves an ancient build — don't use it, and I can't delete it from here.)
+
+## The short version
+
+The entire recorded backlog is now either BUILT or PARKED with a written reason you can
+act on — nothing was quietly dropped. The big adds since your last report: **Field Mode**
+(the phone-in-the-field side of the game: hunt list, courage lantern, field days, and a
+"beam" that moves your field records to your desk by QR code, file, or paste), **the
+Council temple** (where a player enters their own Anthropic key — live readings stay dark
+until you resolve B-4; no Council text was invented), **sound** (synthesized on-device,
+silent until the player opts in at the campfire), **offline + install** (the game now
+works with the network gone and can be added to a phone's home screen), and the **design
+elevation**: every world has its own landmark and ground palette, the world reacts to
+dramatic beats, the Chart got per-world progress pips, the Raven is physically perched by
+the first shrine during the tutorial, and there's an in-game credits page.
+
+## Exit discipline (met)
+
+Two consecutive fully-clean verification runs on the same commit: clean build, lint,
+typecheck, 445/445 unit tests, all 35 end-to-end flows serially, secret scan over the
+full history, dependency scan, and the offline-install smoke — every gate exit-code 0,
+zero flaky retries, both runs. The run BEFORE the pair failed honestly and taught us
+something (below) — that's the discipline working, not a blemish.
+
+## Three catches worth your eyes (all fixed)
+
+1. **The tutorial taught the law wrong.** The induction and the Legend said "only Deed
+   and Gold move the Truth bar." The constitution — and the shipped math — say Word
+   counts too (something a customer SAID TO YOU, verbatim). The copy now teaches what
+   the code enforces. Worth a glance in your playthrough: the tiers beat and the Legend's
+   Truth entry.
+2. **The tutorial could ambush later worlds.** In states only test-seeding can construct
+   (a wiped record standing in World 2+), the "Before you begin" card offered itself and
+   swallowed keyboard input. It's now hard-gated to World 1. Real players were never
+   affected, but it was wrong on paper.
+3. **Import receipts could lie.** A field-records import from a FILE was being recorded
+   in the audit trail as a PASTE. The trail now names the true transport. Small, but the
+   audit trail is a privacy surface — it should never guess.
+
+## Your QA route for the new layer (~20 min on top of the usual)
+
+1. Fresh profile → notice the Raven perched by the first shrine during the intro (it
+   flies ahead when you finish — find its rookery in World 2). The camera now drifts
+   slowly during the intro; tell me if it reads cinematic or annoying.
+2. Open the Chart (M) — watch the parchment unroll; check the per-world pips against
+   what you've actually done. Open the Legend (L) → Truth → "more" → "even deeper".
+3. Press F → Field Mode. Add a profile, log two attempts, resolve one with a quote,
+   close the day. Then "Show as QR" — scan it with your PHONE's camera app if it has one
+   (this is the one path I cannot test headless: no camera in the container). File and
+   paste import are machine-tested.
+4. At the campfire: sound sliders (it ships SILENT by design — raise master), the
+   "This device" card (try installing on your phone; also untestable headless), and
+   Credits from the export desk.
+5. World 5: walk to the mirror lake — on your real GPU you should see actual
+   reflections (untestable in the container; if it tanks your framerate, say so —
+   there's a cheap fallback ready).
+6. The Council temple (C): consent room reads first, key room takes a key you can
+   visibly remove. Live readings are dark on purpose (B-4 needs your text or your
+   approval of a draft).
+
+## Honest nits and UNTESTED items
+
+- Camera QR scanning uses the browser's built-in detector where it exists (Chrome
+  desktop/Android — not Firefox); file + paste work everywhere. Camera loop untested in
+  CI (no camera exists there); the frame-assembly logic under it is unit-tested.
+- The install prompt and the W5 reflection: untestable headless, need your one glance.
+- Set-piece feel shots still catch some landmarks at frame edge — capture artifact, they
+  read fine in-world.
+- Voice capture (F-12) is PARKED, not built: the browser's speech API ships your voice
+  to Google/Apple servers — an unsanctioned service outside the consent architecture.
+  Typed capture stays primary. It's K-14 in BLOCKERS if you want to revisit.
+
+## Security posture (verified again this run)
+
+BYOK unchanged: each player brings their own key, entered at runtime, stored device-side
+under its own storage key, never serialized, never exported; browser talks to Anthropic
+directly — no server exists anywhere in the product. NEW this run and worth knowing: the
+offline layer (service worker) was built so it CANNOT touch the Council path — it never
+intercepts non-GET or cross-origin requests, and a tripwire test fails the build if the
+worker's code so much as names the API host. Imports (QR/file/paste) all pass the same
+strict validation — a scanned code can't smuggle anything a paste couldn't. Secret scan
+clean over all history; dependency scan clean; no telemetry, nothing phones home, ever.
+
+## The numbers
+
+445 unit tests · 35 e2e flows (serial, real browser) · 2 consecutive fully-clean full
+runs · 6 feel packs archived (a3/a4/a5/worlds/e9/e10) · 14 parks in BLOCKERS, each with
+a reason you can act on · 0 new runtime dependencies (one vendored MIT file, checksummed,
+license-verified against the registry) · deploy hash-verified at the alias above.
+
+---
+
 # SITREP — Mind & Myth: the full inner game (2026-07-11)
 
 Plain-English status for your one consolidated playthrough. Everything below was
