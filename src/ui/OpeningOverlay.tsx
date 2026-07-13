@@ -16,6 +16,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react'
+import { useJourneyStore } from '../state/journey'
 import { useQuestStore } from '../state/store'
 import { useUiStore } from '../state/ui'
 import { FIRST_LIGHT, TIER_CODES, TIER_METALS, UI } from '../strings'
@@ -185,6 +186,7 @@ function useFirstMovement(active: boolean, onMove: () => void): void {
 
 export function OpeningOverlay(): ReactElement | null {
   const data = useQuestStore((s) => s.data)
+  const currentStage = useJourneyStore((s) => s.currentStage)
   const markInvitationSeen = useQuestStore((s) => s.markInvitationSeen)
   const setOpeningBeat = useQuestStore((s) => s.setOpeningBeat)
   const completeOpening = useQuestStore((s) => s.completeOpening)
@@ -241,7 +243,11 @@ export function OpeningOverlay(): ReactElement | null {
     data.assumptions.length === 0 &&
     data.evidence.length === 0 &&
     data.vault.length === 0
+  // stage-gated: the induction is a WORLD-1 artifact (its beats seal the vault
+  // and register the first guardian there). A pristine record standing in a
+  // later world only exists via seeding/devtools — never offer the intro there.
   const showInvitation =
+    currentStage === 1 &&
     !data.invitationSeen &&
     data.openingCompletedAt === null &&
     data.openingSkippedAt === null &&

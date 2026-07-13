@@ -7,7 +7,6 @@ import { expect, test } from '@playwright/test'
 import { UI } from '../src/strings'
 import {
   inscribe,
-  kneel,
   questionText,
   recordRun,
   shot,
@@ -59,9 +58,19 @@ test('storage degraded: throwing localStorage → honest banner, still playable 
   await page.getByTestId('founder-name-skip').press('Enter')
   await expect(page.getByTestId('founder-naming')).toBeHidden()
 
-  // still playable: kneel at the threshold shrine and inscribe one answer
+  // a fresh-memory session IS a first run: the First Light invitation offers
+  // itself (correctly — nothing persisted says otherwise). Skip it, in memory.
+  await page.getByTestId('opening-skip').press('Enter')
+  await expect(page.getByTestId('opening-invitation')).toBeHidden()
+
+  // still playable: kneel at the threshold shrine and inscribe one answer.
+  // A skipper's first kneel raises the one-time re-entry offer (by design) —
+  // declining proceeds straight into the trance, like any player who skipped.
   await tabToChip(page, questionText('s1-th'))
-  await kneel(page)
+  await page.keyboard.press('KeyE')
+  await expect(page.getByTestId('reentry-decline')).toBeVisible()
+  await page.getByTestId('reentry-decline').press('Enter')
+  await expect(page.getByTestId('trance-panel')).toBeVisible()
   await page.getByTestId('input-text').pressSequentially(STORY)
   await inscribe(page, 'input-text')
 
