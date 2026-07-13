@@ -24,7 +24,7 @@ import type { MeshBasicMaterial } from 'three'
 import type { Camera, Group, Object3D, PointLight } from 'three'
 import { useMemo } from 'react'
 import { asset } from './assets'
-import { ContactShadow, GlowRing, GlowSprite, useFlame } from './fx'
+import { ContactShadow, GlowRing, GlowSprite, useFlame, veilTexture } from './fx'
 import { Rock } from './rocks'
 import { arenaChallenger } from '../core/confrontation'
 import { IMPORTANCE_WEIGHT, riskiest, tierOf } from '../core/metrics'
@@ -761,14 +761,29 @@ function PortalArch({ spec, reduced }: ShrineProps): JSX.Element {
         <meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.5} roughness={0.15} />
       </mesh>
 
-      {/* layered shimmering veil */}
+      {/* layered shimmering veil — radial alpha falloff so the field feathers
+          into the frame instead of reading as a painted rectangle */}
       <mesh ref={shimmer} position={[0, 1.9, 0]}>
-        <planeGeometry args={[1.9, 3.2]} />
-        <meshBasicMaterial color={glow} transparent opacity={0.4} depthWrite={false} side={DoubleSide} />
+        <planeGeometry args={[2.2, 3.6]} />
+        <meshBasicMaterial
+          color={glow}
+          transparent
+          opacity={0.4}
+          depthWrite={false}
+          side={DoubleSide}
+          alphaMap={veilTexture()}
+        />
       </mesh>
       <mesh position={[0, 1.9, 0.02]}>
-        <planeGeometry args={[1.5, 2.9]} />
-        <meshBasicMaterial color="#eaf6ff" transparent opacity={0.08} depthWrite={false} side={DoubleSide} />
+        <planeGeometry args={[1.6, 3.0]} />
+        <meshBasicMaterial
+          color="#eaf6ff"
+          transparent
+          opacity={0.14}
+          depthWrite={false}
+          side={DoubleSide}
+          alphaMap={veilTexture()}
+        />
       </mesh>
 
       {/* runes drifting within the arch */}
