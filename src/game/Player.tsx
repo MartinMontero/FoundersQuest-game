@@ -40,6 +40,8 @@ declare global {
     __fq_player?: { x: number; y: number; z: number }
     /** dev/e2e builds only — Z-6 fault hook: drop the capsule into the void */
     __fq_drop?: boolean
+    /** dev/e2e builds only — teleport for feel-capture framing, self-clearing */
+    __fq_goto?: [number, number] | null
   }
 }
 
@@ -102,6 +104,13 @@ export function Player({ reduced }: PlayerProps): JSX.Element {
     if (import.meta.env.DEV && window.__fq_drop === true) {
       window.__fq_drop = false
       rb.setTranslation({ x: 0, y: VOID_Y - 5, z: 0 }, true)
+      rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
+    }
+    // capture-framing teleport (DEV only): [x, z] → stand there, settled
+    if (import.meta.env.DEV && Array.isArray(window.__fq_goto)) {
+      const [gx, gz] = window.__fq_goto
+      window.__fq_goto = null
+      rb.setTranslation({ x: gx, y: PLAYER_SPAWN[1], z: gz }, true)
       rb.setLinvel({ x: 0, y: 0, z: 0 }, true)
     }
 

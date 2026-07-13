@@ -18,9 +18,13 @@
 // player roams.
 
 import { useRef } from 'react'
-import { Float, Html } from '@react-three/drei'
-import { DoubleSide, Vector3 } from 'three'
-import type { Camera, Group, Mesh, Object3D, PointLight } from 'three'
+import { Clone, Float, Html, useGLTF } from '@react-three/drei'
+import { DoubleSide, Mesh, Vector3 } from 'three'
+import type { Camera, Group, Object3D, PointLight } from 'three'
+import { useMemo } from 'react'
+import { asset } from './assets'
+import { ContactShadow, GlowRing, GlowSprite, useFlame } from './fx'
+import { Rock } from './rocks'
 import { arenaChallenger } from '../core/confrontation'
 import { IMPORTANCE_WEIGHT, riskiest, tierOf } from '../core/metrics'
 import type { Answer, Assumption, EvidenceEntry, EvidenceTier } from '../core/schema'
@@ -1126,15 +1130,7 @@ function HighlightRing({ reduced }: { reduced: boolean }): JSX.Element | null {
       s.data.milestones[spec.milestoneId ?? spec.id] === true,
   )
   const vaultLocked = useQuestStore((s) => !s.data.vaultUnlocked)
-  const ring = useRef<Mesh>(null)
-
-  // gentle pulse — static under reduced motion (no shake, ever)
-  useSafeFrame(({ clock }) => {
-    const mesh = ring.current
-    if (mesh === null) return
-    const pulse = reduced ? 1 : 1 + Math.sin(clock.elapsedTime * 3) * 0.06
-    mesh.scale.setScalar(pulse)
-  })
+  void reduced // GlowRing gates its own pulse on reduced motion
 
   if (!roaming || spec === undefined) return null
 
@@ -1148,10 +1144,8 @@ function HighlightRing({ reduced }: { reduced: boolean }): JSX.Element | null {
 
   return (
     <group>
-      <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.06, z]}>
-        <ringGeometry args={[1.0, 1.25, 40]} />
-        <meshBasicMaterial color="#fbbf24" transparent opacity={0.85} depthWrite={false} />
-      </mesh>
+      {/* art-elevation: the flat sticker ring is dead — light marks the spot */}
+      <GlowRing position={[x, 0.05, z]} color="#f2b64a" radius={1.35} opacity={0.6} />
       <Html
         position={[x, chipHeight(spec), z]}
         center
@@ -1171,16 +1165,34 @@ function HighlightRing({ reduced }: { reduced: boolean }): JSX.Element | null {
   )
 }
 
-/** The campfire: a hearth-stone ring, crossed logs, a flickering flame, and its
- *  warm light — the rest hub (weather / notes / quests / export / dinner). Minimal
- *  box on the software-GL CI tier (the flame + light are real-tier chrome). */
+/** The campfire, rebuilt (art-elevation exhibit 5): the real Quaternius
+ *  bonfire log pile, a LIVING shader flame (sway + temperature ramp) with a
+ *  small white-hot core, a breathing glow where the sticker ring used to be,
+ *  sculpted boulders seating it into the ground over a contact shadow.
+ *  Minimal box on the software-GL CI tier, exactly as before. */
+function CampfireFlame(): JSX.Element {
+  const outer = useFlame()
+  const core = useFlame({ base: '#f2b64a', mid: '#ffdf9e', core: '#ffffff' })
+  return (
+    <group position={[0, 0.28, 0]}>
+      <mesh material={outer} position={[0, 0.42, 0]}>
+        <coneGeometry args={[0.32, 0.95, 10, 6, true]} />
+      </mesh>
+      <mesh material={core} position={[0, 0.3, 0]}>
+        <coneGeometry args={[0.16, 0.55, 8, 4, true]} />
+      </mesh>
+    </group>
+  )
+}
+
 function Campfire({ spec, reduced }: ShrineProps): JSX.Element {
   const [x, y, z] = spec.position
-  const flame = useRef<Mesh>(null)
+  const flicker = useRef<PointLight>(null)
   useSafeFrame(({ clock }) => {
-    const f = flame.current
-    if (f === null || reduced) return
-    f.scale.setY(1 + Math.sin(clock.elapsedTime * 6) * 0.1)
+    const l = flicker.current
+    if (l === null || reduced) return
+    // firelight breathes — two bands so it never reads as a metronome
+    l.intensity = 1.5 + Math.sin(clock.elapsedTime * 7.3) * 0.18 + Math.sin(clock.elapsedTime * 3.1) * 0.12
   })
 
   if (IS_AUTOMATION) {
@@ -1196,38 +1208,45 @@ function Campfire({ spec, reduced }: ShrineProps): JSX.Element {
 
   return (
     <group position={[x, y, z]}>
-      {/* ring of hearth stones */}
-      {Array.from({ length: 7 }).map((_, i) => {
-        const a = (i / 7) * Math.PI * 2
+      <ContactShadow position={[0, 0.015, 0]} radius={1.5} />
+      {/* the real log pile */}
+      <BonfireLogs />
+      {/* hearth boulders — varied sculpts, sizes, and facing */}
+      {[0, 1, 2, 3, 4].map((i) => {
+        const a = (i / 5) * Math.PI * 2 + 0.5
         return (
-          <mesh key={i} position={[Math.cos(a) * 0.9, 0.12, Math.sin(a) * 0.9]} castShadow>
-            <dodecahedronGeometry args={[0.22]} />
-            <meshStandardMaterial color={PALETTE.stone} roughness={0.9} metalness={0.04} />
-          </mesh>
+          <Rock
+            key={i}
+            index={i + 2}
+            position={[Math.cos(a) * 0.95, 0, Math.sin(a) * 0.95]}
+            rotationY={a * 2.3}
+            scale={0.55 + (i % 3) * 0.12}
+            tint={PALETTE.stone}
+          />
         )
       })}
-      {/* crossed logs */}
-      <mesh position={[0, 0.2, 0]} rotation={[0, 0.4, Math.PI / 2.2]} castShadow>
-        <cylinderGeometry args={[0.1, 0.1, 1.3, 6]} />
-        <meshStandardMaterial color={PALETTE.stoneWarm} roughness={0.85} />
-      </mesh>
-      <mesh position={[0, 0.2, 0]} rotation={[0, -0.5, Math.PI / 2.2]} castShadow>
-        <cylinderGeometry args={[0.1, 0.1, 1.3, 6]} />
-        <meshStandardMaterial color={PALETTE.stoneWarm} roughness={0.85} />
-      </mesh>
-      {/* the flame — a warm emissive cone that catches bloom */}
-      <mesh ref={flame} position={[0, 0.55, 0]}>
-        <coneGeometry args={[0.3, 0.9, 8]} />
-        <meshStandardMaterial
-          color={PALETTE.amberBright}
-          emissive={PALETTE.ember}
-          emissiveIntensity={1.6}
-          toneMapped={false}
-        />
-      </mesh>
-      <pointLight position={[0, 0.7, 0]} color={PALETTE.amber} intensity={1.4} distance={7} decay={2} />
+      {/* the living flame + its light */}
+      <CampfireFlame />
+      <GlowSprite position={[0, 0.75, 0]} color="#f2b64a" scale={1.6} opacity={0.55} pulse />
+      <pointLight ref={flicker} position={[0, 0.8, 0]} color={PALETTE.amber} intensity={1.5} distance={7.5} decay={2} />
     </group>
   )
+}
+
+/** the vendored Quaternius bonfire logs (CC0 — CREDITS.md) */
+function BonfireLogs(): JSX.Element {
+  const { scene } = useGLTF(asset('models/campfire/Bonfire.glb'))
+  const logs = useMemo(() => {
+    const clone = scene.clone(true)
+    clone.traverse((node) => {
+      if (node instanceof Mesh) {
+        node.castShadow = true
+        node.receiveShadow = true
+      }
+    })
+    return clone
+  }, [scene])
+  return <Clone object={logs} position={[0, 0, 0]} scale={0.85} />
 }
 
 // ---- assembly ----
