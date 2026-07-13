@@ -8,19 +8,21 @@
 // nothing lands on top of an interactable.
 
 import { Suspense, useMemo } from 'react'
-import { useTexture } from '@react-three/drei'
+import { useGLTF, useTexture } from '@react-three/drei'
 import {
   BufferAttribute,
   BufferGeometry,
   Color,
   DodecahedronGeometry,
   type Material,
+  Mesh,
   MeshStandardMaterial,
   Object3D,
   OctahedronGeometry,
   RepeatWrapping,
   SRGBColorSpace,
   type Texture,
+  Vector3,
 } from 'three'
 import { asset } from './assets'
 import { AssetBoundary } from './AssetBoundary'
@@ -315,9 +317,61 @@ function ScatterField({
   )
 }
 
-/** The dressed plateau: vertex-coloured ground + instanced rock, crystal, grass.
- * Everything is static — no motion to gate on reduced-motion. */
-export function GroundField(): JSX.Element {
+/** Pull the sculpted-rock geometry out of a vendored glTF, baking the pack's
+ *  x100 node transform in, centered so it drops into the same placements the
+ *  primitive dodecahedron used (art-elevation: real boulders, same scatter). */
+function sculptedGeometry(scene: import('three').Group): BufferGeometry {
+  scene.updateMatrixWorld(true)
+  let found: BufferGeometry | null = null
+  let scale = 1
+  scene.traverse((node) => {
+    if (found === null && node instanceof Mesh) {
+      found = node.geometry as BufferGeometry
+      scale = node.getWorldScale(new Vector3()).x
+    }
+  })
+  const geometry = (found ?? new DodecahedronGeometry(1, 0)).clone()
+  geometry.scale(scale, scale, scale)
+  geometry.center()
+  // normalize to the primitive baseline (dodecahedron radius 1) so the same
+  // placement scales produce the same visual mass — sculpts, not shrinkage
+  geometry.computeBoundingSphere()
+  const r = geometry.boundingSphere?.radius ?? 1
+  if (r > 0) geometry.scale(1 / r, 1 / r, 1 / r)
+  return geometry
+}
+
+/** The rock scatter on REAL sculpts — two boulder variants split the same
+ *  deterministic placements. Suspends while the (tiny, embedded) glTFs load;
+ *  the primitive path stands in and remains the automation tier's whole story. */
+function SculptedRockScatter(): JSX.Element {
+  const a = useGLTF(asset('models/rocks/Rock_2.gltf'))
+  const b = useGLTF(asset('models/rocks/Rock_5.gltf'))
+  const geoms = useMemo(
+    () => [sculptedGeometry(a.scene), sculptedGeometry(b.scene)],
+    [a.scene, b.scene],
+  )
+  const materials = useMemo(
+    () => [
+      new MeshStandardMaterial({ color: PALETTE.stone, roughness: 0.9, metalness: 0.03 }),
+      new MeshStandardMaterial({ color: PALETTE.stoneWarm, roughness: 0.9, metalness: 0.03 }),
+    ],
+    [],
+  )
+  const split = useMemo(() => {
+    const all = [...rockPlacements(), ...boulderPlacements()]
+    return [all.filter((_, i) => i % 2 === 0), all.filter((_, i) => i % 2 === 1)]
+  }, [])
+  return (
+    <>
+      <ScatterField placements={split[0]!} geometry={geoms[0]!} material={materials[0]!} />
+      <ScatterField placements={split[1]!} geometry={geoms[1]!} material={materials[1]!} />
+    </>
+  )
+}
+
+/** the primitive rock path — automation tier + suspense/failure fallback */
+function PrimitiveRockScatter(): JSX.Element {
   const rocks = useMemo(
     () => ({
       placements: rockPlacements(),
@@ -334,6 +388,34 @@ export function GroundField(): JSX.Element {
     }),
     [],
   )
+  return (
+    <>
+      <ScatterField {...rocks} />
+      <ScatterField {...boulders} />
+    </>
+  )
+}
+
+/** Fresnel injection for the instanced crystal materials: edges run hotter
+ *  than faces, so a gem reads as lit glass instead of a painted cone. Patches
+ *  the standard shader (instancing keeps working); cheap — one dot product. */
+function gemBoost(material: MeshStandardMaterial): MeshStandardMaterial {
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <emissivemap_fragment>',
+      [
+        '#include <emissivemap_fragment>',
+        'float fqFresnel = pow(1.0 - abs(dot(normalize(vNormal), normalize(vViewPosition))), 2.0);',
+        'totalEmissiveRadiance *= (0.5 + fqFresnel * 2.1);',
+      ].join('\n'),
+    )
+  }
+  return material
+}
+
+/** The dressed plateau: vertex-coloured ground + instanced rock, crystal, grass.
+ * Everything is static — no motion to gate on reduced-motion. */
+export function GroundField(): JSX.Element {
   // crystals come in two registers — teal runes and violet shards — each a deep
   // faceted body under a bright emissive glow that Bloom catches so they read as
   // lit gems, not flat plastic cones. Slender and tall, a little sparkle field.
@@ -350,13 +432,15 @@ export function GroundField(): JSX.Element {
         tilt: 0.16,
       }),
       geometry: new OctahedronGeometry(0.5, 0),
-      material: new MeshStandardMaterial({
-        color: '#0f5f5b',
-        emissive: PALETTE.teal,
-        emissiveIntensity: 1.6,
-        roughness: 0.12,
-        metalness: 0.0,
-      }),
+      material: gemBoost(
+        new MeshStandardMaterial({
+          color: '#0f5f5b',
+          emissive: PALETTE.teal,
+          emissiveIntensity: 1.6,
+          roughness: 0.12,
+          metalness: 0.0,
+        }),
+      ),
     }),
     [],
   )
@@ -373,13 +457,15 @@ export function GroundField(): JSX.Element {
         tilt: 0.16,
       }),
       geometry: new OctahedronGeometry(0.5, 0),
-      material: new MeshStandardMaterial({
-        color: PALETTE.violetDeep,
-        emissive: PALETTE.violet,
-        emissiveIntensity: 1.35,
-        roughness: 0.12,
-        metalness: 0.0,
-      }),
+      material: gemBoost(
+        new MeshStandardMaterial({
+          color: PALETTE.violetDeep,
+          emissive: PALETTE.violet,
+          emissiveIntensity: 1.35,
+          roughness: 0.12,
+          metalness: 0.0,
+        }),
+      ),
     }),
     [],
   )
@@ -422,8 +508,17 @@ export function GroundField(): JSX.Element {
           </Suspense>
         </AssetBoundary>
       )}
-      <ScatterField {...rocks} />
-      <ScatterField {...boulders} />
+      {IS_AUTOMATION ? (
+        <PrimitiveRockScatter />
+      ) : (
+        // real sculpted boulders; the primitive path stands in while the tiny
+        // embedded glTFs stream, and stays if they somehow fail (world holds)
+        <AssetBoundary fallback={<PrimitiveRockScatter />} label="rock-sculpts">
+          <Suspense fallback={<PrimitiveRockScatter />}>
+            <SculptedRockScatter />
+          </Suspense>
+        </AssetBoundary>
+      )}
       <ScatterField {...crystalsTeal} />
       <ScatterField {...crystalsViolet} />
       <ScatterField {...motes} />
