@@ -79,6 +79,12 @@ export function coinCount(count: number): string {
 // ---- Chrome copy ----
 
 export const UI = {
+  /** milestone flag feedback (Photoreal Pass II) — the raise now SAYS what it
+   *  did and teaches the currency split in one breath */
+  milestone: {
+    raised: (label: string): string => `Flag raised — ${label}. Action moves; Truth waits for evidence.`,
+    lowered: (label: string): string => `Flag lowered — ${label}.`,
+  },
   hud: {
     /** Truth LEADS the HUD (game-design §4) */
     truthLabel: 'Truth',

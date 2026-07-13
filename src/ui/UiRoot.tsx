@@ -39,6 +39,7 @@ import { OpeningOverlay } from './OpeningOverlay'
 import { ReentryPrompt } from './ReentryPrompt'
 import { RegistryPanel } from './RegistryPanel'
 import { ShadowOverlay } from './ShadowOverlay'
+import { Toast } from './Toast'
 import { TrancePanel } from './TrancePanel'
 import { VaultPanel } from './VaultPanel'
 
@@ -161,6 +162,7 @@ export function UiRoot(): ReactElement {
         <ShadowOverlay onAction={handleShadowAction} onDismiss={handleShadowDismiss} />
       ) : null}
       <AudioDirector />
+      <Toast />
       <DegradedBanner />
     </>
   )

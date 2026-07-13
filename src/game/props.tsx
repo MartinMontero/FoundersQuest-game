@@ -13,6 +13,7 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  CylinderGeometry,
   DodecahedronGeometry,
   type Material,
   Mesh,
@@ -24,6 +25,7 @@ import {
   type Texture,
   Vector3,
 } from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { asset } from './assets'
 import { AssetBoundary } from './AssetBoundary'
 import {
@@ -396,6 +398,39 @@ function PrimitiveRockScatter(): JSX.Element {
   )
 }
 
+/** A crystal CLUSTER: 4-6 faceted hexagonal shards of varied height and lean
+ *  growing from a shared heart, merged into ONE geometry so the whole cluster
+ *  instances as cheaply as the old lone cone did. Photoreal Pass II — the
+ *  operator's verdict on the singles was "horrible triangles": a real gem
+ *  node is a FAMILY of columns, not a spike. Deterministic per seed. */
+function makeCrystalCluster(seed: number): BufferGeometry {
+  const rng = makeRng(seed)
+  const shards: BufferGeometry[] = []
+  const count = 4 + Math.floor(rng() * 3)
+  for (let i = 0; i < count; i += 1) {
+    const big = i === 0 // the first shard is the tall heart of the node
+    const r = big ? 0.16 + rng() * 0.05 : 0.07 + rng() * 0.06
+    const h = big ? 0.85 + rng() * 0.35 : 0.3 + rng() * 0.35
+    // column body with a tapered crown — a crystal prism, not a cone
+    const body = new CylinderGeometry(r * 0.55, r, h, 6, 1)
+    const crown = new CylinderGeometry(0.02, r * 0.55, h * 0.3, 6, 1)
+    crown.translate(0, h * 0.65, 0)
+    const shard = mergeGeometries([body, crown])
+    if (shard === null) continue
+    const angle = rng() * Math.PI * 2
+    const spread = big ? 0 : 0.12 + rng() * 0.14
+    shard.rotateZ((rng() - 0.5) * (big ? 0.12 : 0.55))
+    shard.rotateY(angle)
+    shard.translate(Math.cos(angle) * spread, h * 0.32, Math.sin(angle) * spread)
+    shards.push(shard)
+  }
+  const cluster = mergeGeometries(shards) ?? new OctahedronGeometry(0.5, 0)
+  // flat facets: unshared vertices so every face catches its own light
+  const flat = cluster.toNonIndexed()
+  flat.computeVertexNormals()
+  return flat
+}
+
 /** Fresnel injection for the instanced crystal materials: edges run hotter
  *  than faces, so a gem reads as lit glass instead of a painted cone. Patches
  *  the standard shader (instancing keeps working); cheap — one dot product. */
@@ -421,17 +456,19 @@ export function GroundField(): JSX.Element {
   // lit gems, not flat plastic cones. Slender and tall, a little sparkle field.
   const crystalsTeal = useMemo(
     () => ({
-      placements: scatter(0x0c53, 14, {
-        minR: 7,
-        maxR: 21,
-        pad: 1.1,
-        yBase: 0.2,
-        scaleMin: 0.3,
-        scaleMax: 0.6,
-        scaleY: [1.1, 1.8],
-        tilt: 0.16,
+      // Photoreal Pass II: a THIRD of the old count, each now a full cluster —
+      // fewer, bigger, intentional; the sprinkled-cone litter is gone
+      placements: scatter(0x0c53, 5, {
+        minR: 8,
+        maxR: 20,
+        pad: 1.4,
+        yBase: 0.02,
+        scaleMin: 0.75,
+        scaleMax: 1.15,
+        scaleY: [0.9, 1.25],
+        tilt: 0.06,
       }),
-      geometry: new OctahedronGeometry(0.5, 0),
+      geometry: makeCrystalCluster(0x9e31),
       material: gemBoost(
         new MeshStandardMaterial({
           color: '#0f5f5b',
@@ -446,17 +483,17 @@ export function GroundField(): JSX.Element {
   )
   const crystalsViolet = useMemo(
     () => ({
-      placements: scatter(0x0c9f, 9, {
-        minR: 7.5,
-        maxR: 20,
-        pad: 1.1,
-        yBase: 0.2,
-        scaleMin: 0.28,
-        scaleMax: 0.52,
-        scaleY: [1.0, 1.6],
-        tilt: 0.16,
+      placements: scatter(0x0c9f, 3, {
+        minR: 9,
+        maxR: 19,
+        pad: 1.4,
+        yBase: 0.02,
+        scaleMin: 0.7,
+        scaleMax: 1.05,
+        scaleY: [0.85, 1.2],
+        tilt: 0.06,
       }),
-      geometry: new OctahedronGeometry(0.5, 0),
+      geometry: makeCrystalCluster(0x51c7),
       material: gemBoost(
         new MeshStandardMaterial({
           color: PALETTE.violetDeep,

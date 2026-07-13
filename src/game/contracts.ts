@@ -8,6 +8,11 @@
 
 import { NAMED_LOOPS, STAGES, type NamedLoop } from '../strings'
 
+/** milestone label by id, across every world — for the flag-raise toast */
+export function milestoneLabelById(id: string): string | undefined {
+  return ALL_MILESTONE_LABELS.get(id)
+}
+
 /** Callbacks the world fires; the UI layer supplies the implementation. */
 export interface WorldEvents {
   /** player kneels at a shrine (E/Enter on walk-up or Tab focus) */
@@ -282,6 +287,11 @@ export function milestonesForStage(stage: number): MilestoneSpec[] {
 export function milestoneIdsForStage(stage: number): string[] {
   return milestonesForStage(stage).map((m) => m.id)
 }
+
+/** every milestone label by id, all worlds — feeds the flag-raise toast */
+const ALL_MILESTONE_LABELS: ReadonlyMap<string, string> = new Map(
+  STAGES.flatMap((s) => milestonesForStage(s.stage).map((m) => [m.id, m.label] as const)),
+)
 
 /** The full interactable layout for a world: World 1 is hand-authored, 2..8 generated. */
 const LAYOUT_BY_STAGE: ReadonlyMap<number, readonly InteractableSpec[]> = new Map(
