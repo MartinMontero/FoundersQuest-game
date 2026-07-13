@@ -1,7 +1,7 @@
 // src/game/RavenGuide.tsx — the Cartographer: First Light's raven, PHYSICALLY
 // present in the world for the induction's duration (backlog E-10). The QA pass
 // called the hand-built cone/sphere bird a toy, so this is the asset-driven
-// replacement: the vendored CC0 Quaternius bird (public/models/bird/Pigeon.gltf,
+// replacement: the vendored CC0 Quaternius bird (public/models/bird/Pigeon.glb,
 // CREDITS.md) recolored crow-black in code — real feathered geometry where the
 // D36 audit once found no rigged raven to use. It perches on a dead snag beside
 // the threshold shrine (s1-th), visible from spawn looking toward the dialogue
@@ -33,7 +33,7 @@ import { useQuestStore } from '../state/store'
 import { useReducedMotion } from './useReducedMotion'
 import { useSafeFrame } from './useSafeFrame'
 
-const MODEL_URL = asset('models/bird/Pigeon.gltf')
+const MODEL_URL = asset('models/bird/Pigeon.glb')
 useGLTF.preload(MODEL_URL)
 
 // ---- the Cartographer's register ----

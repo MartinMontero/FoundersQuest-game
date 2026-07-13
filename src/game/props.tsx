@@ -345,8 +345,8 @@ function sculptedGeometry(scene: import('three').Group): BufferGeometry {
  *  deterministic placements. Suspends while the (tiny, embedded) glTFs load;
  *  the primitive path stands in and remains the automation tier's whole story. */
 function SculptedRockScatter(): JSX.Element {
-  const a = useGLTF(asset('models/rocks/Rock_2.gltf'))
-  const b = useGLTF(asset('models/rocks/Rock_5.gltf'))
+  const a = useGLTF(asset('models/rocks/Rock_2.glb'))
+  const b = useGLTF(asset('models/rocks/Rock_5.glb'))
   const geoms = useMemo(
     () => [sculptedGeometry(a.scene), sculptedGeometry(b.scene)],
     [a.scene, b.scene],

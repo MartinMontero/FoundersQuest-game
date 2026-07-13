@@ -14,8 +14,8 @@ import { asset } from './assets'
 export const ROCK_COUNT = 7
 export const ROCK_MOSS_COUNT = 3
 
-const rockUrl = (i: number): string => asset(`models/rocks/Rock_${i}.gltf`)
-const mossUrl = (i: number): string => asset(`models/rocks/Rock_Moss_${i}.gltf`)
+const rockUrl = (i: number): string => asset(`models/rocks/Rock_${i}.glb`)
+const mossUrl = (i: number): string => asset(`models/rocks/Rock_Moss_${i}.glb`)
 
 for (let i = 1; i <= ROCK_COUNT; i += 1) useGLTF.preload(rockUrl(i))
 
