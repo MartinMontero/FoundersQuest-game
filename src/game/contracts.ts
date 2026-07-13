@@ -6,7 +6,7 @@
 // milestones appear in src/strings questions.ts (03 verbatim); cross-checked
 // against the v3 source when the operator's upload lands.
 
-import { STAGES } from '../strings'
+import { NAMED_LOOPS, STAGES, type NamedLoop } from '../strings'
 
 /** Callbacks the world fires; the UI layer supplies the implementation. */
 export interface WorldEvents {
@@ -16,9 +16,27 @@ export interface WorldEvents {
   onRegistryApproach(): void
   /** player pulls a milestone flagpole (raise or lower — self-report, Action only) */
   onFlagpole(id: string): void
+  /** player walks into an onward/back path portal → travel to that world */
+  onPortal(targetStage: number): void
+  /** player takes a named-loop toll-portal → the loop toll (learning line) before travel */
+  onLoop(name: string, toStage: number): void
+  /** player rests at the campfire → the furniture hub (weather / notes / quests / export / dinner) */
+  onCampfire(): void
+  /** player steps into the Proving Circle → the confrontation loop (A4) */
+  onArenaEnter(): void
+  /** player approaches the W8 Launch Threshold → the Ego (A5) */
+  onEgoApproach(): void
 }
 
-export type InteractableKind = 'shrine' | 'vault' | 'registry' | 'flagpole'
+export type InteractableKind =
+  | 'shrine'
+  | 'vault'
+  | 'registry'
+  | 'flagpole'
+  | 'portal'
+  | 'campfire'
+  | 'arena'
+  | 'ego'
 
 export interface InteractableSpec {
   id: string
@@ -29,6 +47,12 @@ export interface InteractableSpec {
   qid?: string
   /** set when kind === 'flagpole' */
   milestoneId?: string
+  /** set when kind === 'portal' — the world this portal travels to (1..8) */
+  targetStage?: number
+  /** portal direction, for the chip label */
+  portalDir?: 'onward' | 'back' | 'loop'
+  /** set when portalDir === 'loop' — the named loop (03) this toll-portal serves */
+  loopName?: string
 }
 
 export interface MilestoneSpec {
@@ -88,13 +112,188 @@ function flagpoleSpec(milestone: MilestoneSpec, index: number): InteractableSpec
   return { id: milestone.id, kind: 'flagpole', position, milestoneId: milestone.id }
 }
 
+// ---- Traversal portals (game-design §1: the path is walkable from minute one) ----
+// Grey-box: an onward portal at each world's far edge → the next world, and a back
+// portal near spawn → the previous world. (Act-Gate doors and loop toll-portals are
+// layered on in later cycles; these plain portals carry the spine's traversal now.)
+
+// Both portals sit comfortably INSIDE the rim wall (radius 23.5) so the founder can
+// actually walk up to them: onward at the far −z end of the field, back near the
+// campfire spawn on the left. (The old back position [-19,18] was radius 26.2 —
+// beyond the plateau edge, unreachable. Operator bug report 2026-07-10.)
+export const ONWARD_POSITION: [number, number, number] = [0, 0, -18]
+export const BACK_POSITION: [number, number, number] = [-8, 0, 16]
+
+function onwardPortal(fromStage: number): InteractableSpec {
+  return {
+    id: `portal-${fromStage}-onward`,
+    kind: 'portal',
+    position: ONWARD_POSITION,
+    targetStage: fromStage + 1,
+    portalDir: 'onward',
+  }
+}
+
+function backPortal(fromStage: number): InteractableSpec {
+  return {
+    id: `portal-${fromStage}-back`,
+    kind: 'portal',
+    position: BACK_POSITION,
+    targetStage: fromStage - 1,
+    portalDir: 'back',
+  }
+}
+
+/** Portals for a world: onward (unless the last) + back (unless the first). */
+function portalsForStage(stage: number): InteractableSpec[] {
+  const out: InteractableSpec[] = []
+  if (stage < STAGES.length) out.push(onwardPortal(stage))
+  if (stage > 1) out.push(backPortal(stage))
+  return out
+}
+
+// ---- Named-loop toll-portals (03): a marked portal back to an earlier world.
+// Reality Check (W5→W1), Re-Build (W7→W3), Reset (W8→W1). Distinct from the plain
+// back portal: taking it demands a learning line (→ trail), so it routes through
+// the loop toll, not a silent jump. One clear spot on the right, in the KEEPOUT.
+export const LOOP_POSITION: [number, number, number] = [16, 0, -6]
+
+function loopPortal(loop: NamedLoop): InteractableSpec {
+  return {
+    id: `portal-${loop.from}-loop`,
+    kind: 'portal',
+    position: LOOP_POSITION,
+    targetStage: loop.to,
+    portalDir: 'loop',
+    loopName: loop.name,
+  }
+}
+
+/** The named-loop toll-portal(s) that loop back FROM this world (03), if any. */
+function loopPortalsForStage(stage: number): InteractableSpec[] {
+  return NAMED_LOOPS.filter((l) => l.from === stage).map(loopPortal)
+}
+
+// ---- The campfire (the rest hub, every world). One waypoint near spawn where the
+// furniture lives: weather totem, field-notes lectern, side-quest board, journal
+// export desk, Dinner Card. A clear spot left of spawn, inside the rim, in KEEPOUT.
+export const CAMPFIRE_POSITION: [number, number, number] = [-4, 0, 20]
+
+const CAMPFIRE_SPEC: InteractableSpec = {
+  id: 'campfire',
+  kind: 'campfire',
+  position: CAMPFIRE_POSITION,
+}
+
+// ---- The Proving Circle (A4): the confrontation arena. Vertical slice lives in
+// World 1 — a clear spot on the east side, inside the rim (r≈17.1 < 23.5), well
+// off the shrine spiral (nearest shrine s1-l1 at [10,9] is ~6.7 away).
+export const ARENA_POSITION: [number, number, number] = [16, 0, 6]
+
 /**
  * Every placed interactable in the Stage 1 slice: all 8 s1 shrines (ids from
- * src/strings, canon order), 3 milestone flagpoles, the Vault, the Registry.
+ * src/strings, canon order), 3 milestone flagpoles, the Vault, the Registry,
+ * the Proving Circle, plus the onward portal to World 2.
  */
 export const STAGE1_LAYOUT: readonly InteractableSpec[] = [
   ...stage1.questions.map((q) => shrineSpec(q.id)),
   ...STAGE1_MILESTONES.map((m, i) => flagpoleSpec(m, i)),
   { id: 'vault', kind: 'vault', position: VAULT_POSITION },
   { id: 'registry', kind: 'registry', position: REGISTRY_POSITION },
+  { id: 'arena', kind: 'arena', position: ARENA_POSITION },
+  CAMPFIRE_SPEC,
+  ...portalsForStage(1),
 ]
+
+// ---- Generalized per-stage layout (Worlds 2..8; World 1 keeps its hand-authored
+// spiral above). Grey-box: shrines on an inward spiral, flagpoles clustered near
+// spawn, portals for traversal. Per-world set-pieces (the Raven fellowship circle,
+// the forge pyre, the maze, the mirror causeway, the graveyard, the bridge, the
+// launch pad) and distinct visuals are layered on in each world's own cycle. ----
+
+const SPIRAL_MAX_R = 18
+const SPIRAL_MIN_R = 4
+/** shrines wind inward from near spawn (+z) across ~1.15 turns */
+function spiralPositions(count: number): [number, number, number][] {
+  const out: [number, number, number][] = []
+  for (let i = 0; i < count; i += 1) {
+    const t = count <= 1 ? 0 : i / (count - 1)
+    const r = SPIRAL_MAX_R - t * (SPIRAL_MAX_R - SPIRAL_MIN_R)
+    const angle = Math.PI / 2 + t * Math.PI * 2.3 // start at +z (near spawn), wind in
+    out.push([
+      Math.round(Math.cos(angle) * r * 10) / 10,
+      0,
+      Math.round(Math.sin(angle) * r * 10) / 10,
+    ])
+  }
+  return out
+}
+
+/** three flagpoles in a short row on the near-right, clear of the back portal */
+const GENERIC_FLAGPOLES: readonly [number, number, number][] = [
+  [7, 0, 16],
+  [10, 0, 15],
+  [13, 0, 14],
+]
+
+// ---- The Launch Threshold (A5): the Ego's gate, World 8 only. Far −z end of
+// the pad (W8 has no onward portal, so the slot is clear of the spiral: the
+// nearest shrine ring point sits at r=18 near spawn, +z side).
+export const EGO_POSITION: [number, number, number] = [0, 0, -19]
+
+function generatedLayout(stage: number): InteractableSpec[] {
+  const stageData = STAGES.find((s) => s.stage === stage)
+  if (stageData === undefined) throw new Error(`contracts: no STAGES entry for stage ${stage}`)
+  const shrinePositions = spiralPositions(stageData.questions.length)
+  const shrines: InteractableSpec[] = stageData.questions.map((q, i) => ({
+    id: q.id,
+    kind: 'shrine',
+    position: shrinePositions[i] ?? [0, 0, 0],
+    qid: q.id,
+  }))
+  const milestones = milestonesForStage(stage)
+  const poles: InteractableSpec[] = milestones.map((m, i) => ({
+    id: m.id,
+    kind: 'flagpole',
+    position: GENERIC_FLAGPOLES[i] ?? [7, 0, 16],
+    milestoneId: m.id,
+  }))
+  return [
+    ...shrines,
+    ...poles,
+    CAMPFIRE_SPEC,
+    ...portalsForStage(stage),
+    ...loopPortalsForStage(stage),
+    // D-A: confrontations are PER-WORLD encounters — every world 2..7 gets its
+    // Proving Circle (W1 is hand-placed; W8's confrontation is the Ego itself)
+    ...(stage < STAGES.length
+      ? [{ id: 'arena', kind: 'arena', position: ARENA_POSITION } as InteractableSpec]
+      : [{ id: 'ego-gate', kind: 'ego', position: EGO_POSITION } as InteractableSpec]),
+  ]
+}
+
+/** Milestones for any stage, ids per R-K: s{n}-m{1..3}. */
+export function milestonesForStage(stage: number): MilestoneSpec[] {
+  const stageData = STAGES.find((s) => s.stage === stage)
+  if (stageData === undefined) return []
+  return stageData.milestones.map((label, index) => ({ id: `s${stage}-m${index + 1}`, label }))
+}
+
+export function milestoneIdsForStage(stage: number): string[] {
+  return milestonesForStage(stage).map((m) => m.id)
+}
+
+/** The full interactable layout for a world: World 1 is hand-authored, 2..8 generated. */
+const LAYOUT_BY_STAGE: ReadonlyMap<number, readonly InteractableSpec[]> = new Map(
+  STAGES.map((s) => [s.stage, s.stage === 1 ? STAGE1_LAYOUT : generatedLayout(s.stage)]),
+)
+
+export function layoutForStage(stage: number): readonly InteractableSpec[] {
+  return LAYOUT_BY_STAGE.get(stage) ?? STAGE1_LAYOUT
+}
+
+/** Global spec lookup across ALL worlds — ids are globally unique (qids, s{n}-m{k},
+ *  stage-scoped set-pieces, portal-{n}-{dir}), so one map serves every world. */
+export const ALL_SPECS_BY_ID: ReadonlyMap<string, InteractableSpec> = new Map(
+  STAGES.flatMap((s) => layoutForStage(s.stage).map((spec) => [spec.id, spec] as const)),
+)

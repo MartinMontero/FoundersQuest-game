@@ -9,11 +9,13 @@ import {
   XP_VALIDATED,
   actionFraction,
   fieldAttemptTally,
+  gateMet,
   importanceWeight,
   riskiest,
   tierOf,
   trough,
   truth,
+  verdictRecorded,
   xp,
 } from '../src/core/metrics'
 import { withDefaults } from '../src/core/schema'
@@ -492,5 +494,112 @@ describe('actionFraction', () => {
     // with none: still null even at full Action
     expect(truth(data({ milestones: allRaised }))).toBeNull()
     expect(actionFraction(data({ milestones: allRaised }), ids)).toBe(1)
+  })
+})
+
+describe('the First-Light carve-out (D-G, 2026-07-11)', () => {
+  it('firstLight assumptions are excluded from the Truth denominator entirely', () => {
+    const live = assumption({ id: 'live-1', importance: 'dies', status: 'validated' })
+    const tut = assumption({ id: 'tut-1', importance: 'dies', status: 'invalidated', firstLight: true })
+    const d = data({
+      assumptions: [live, tut],
+      evidence: [evidence({ tier: 2, linkedAssumptionIds: ['live-1'] })],
+    })
+    expect(truth(d)).toBe(1) // 3/3 — the tutorial kill neither lowers nor raises the ceiling
+    // ONLY firstLight assumptions → Truth stays null (the meter is unlit, not corrupted)
+    expect(truth(data({ assumptions: [tut] }))).toBeNull()
+  })
+
+  it('a RESOLVED firstLight assumption pays fixed First-Light XP outside the tier≥2 formula', () => {
+    const killed = assumption({ id: 'fl-1', status: 'invalidated', firstLight: true }) // tier 0
+    expect(xp(data({ assumptions: [killed] }))).toBe(15)
+    const confirmed = assumption({ id: 'fl-2', status: 'validated', firstLight: true })
+    expect(xp(data({ assumptions: [confirmed] }))).toBe(15) // fixed — not the 15/10 split
+    const unresolved = assumption({ id: 'fl-3', firstLight: true })
+    expect(xp(data({ assumptions: [unresolved] }))).toBe(0)
+    // and tier≥2 evidence does NOT double-pay a firstLight assumption
+    const withEvidence = data({
+      assumptions: [killed],
+      evidence: [evidence({ tier: 3, linkedAssumptionIds: ['fl-1'] })],
+    })
+    expect(xp(withEvidence)).toBe(15)
+  })
+})
+
+describe('verdictRecorded (the W5 sequence-lock key)', () => {
+  it('true only for a yes/no verdict at s5-th', () => {
+    expect(verdictRecorded(data({ answers: { s5: { 's5-th': { verdict: 'yes' } } } }))).toBe(true)
+    expect(verdictRecorded(data({ answers: { s5: { 's5-th': { verdict: 'no' } } } }))).toBe(true)
+    expect(verdictRecorded(data({ answers: { s5: { 's5-th': { verdict: 'maybe' } } } }))).toBe(false)
+    expect(verdictRecorded(data())).toBe(false)
+  })
+})
+
+describe('gateMet (Act-Gate criteria; derived, warn-not-block)', () => {
+  it('act1: s1 threshold · ≥5 E2+ · ≥1 E3+ · a written kill criterion', () => {
+    const met = data({
+      answers: { s1: { 's1-th': { text: 'the story' } } },
+      evidence: [evidence(), evidence(), evidence(), evidence(), evidence({ tier: 3 })],
+      assumptions: [assumption()], // helper gives a non-empty killCriterion
+    })
+    expect(gateMet(met, 'act1')).toBe(true)
+    // one short on E2 count → unmet
+    expect(
+      gateMet(
+        data({
+          answers: { s1: { 's1-th': { text: 'x' } } },
+          evidence: [evidence(), evidence(), evidence(), evidence({ tier: 3 })],
+          assumptions: [assumption()],
+        }),
+        'act1',
+      ),
+    ).toBe(false)
+    // five E2 but no E3 → unmet
+    expect(
+      gateMet(
+        data({
+          answers: { s1: { 's1-th': { text: 'x' } } },
+          evidence: [evidence(), evidence(), evidence(), evidence(), evidence()],
+          assumptions: [assumption()],
+        }),
+        'act1',
+      ),
+    ).toBe(false)
+    // no written kill criterion → unmet
+    expect(
+      gateMet(
+        data({
+          answers: { s1: { 's1-th': { text: 'x' } } },
+          evidence: [evidence(), evidence(), evidence(), evidence(), evidence({ tier: 3 })],
+          assumptions: [assumption({ killCriterion: '   ' })],
+        }),
+        'act1',
+      ),
+    ).toBe(false)
+  })
+
+  it('act2: verdict recorded · decision cited', () => {
+    const met = data({
+      answers: { s5: { 's5-th': { verdict: 'no' }, 's5-dec': { decision: 'pivot', citedEvidenceIds: ['e-1'] } } },
+    })
+    expect(gateMet(met, 'act2')).toBe(true)
+    // decision with no citation → unmet (the s5-dec lock)
+    expect(
+      gateMet(
+        data({ answers: { s5: { 's5-th': { verdict: 'no' }, 's5-dec': { decision: 'pivot', citedEvidenceIds: [] } } } }),
+        'act2',
+      ),
+    ).toBe(false)
+    // verdict missing → unmet
+    expect(
+      gateMet(data({ answers: { s5: { 's5-dec': { decision: 'pivot', citedEvidenceIds: ['e-1'] } } } }), 'act2'),
+    ).toBe(false)
+  })
+
+  it('act3: unit walk-through (s7-th) · SPOF (s7-l2)', () => {
+    expect(
+      gateMet(data({ answers: { s7: { 's7-th': { text: 'unit walk' }, 's7-l2': { text: 'spof' } } } }), 'act3'),
+    ).toBe(true)
+    expect(gateMet(data({ answers: { s7: { 's7-th': { text: 'unit walk' } } } }), 'act3')).toBe(false)
   })
 })

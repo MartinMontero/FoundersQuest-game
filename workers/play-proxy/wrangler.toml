@@ -1,0 +1,11 @@
+# fq-play-proxy — foundersquest.ca/play* → the game's Pages deployment.
+# See worker.js for the constitutional lines. Deploy: npx wrangler deploy
+# (from this directory). The rest of the zone is untouched by this route.
+name = "fq-play-proxy"
+main = "worker.js"
+compatibility_date = "2026-07-01"
+workers_dev = false
+
+[[routes]]
+pattern = "foundersquest.ca/play*"
+zone_name = "foundersquest.ca"

@@ -91,6 +91,45 @@ describe('settings — fallback acceptance', () => {
   })
 })
 
+describe('settings — founder name (device-local, own key)', () => {
+  it('defaults to empty on a fresh store (unnamed → the UI shows the canon default)', () => {
+    const { store, writtenKeys } = spyStore()
+    expect(createSettings(store).getFounderName()).toBe('')
+    expect(writtenKeys).toEqual([]) // a read never writes
+  })
+
+  it('setFounderName persists under exactly SETTINGS_STORAGE_KEY and round-trips', () => {
+    const { store, writtenKeys, storedKeys } = spyStore()
+    createSettings(store).setFounderName('Ada')
+    expect(writtenKeys).toEqual([SETTINGS_STORAGE_KEY])
+    expect(storedKeys()).toEqual([SETTINGS_STORAGE_KEY])
+    expect(createSettings(store).getFounderName()).toBe('Ada')
+  })
+
+  it('the name and the fallback choice coexist — neither write clobbers the other', () => {
+    const { store } = spyStore()
+    const settings = createSettings(store)
+    settings.acceptFallback()
+    settings.setFounderName('Grace')
+    expect(settings.getFallbackAccepted()).toBe(true)
+    expect(settings.getFounderName()).toBe('Grace')
+  })
+
+  it('a mistyped or missing founderName reads back as empty', () => {
+    const { store, seed } = spyStore()
+    seed(SETTINGS_STORAGE_KEY, JSON.stringify({ fallbackAccepted: true, founderName: 42 }))
+    expect(createSettings(store).getFounderName()).toBe('')
+  })
+
+  it('a corrupt record degrades to an empty name without throwing', () => {
+    const { store, seed } = spyStore()
+    seed(SETTINGS_STORAGE_KEY, '{ not json')
+    const settings = createSettings(store)
+    expect(() => settings.getFounderName()).not.toThrow()
+    expect(settings.getFounderName()).toBe('')
+  })
+})
+
 describe('settings — guarded reads (corrupt or foreign records degrade to defaults)', () => {
   it.each(['{ not json', '"a string"', '[1,2,3]', 'null', '42'])(
     'corrupt/foreign payload %s → default false, no throw',

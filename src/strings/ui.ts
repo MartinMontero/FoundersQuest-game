@@ -118,6 +118,139 @@ export const UI = {
     registerGuardian: 'Register as guardian',
     guardianRegistered: 'guardian registered',
   },
+  // ---- per-world trance controls (§2.1) — authored chrome, never canon text ----
+  /** s2-th verbatim: paste five quotes, word for word; log a quote as E2 (04/02). */
+  verbatim: {
+    quoteLabel: (n: number): string => `Quote ${n}`,
+    quoteAdd: 'Add another quote',
+    logAsE2: 'Log as E2',
+    sourceLabel: 'Who said it',
+    logConfirm: 'Log the quote',
+    logged: 'logged as E2 Word',
+  },
+  /** s3-l1 vault: open the Vault (unsealed at Stage 3), pick the idea that hits the root. */
+  vaultPick: {
+    prompt: 'Which captured idea attacks the root — not a symptom of it?',
+    empty: 'The Vault holds nothing yet. Write the idea here instead.',
+    fallbackLabel: 'Your answer',
+    chooseLabel: (n: number): string => `Vault idea ${n}`,
+  },
+  /** s3-l2 ifthen: state the logic before building; register the IF as a guardian. */
+  ifthen: {
+    ifLabel: 'IF',
+    thenLabel: 'THEN — when they meet it, we will observe',
+    withinLabel: 'WITHIN (days)',
+    importanceLabel: 'Importance',
+    registerIf: 'Register the IF as a guardian',
+    registered: 'the IF stands as a guardian',
+  },
+  /** s4-th seal: Ariadne's Thread — timestamped, locked, two-step confirm. */
+  seal: {
+    label: 'The result that makes you stop or pivot',
+    seal: 'Seal it',
+    confirm: 'Confirm — this locks',
+    sealedCaption: "Sealed — Ariadne's Thread",
+    sealedAt: (iso: string): string => `Sealed ${iso.slice(0, 10)}`,
+    locked: 'Sealed and locked. It opens at the Mirror.',
+  },
+  /** s5-th verdict: open the seal, read it, rule yes/no before interpreting. */
+  verdict: {
+    sealedCaption: 'The thread you sealed:',
+    noSeal: 'No thread was sealed at the Labyrinth.',
+    question: 'Did the thread trigger?',
+    yes: 'Yes — it triggered',
+    no: 'No — it held',
+  },
+  /** s5-l5 registry: the funeral — mark a Stage-1 belief invalidated, take the XP. */
+  funeral: {
+    prompt: 'Which Stage-1 belief is now dead?',
+    empty: 'No Stage-1 guardians stand to bury.',
+    hold: 'Hold the funeral',
+    confirm: 'Confirm the funeral',
+    proven: 'Proven — this funeral pays full honors (1.5×).',
+    unproven: 'Unproven funeral — no E2+ evidence stands behind it yet.',
+    buried: 'buried',
+  },
+  /** s5-dec decision: pivot or persevere — locked until ≥1 evidence citation. */
+  decision: {
+    pivot: 'Pivot',
+    persevere: 'Persevere',
+    citePrompt: 'Cite the evidence that decides it:',
+    noEvidence: 'No evidence to cite yet — log evidence, then decide.',
+    cited: (n: number): string => (n === 1 ? '1 citation' : `${n} citations`),
+    locked: 'Locked until you cite at least one piece of evidence.',
+  },
+  /** s8-th spine: the StoryBrand cast; an uncited beat renders [unproven] (A4 interim). */
+  spine: {
+    beatLabels: [
+      'Once there was',
+      'Every day',
+      'Until one day',
+      'Because of that',
+      'Until finally',
+    ] as const,
+    beatPlaceholders: [
+      'named customer',
+      'struggle',
+      'your work',
+      'observed outcome',
+      'transformation',
+    ] as const,
+    citePrompt: 'Cite the evidence your spine rests on:',
+    noEvidence: 'No evidence cited — every beat casts as [unproven].',
+    unproven: '[unproven]',
+  },
+  /** s3-joy / s8-l3 joy: name the one moment that makes them smile and tell a friend. */
+  joy: {
+    label: 'Name the moment',
+    prompt: 'Design it on purpose.',
+  },
+  /** canon sequence locks — verdict-first at the Mirror (W5). */
+  locks: {
+    verdictFirst:
+      'The Mirror will not answer until you rule on Ariadne’s Thread. Open the sealed verdict first — yes or no — before you interpret anything else.',
+  },
+  /** the Act Gate threshold (03; warn, never block — canon 01). */
+  gate: {
+    criteriaLabel: 'To cross cleanly:',
+    met: 'The bar is met — the way is open.',
+    unmet: 'The bar is not met. You may still cross — but name why, for the trail.',
+    pass: 'Cross the threshold',
+    reasonLabel: 'Why cross now?',
+    override: 'Cross anyway',
+    turnBack: 'Not yet',
+  },
+  /** a named loop's toll-portal (03): every loop demands one learning line. */
+  loop: {
+    tollLine: (name: string): string => `${name} — a loop back. Name the one thing you learned.`,
+    learningLabel: 'What did you learn?',
+    pay: 'Loop back',
+    turnBack: 'Stay',
+  },
+  /** the campfire hub (J16): weather totem, field notes, side quests, export, Dinner Card. */
+  campfire: {
+    title: 'The Campfire',
+    save: 'Save',
+    weatherLegend: 'Weather',
+    weatherHint: 'One tap, any time — every reading is kept.',
+    weatherLast: (label: string): string => `Last reading: ${label}`,
+    weatherNone: 'No reading yet.',
+    notesLegend: 'Field notes',
+    notesLabel: "This world's notes",
+    notesPlaceholder: 'What did you see out there?',
+    notesSaved: 'saved',
+    questsLegend: 'Side quests',
+    questAccept: 'Accept',
+    questComplete: 'Mark complete',
+    questDone: 'complete · +5 XP',
+    exportLegend: 'Journal',
+    exportDownload: 'Download your journal',
+    exportHint: 'A Markdown file, yours — nothing leaves this device.',
+    dinnerLegend: 'Dinner Card',
+    dinnerLabel: 'Bring what’s going wrong to the table',
+    dinnerPlaceholder: 'No bragging — share what’s going wrong.',
+    dinnerSaved: 'saved',
+  },
   vault: {
     /** gentle, dismissible, never blocks saving (03 Stage 1 rule; law 10) */
     nudgeText: 'That reads like a solution. The Vault can hold it while you stay with the problem.',
@@ -147,6 +280,41 @@ export const UI = {
     evidenceSourceLabel: 'Source',
     evidenceAdd: 'Log as E2',
   },
+  /** The Earned Hunch (Mind & Myth A2) — whispers, provenance, the gut's record. */
+  hunch: {
+    whispersLegend: 'Whispers — hunches on the bench',
+    captureLabel: 'Log a hunch — no justification needed',
+    captureButton: 'Log the whisper',
+    /** the wicked-domain rune: standing, unobtrusive; never blocks, never nags */
+    runeGlyph: '☽',
+    runeLabel: 'wicked-domain rune',
+    runeText:
+      'Confidence is not evidence. Founding gives slow, distorted feedback — send this to the test bench.',
+    provenanceLabel: 'Where did this come from?',
+    provenanceUntagged: 'untagged',
+    /** plain one-line definitions (mythic chrome stays on the entry, not here) */
+    provenanceOptions: {
+      earned: 'Earned — your own direct domain experience',
+      adjacent: 'Adjacent — a domain near the one you know',
+      wild: 'Wild — no experiential basis',
+      borrowed: 'Borrowed — someone else’s conviction',
+    },
+    seedButton: 'Send to the test bench',
+    seeded: 'on the bench',
+    calibrationOpen: 'Your gut’s record',
+  },
+  /** The Calibration Record page (A2): factual and warm; no shaming states. */
+  calibration: {
+    panelTitle: 'Your Gut’s Record',
+    intro:
+      'Nobody can introspect their own hit-rate — that is why this record exists. It never moves Truth or XP; it only shows how your gut has tested, rung by rung.',
+    empty: 'No tagged hunches yet. Log a whisper in the Registry and tag where it came from.',
+    awaiting: 'awaiting its test',
+    held: 'held',
+    broke: 'broke',
+    rateLine: (held: number, resolved: number): string =>
+      resolved === 0 ? 'no resolved tests yet' : `${held} of ${resolved} held`,
+  },
   shadow: {
     title: 'The Shadow',
     /** the exactly-one low-friction action: deep-link to the riskiest guardian */
@@ -157,6 +325,23 @@ export const UI = {
     /** the honest banner for the 02 storage-ladder memory fallback (wording authored here) */
     degraded:
       'Storage is unavailable on this device — this session lives in memory only, and nothing will survive a reload.',
+  },
+  founder: {
+    /** the canon default when the player names nothing (operator ruling, 2026-07-10) */
+    defaultName: 'founder',
+    /** the naming card — one title for both first run and rename (operator copy, 2026-07-10) */
+    namingTitle: 'Name your founder',
+    namingPrompt: 'Make this quest your own! What shall we call you?',
+    namingPlaceholder: 'founder',
+    namingBegin: 'Begin the quest',
+    namingSkip: 'Stay “founder”',
+    /** the HUD identity line under/over the world banner */
+    hudTitle: 'Founder',
+    /** rename flow — the same card, re-opened from the HUD name (operator ask, 2026-07-10) */
+    renameSave: 'Save name',
+    renameCancel: 'Cancel',
+    /** tooltip/label on the clickable HUD name */
+    renameHint: 'Rename your founder',
   },
   onboarding: {
     movement: 'Move — WASD or arrow keys · Tab — cycle what is near · E or Enter — interact',

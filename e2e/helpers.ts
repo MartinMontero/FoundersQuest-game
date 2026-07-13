@@ -6,9 +6,52 @@
 
 import { expect, type Page } from '@playwright/test'
 import { STORAGE_KEY, type QuestData } from '../src/core/schema'
+import { SETTINGS_STORAGE_KEY } from '../src/settings'
 import { STAGES } from '../src/strings'
 
 export const SCREENSHOT_DIR = 'e2e/screenshots'
+
+/** Pre-seed the founder's name so the first-run naming card never opens over a
+ * gameplay spec (the card is exercised on its own in founder-naming.spec). The
+ * name lives under the settings' own key, so it never touches founders-quest:v3.
+ * ALSO (unless `freshOpening`) pre-seeds a COMPLETED First Light into an absent
+ * founders-quest:v3 — a returning founder — so the invitation/induction never
+ * opens over a gameplay spec (First Light is exercised in firstlight.spec). A
+ * spec that writes its own STORAGE_KEY afterwards simply overwrites this seed;
+ * its non-pristine record keeps the invitation away by the product rule.
+ * Best-effort under a storage shim: setItem throws there and is swallowed (that
+ * spec dismisses the card in-test instead). Call BEFORE page.goto. */
+export async function seedFounderName(
+  page: Page,
+  name = 'Tester',
+  opts: { freshOpening?: boolean } = {},
+): Promise<void> {
+  await page.addInitScript(
+    ([key, value, storageKey, openingDone]) => {
+      try {
+        window.localStorage.setItem(key as string, value as string)
+        if (openingDone === 'yes' && window.localStorage.getItem(storageKey as string) === null) {
+          window.localStorage.setItem(
+            storageKey as string,
+            JSON.stringify({
+              openingCompletedAt: '2026-07-10T00:00:00.000Z',
+              invitationSeen: true,
+              chartUnlocked: true,
+            }),
+          )
+        }
+      } catch {
+        // storage blocked (degraded-mode spec) — handled in that spec directly
+      }
+    },
+    [
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({ fallbackAccepted: false, founderName: name }),
+      STORAGE_KEY,
+      opts.freshOpening === true ? 'no' : 'yes',
+    ],
+  )
+}
 
 const stage1 = STAGES.find((s) => s.stage === 1)
 if (stage1 === undefined) throw new Error('e2e helpers: stage 1 missing from src/strings')
@@ -61,7 +104,7 @@ export async function shot(page: Page, name: string): Promise<void> {
 }
 
 // 8 shrines + 3 flagpoles + vault + registry = 13 interactables in the cycle.
-const TAB_CYCLE_LIMIT = 16
+const TAB_CYCLE_LIMIT = 24
 
 /** Tab-cycle the 3D interactable focus (keyboard a11y path) until the name
  * chip shows `label` — the chip is the player-visible signal that this target
@@ -78,6 +121,21 @@ export async function tabToChip(page: Page, label: string): Promise<void> {
     }
   }
   throw new Error(`tabToChip: never reached "${label}" in ${TAB_CYCLE_LIMIT} tabs`)
+}
+
+/** Tab-cycle interactable focus until the EXACT interactable `id` is active,
+ * reading the dev-only window mirror (src/game/interaction.ts). Deterministic:
+ * focusedId advances exactly one step per Tab keydown, so this is immune to the
+ * drei <Html> focus-chip render lag that makes label-matching (tabToChip) flaky
+ * when the founder starts near a shrine. Use this to reach a precise shrine. */
+export async function tabToTarget(page: Page, id: string, maxTabs = 24): Promise<void> {
+  const active = (): Promise<string | null> =>
+    page.evaluate(() => (window as unknown as { __fq_target?: string | null }).__fq_target ?? null)
+  for (let i = 0; i <= maxTabs; i += 1) {
+    if ((await active()) === id) return
+    await page.keyboard.press('Tab')
+  }
+  throw new Error(`tabToTarget: never reached "${id}" in ${maxTabs} tabs`)
 }
 
 /** WASD walk-up: hold `key` in short bursts until the walk-up proximity chip

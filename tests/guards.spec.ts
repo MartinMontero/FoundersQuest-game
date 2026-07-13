@@ -72,10 +72,41 @@ describe('repo guards (canon 02 / CLAUDE.md)', () => {
     expect(offenders).toEqual([])
   })
 
+  it('no default-browser resize grips: resize utilities are banned in src (art-direction §3)', () => {
+    // the OS textarea grip is banned chrome; index.css sets resize:none for
+    // every textarea — a resize-y/resize-x utility class would reintroduce it
+    const offenders = walk(SRC)
+      .filter((p) => p.endsWith('.tsx') || p.endsWith('.ts'))
+      .filter((p) => /resize-[xy]/.test(readFileSync(p, 'utf8')))
+    expect(offenders).toEqual([])
+    expect(readFileSync(join(SRC, 'index.css'), 'utf8')).toContain('resize: none')
+  })
+
   it('the CSP header file ships the canon connect-src', () => {
     const headers = readFileSync(join(ROOT, 'public', '_headers'), 'utf8')
     expect(headers).toContain("default-src 'self'")
-    expect(headers).toContain("connect-src 'self' https://api.anthropic.com")
+    // blob: is LOAD-BEARING beside the canon pair: rapier's WASM instantiates
+    // via a blob: fetch in the Vite build — removing it re-crashes the world
+    // under the shipped CSP (verified by e2e/csp.spec.ts, 2026-07-11). The
+    // policy is exactly these three sources, nothing else.
+    expect(headers).toContain("connect-src 'self' https://api.anthropic.com blob:;")
     expect(headers).toContain('frame-ancestors \'none\'')
+  })
+
+  it('the service worker never touches the Council path (F-9 / R-J)', () => {
+    const sw = readFileSync(join(ROOT, 'public', 'sw.js'), 'utf8')
+    // the two load-bearing early returns: non-GET and cross-origin pass through
+    expect(sw).toContain("if (request.method !== 'GET') return")
+    expect(sw).toContain('if (url.origin !== self.location.origin) return')
+    // the worker must not even know the hostname — nothing to observe or log
+    expect(sw.toLowerCase()).not.toContain('anthropic')
+  })
+
+  it('service-worker registration is production-gated (dev never sits behind a cache)', () => {
+    const pwa = readFileSync(join(SRC, 'pwa.ts'), 'utf8')
+    const gate = pwa.indexOf('import.meta.env.PROD')
+    const register = pwa.indexOf('serviceWorker.register')
+    expect(gate).toBeGreaterThan(-1)
+    expect(register).toBeGreaterThan(gate) // the gate comes first
   })
 })

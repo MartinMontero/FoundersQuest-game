@@ -13,6 +13,25 @@ export const SHADOW_DIVERGENCE_PP = 40
 export const SHADOW_MIN_ASSUMPTIONS = 3
 
 /**
+ * Earned-hunch priority bump (02 computed-metrics, Mind & Myth A2): added to a
+ * seeded-from-Earned guardian's riskiest-ORDERING score only. Weight/Truth/XP
+ * math untouched (invariant-tested). 2 ≈ two-thirds of a tier step at `dies`
+ * weight — enough to break ties and lift a rung, never to dwarf importance.
+ */
+export const EARNED_HUNCH_BUMP = 2
+
+/**
+ * The Proving Circle's action wrapper (A4, D-C: skill accelerates, NEVER
+ * locks). The citation window opens EARLY when strikes break the guardian's
+ * poise — and opens AUTOMATICALLY after this many ms regardless, so evidence
+ * access needs zero successful strikes (invariant, e2e-tested). Code
+ * constants per R-F: numbers never enter canon.
+ */
+export const ARENA_WINDOW_AUTO_MS = 6000
+/** poise chipped per landed strike (poise pool = the guardian's composureMax) */
+export const ARENA_POISE_CHIP = 1
+
+/**
  * The derived divergence check — no write, zero network. True when:
  *   - ≥ SHADOW_MIN_ASSUMPTIONS assumptions are registered,
  *   - NOT in the trough (the Shadow holds fire there — 02/03), and

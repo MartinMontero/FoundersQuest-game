@@ -3,6 +3,7 @@
 // Movement keys plus the walk-to-a-shrine line, all from src/strings.
 
 import type { ReactElement } from 'react'
+import { useFounderStore } from '../state/founder'
 import { useQuestStore } from '../state/store'
 import { useUiStore } from '../state/ui'
 import { UI } from '../strings'
@@ -10,17 +11,23 @@ import { UI } from '../strings'
 export function OnboardingHint(): ReactElement | null {
   const firstRun = useQuestStore((s) => Object.keys(s.data.answers).length === 0)
   const mode = useUiStore((s) => s.mode)
-  if (!firstRun || mode !== 'roam') return null
+  // hold the keys hint back while the naming card still owns the screen — either
+  // the first-run card (unnamed) or the rename card re-opened from the HUD
+  const unnamed = useFounderStore((s) => s.name === '')
+  const renaming = useFounderStore((s) => s.renaming)
+  if (!firstRun || mode !== 'roam' || unnamed || renaming) return null
 
   return (
     <div
       role="note"
       data-testid="onboarding-hint"
-      className="pointer-events-none fixed inset-x-0 bottom-6 z-hud flex justify-center px-4"
+      className="pointer-events-none fixed inset-x-0 bottom-6 z-hud flex justify-center px-4 motion-safe:animate-quest-fade"
     >
-      <div className="rounded-lg border border-slate-700 bg-slate-900/90 px-4 py-2 text-center">
-        <p className="text-xs text-slate-300">{UI.onboarding.movement}</p>
-        <p className="mt-0.5 text-sm font-medium text-slate-100">{UI.onboarding.interact}</p>
+      <div className="quest-hud px-5 py-3 text-center">
+        <p className="text-xs tracking-wide text-parchment-300/85">{UI.onboarding.movement}</p>
+        <p className="quest-heading mt-1 text-sm font-semibold text-amber-accent-200">
+          {UI.onboarding.interact}
+        </p>
       </div>
     </div>
   )

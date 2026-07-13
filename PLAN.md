@@ -29,3 +29,167 @@ Phase 1 core is green (VERIFICATION round 1; CI run 4). This phase builds the pl
 ## Non-goals (Phase 2)
 
 Stages 2–8, gates, loops, side quests, weather totem, funerals (Phase 3) · Council temple/UI (Phase 4; transport stays unit-tested only) · Field Mode, PWA, QR (Phase 5) · exports UI, audio, onboarding polish (Phase 6) · non-grey-box assets (allowed: Kenney prototype textures if trivially embeddable; nothing on the critical path).
+
+---
+
+# Program Addendum A — "Mind & Myth" (merged 2026-07-11)
+
+The operator's addendum prompt (uploads/ccpromptfqgamemindmythintegration.md) merges here
+alongside the phase program. Gate 0 ran 2026-07-11: recon in AUDIT.md, consolidated canon diff
+in docs/build/mindmyth-canon-diff.md (RATIFIED, all defaults), blockers in BLOCKERS.md.
+
+- **A0 Gate 0** ✅ — three artifacts produced; operator ratified all D-blocks at defaults;
+  research files landed on main and merged; art law = docs/build/art-direction.md.
+- **A1 docs landing** ✅ — WIKJ v3 assembled at docs/epistemology/ (8 edits by intent, deviations
+  logged); canon commit applied (schema delta, council sentence swap, 5 riders, keybind
+  reservation, glossary). Council provenance-block: BLOCKERS B-4 (severable, awaiting source).
+- **A2 The Earned Hunch** ✅ CLOSED (2026-07-11) — provenance tagging, wicked rune, priority
+  bump, calibration record; 15 invariant tests + full e2e flow; two consecutive clean full runs
+  (vitest 351 ×2 · e2e 23 ×2 · scanners clean). 05 moved Queued→Shipped.
+- **A3 First Light** — UNBLOCKED by the 2026-07-11 operator directive (one consolidated
+  end-of-build playthrough; BLOCKERS B-3 superseded-entry). Shipped: D-G carve-out in metrics
+  (denominator exclusion + fixed XP), opening store actions, the Cartographer's Chart (M) +
+  Legend (L) panels + HUD affordances, the 11-beat induction (real artifacts: vault capture,
+  D-I firstLight guardian + sealed kill criterion, verbatim E2 quote, the real first kill),
+  courtesy skip + one-time re-entry prompt + campfire replay, accessibility (no timed reading,
+  instant-complete typewriter, reduced-motion, ARIA live region). e2e: full induction + skip
+  path. Feel pack: docs/feel-packs/a3/ (FEEL_PACK=1 run).
+- **A4 Confrontation + Funeral rite** — BUILT (2026-07-11); in two-clean-run close. All 8 plan
+  steps landed in the law's order (core → store → citation UI → finisher → rite → wrapper LAST
+  → world → e2e/feel). 39 unit invariants + 4 slice e2e green first run; feel pack a4 archived.
+- **A5 The Ego** — ✅ CLOSED (2026-07-11): two clean full runs (vitest 411 ×2 · e2e 31+3
+  ×2 · gitleaks clean · osv proxy-blocked, zero new deps — note in VERIFICATION). The
+  addendum's build program is COMPLETE; the consolidated SITREP heads SITREP.md and the
+  operator's one full playthrough is the next gate.
+
+## A5 build plan (addendum §8; egoRecord derived, NEVER stored — D-B)
+
+1. **Pure core** `src/core/ego.ts` — the Ego assembled at runtime from the real record:
+   shields = overridden gates (each carries its logged reason verbatim; absorb one landed
+   cite each) · ghosts = skipped-unheld funerals (+2 HP each; a delayed funeral removes the
+   weapon — mechanic already live) · HP = 6 + 2×Σ weight(untested|testing, non-firstLight)
+   · founderEdge = count of E2+-resolved assumptions (per-cite damage bonus, capped +2) ·
+   heavy-attack strength = live Action−Truth divergence. **The outranking invariant ships
+   as a PROPERTY TEST across seeded-random states: capture+resolve@E2+ is never worse than
+   not capturing, on every axis the formula has (hp ≤, edge ≥, damage ≥, shields/ghosts =).
+   The formula is tuned to the test, never the reverse.**
+2. **Phase ladder** (deterministic, session-state only — no canon key exists for fight
+   progress, so a re-entry re-forms the Ego, thematically honest): denial (only E3/E4
+   land; hp full→2/3) → rationalization (only evidence linked to a SEALED-criterion
+   guardian lands; →1/3) → projection (no damage: the founder's own untested assumptions
+   thrown back; "return as test" flips untested→testing — a real write; ≤3 in the slice)
+   → sunk-cost (chains; cut by E2+ linked to an invalidated guardian OR any E4; →0) →
+   identity-fusion (**cannot be won by damage**: the integration — one deliberate typed
+   line, written to the wisdomCodex with sourceGuardianId 'ego' — the capstone unlock
+   derives from that entry; NO new schema key, canon shapes untouched).
+3. **Capstone** "Cartographer's Distance": once integrated (derived from the codex), the
+   HUD shows the live Truth-vs-Action divergence readout permanently.
+4. **Store actions** — markTesting (projection's return-as-test), integrateEgo (write-once
+   codex line). Zero API anywhere (D-E: all dialogue pre-written).
+5. **Surfaces** — src/strings/ego.ts (phase lines, per-mechanic feedback, integration
+   exchange, trough-delay line) · EgoOverlay over the live world (phase banner, shields
+   with verbatim reasons, ghosts named, Ledger reuse, fusion finale) · W8 'ego' gate
+   set-piece (the pad's threshold; spawn-clear position) · D-F: in the trough the gate
+   opens to the pre-written DELAY offer, never the fight, never a block.
+6. **Close** — e2e (full five-phase fight on a seeded rich record; trough delay; leave-
+   without-penalty; capstone persistence across reload), feel pack a5, two clean runs,
+   SHIP/VERIFICATION, deploy. Then the consolidated SITREP for the operator's playthrough.
+
+## A4 build plan (order is law — addendum §7)
+
+1. **Pure core** `src/core/confrontation.ts` — argument state derived, never stored:
+   `argumentStateFrom(importance, citedTiers)` replays the confrontation's citations[]
+   (order-preserving) so a reload restores the exact argument-HP; live composure/poise is
+   session state. Numbers (code constants, R-F style): HP dies 12 / wobbles 8 / shrugs 5;
+   composure shield 4 / 2 / 1; damage E0/E1 **0 (bounce — state returned unchanged,
+   reference-equal)**, E2 = 2 (soaks composure first), E3 = 4, E4 = 6 + shatters the whole
+   shield with overflow to core. `hp === 0` = the argument is SPENT — it never resolves the
+   guardian (B3 no-inverse-HP: only the verdict does). Finisher predicate is pure and
+   deterministic: outcome recorded && not yet resolved (never RNG). Funeral queue derived:
+   invalidated + non-firstLight + no funerals[] record; the rite offer further gates on
+   !trough (queues, never in the trough). Invariant tests per item.
+2. **Store actions** — `startConfrontation` (idempotent; untested→testing),
+   `citeInConfrontation` (real Ledger ids only — synthetic ammunition impossible; E0/E1
+   writes NOTHING (bounce = pure feedback); E2+ appends to citations[] once and links the
+   evidence to the guardian), `recordConfrontationVerdict` (verdict before interpretation;
+   write-once), `resolveConfrontation` (finisher: stamps resolvedAt, flips guardian status,
+   resolves calibration held/broke at derived tier≥2; XP stays derived by metrics — 1.5×
+   already lives there), `holdFuneral` (heldAt + epitaph; wisdom line → codex; laying a
+   skipped ghost to rest KEEPS skippedAt honestly), `skipFuneral` (write-once skippedAt).
+3. **Citation UI** `src/ui/ConfrontationOverlay.tsx` over the live world (no modal-over-
+   darkness): guardian statement + HP/composure readout, the real Ledger list (cited coins
+   spend once), bounce line teaches "this can't move Truth" — nothing more.
+4. **Finisher** — the sealed kill criterion renders as the golden thread; recording the
+   real-world verdict ignites it; the strike stays persistently available until used.
+   Both outcomes authored equal: shatter + funeral vs standing-pillar transformation (D-D).
+5. **Funeral rite** `src/ui/FuneralRiteOverlay.tsx` — Vigil (named plainly) → Eulogy (the
+   REAL evidence, verbatim from the Ledger) → Committal (one deliberate input; tombstone;
+   wisdom line) → XP. Skip = single warning + logged; ghost is narrative-only; delayed
+   funeral lays it to rest. Trough queues the rite (HUD ember chip offers it later).
+6. **Action wrapper LAST** — press/window rhythm: Space-strikes chip poise and open the
+   citation window EARLY; an idle timer opens it regardless (D-C invariant e2e: cite with
+   zero successful strikes). Reduced-motion: no shake, static cues. Citation and the
+   finisher are never skill-locked.
+7. **World** — arena circle set-piece in W1 at [16, 0, 6] (clear of shrines/rim); the
+   manifested guardian reuses the Registry's cel-shaded menhir language scaled by
+   importance (visible primitives stay banned); tombstones + ghost markers by the arena
+   from funerals[]. New interactable kind 'arena' + onArenaEnter event.
+8. **Close** — slice e2e (invalidation branch incl. rite + skip/lay-to-rest; validation
+   branch incl. pillar), feel pack a4 (a rite over a void fails the phase), two clean full
+   runs, SHIP/VERIFICATION, deploy.
+
+---
+
+# PLAN — Backlog Build-Out + Design Elevation run (2026-07-11)
+
+RPI Phase 2. Inputs: BACKLOG.md (inventory + acceptance criteria — the IDs
+below reference it) and AUDIT.md (this run's section). Baseline green:
+vitest 411 · e2e 31+3 · gitleaks tree+history · osv offline-verified.
+
+## Order of work (epic gates; feel pack per world; anti-thrash 3-strike)
+
+1. **Hygiene sprint** — P0-3 resize grip kill (all textareas + static guard),
+   P0-4 capture-tier fix (rigged model in capture tier) + recapture a3/a4/a5
+   packs, X-1/X-2 dialog a11y (trap/Esc/label via DialogShell or equivalent),
+   X-3 CSP blob: verdict, Z-9 @types/node align, Z-10 tab-cycle audit.
+   Exit: suite green; packs show no primitive protagonist.
+2. **BLOCKERS update** — park K-1..K-13 with operator-facing asks; post the
+   F-8 QR vendoring proposal (exact packages + licenses) as a Rule-9 item so
+   operator review runs in parallel with the build. STOP only on that item.
+3. **E-0 shared groundwork** — rogue.glb compression (<1MB, meshopt/draco via
+   three's bundled decoders; degrade path retested), vite manualChunks split,
+   weather→sky tint, celebration-staging framework (world reacts: light/
+   particles/set-piece response, reduced-motion gated), panel typography/
+   material pass, camera transition language, DOF/quality toggle audit.
+   Exit: bundle numbers recorded before/after; suite green.
+4. **Design elevation W1→W8** (E-1..E-8, one world per cycle, feel-pack gate
+   each; E-9 Chart/HUD, E-10 First Light v2, E-11 attribution inside the
+   relevant cycles). A world that fails its pack is not done.
+5. **Field Mode** (F-1..F-7, F-10 core first; F-11 responsive; F-9 PWA;
+   F-8 QR LAST, gated on the Rule-9 approval from step 2). Invariants F-103 +
+   A1-A4 ship as tests before surfaces wire to them (evidence-layer-first).
+6. **Audio A-1** — silence-default, sliders, CC0 beds + cues, attribution.
+7. **Mechanics M-1..M-6** — invariant suite green throughout; M-3 stops the
+   moment anything reads metric-adjacent.
+8. **Council C-1** — temple + key UI + consent + fallback readings; live
+   calls dark (B-4); C-2 stays parked.
+9. **P2 sweep** — Z-1..Z-8, Z-11 docs, Z-12 alias note.
+10. **Phase 4 verification loop** — clean-state build; full suite (vitest,
+    serial e2e incl. every new flow, gitleaks tree+history, osv OFFLINE
+    command, parity, invariant suite); two consecutive clean full runs to
+    exit (three if flakiness appears — recorded); per-flow evidence in
+    VERIFICATION.md; SHIP.md + consolidated SITREP section; deploy +
+    hash-verify; state the URL explicitly.
+
+## Non-goals (this run)
+No features beyond the recorded backlog · no canon reinterpretation (K-items
+wait for rulings) · no mobile port of the 3D world (graceful small-viewport
+message only) · no major version upgrades (canon pins stand) · no live
+Council traffic (B-4 + operator key) · no telemetry, ever.
+
+## Standing constraints
+Invariants outrank features (the shipped suite must stay green through every
+change). Canon-file edits, new dependencies, new consent surfaces = Rule-9 FQ
+protocol (proposed diff → STOP → approval). Evidence-layer-first for combat
+work. Every world close archives a feel pack self-audited vs art §4 + this
+run's elevation criteria.

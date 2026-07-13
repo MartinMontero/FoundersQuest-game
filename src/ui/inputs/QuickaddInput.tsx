@@ -95,14 +95,14 @@ export function QuickaddInput({
               addEntry()
             }
           }}
-          className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100"
+          className="quest-input px-2 py-1.5 text-sm"
         />
         <button
           type="button"
           data-testid="quickadd-add"
           disabled={pending.trim() === ''}
           onClick={addEntry}
-          className="rounded border border-slate-600 px-3 py-1.5 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
+          className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
         >
           {UI.trance.quickaddAdd}
         </button>
@@ -114,16 +114,16 @@ export function QuickaddInput({
           <li
             key={index}
             data-testid={`quickadd-item-${index + 1}`}
-            className="rounded border border-slate-700 bg-slate-950/60 p-2"
+            className="quest-aside p-2.5"
           >
             <div className="flex items-start justify-between gap-2">
-              <p className="text-sm text-slate-100">{entry.text}</p>
+              <p className="text-sm text-ink">{entry.text}</p>
               <button
                 type="button"
                 aria-label={UI.trance.quickaddRemoveLabel(index + 1)}
                 data-testid={`quickadd-remove-${index + 1}`}
                 onClick={() => removeEntry(index)}
-                className="rounded border border-slate-600 px-2 py-0.5 text-2xs text-slate-300"
+                className="quest-btn quest-btn-quiet px-2 py-0.5 text-2xs"
               >
                 {UI.trance.quickaddRemoveLabel(index + 1)}
               </button>
@@ -132,23 +132,23 @@ export function QuickaddInput({
             {entry.guardianId !== undefined ? (
               <p
                 data-testid={`quickadd-registered-${index + 1}`}
-                className="mt-1 text-2xs uppercase tracking-wide text-amber-400"
+                className="quest-eyebrow mt-1.5 text-2xs text-amber-accent-600"
               >
                 {UI.trance.guardianRegistered}
               </p>
             ) : openIndex === index ? (
-              <div className="mt-2 flex flex-col gap-2 rounded border border-slate-700 p-2">
-                <label className="flex flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
+              <div className="quest-aside mt-2 flex flex-col gap-2 p-2.5 motion-safe:animate-quest-fade">
+                <label className="quest-label flex flex-col gap-1 text-2xs">
                   <span>{UI.trance.quickaddAffordance}</span>
                   <input
                     aria-label={UI.trance.quickaddBlankLabel}
                     data-testid="quickadd-blank"
                     value={blank}
                     onChange={(event) => setBlank(event.target.value)}
-                    className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm normal-case tracking-normal text-slate-100"
+                    className="quest-input px-2 py-1.5 text-sm normal-case tracking-normal"
                   />
                 </label>
-                <label className="flex flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
+                <label className="quest-label flex flex-col gap-1 text-2xs">
                   <span>{UI.trance.importanceLabel}</span>
                   <select
                     data-testid="quickadd-importance"
@@ -156,7 +156,7 @@ export function QuickaddInput({
                     onChange={(event) => {
                       if (isImportance(event.target.value)) setImportance(event.target.value)
                     }}
-                    className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm normal-case tracking-normal text-slate-100"
+                    className="quest-input px-2 py-1.5 text-sm normal-case tracking-normal"
                   >
                     {IMPORTANCE_ORDER.map((option) => (
                       <option key={option} value={option}>
@@ -165,13 +165,13 @@ export function QuickaddInput({
                     ))}
                   </select>
                 </label>
-                <label className="flex flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
+                <label className="quest-label flex flex-col gap-1 text-2xs">
                   <span>{UI.trance.killCriterionLabel}</span>
                   <input
                     data-testid="quickadd-kill"
                     value={killCriterion}
                     onChange={(event) => setKillCriterion(event.target.value)}
-                    className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm normal-case tracking-normal text-slate-100"
+                    className="quest-input px-2 py-1.5 text-sm normal-case tracking-normal"
                   />
                 </label>
                 <div className="flex gap-2">
@@ -180,14 +180,14 @@ export function QuickaddInput({
                     data-testid="quickadd-register"
                     disabled={blank.trim() === ''}
                     onClick={() => register(index)}
-                    className="rounded bg-amber-400 px-3 py-1.5 text-sm font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="quest-btn quest-btn-gold px-3 py-1.5 text-sm"
                   >
                     {UI.trance.registerGuardian}
                   </button>
                   <button
                     type="button"
                     onClick={() => setOpenIndex(null)}
-                    className="rounded border border-slate-600 px-3 py-1.5 text-sm text-slate-200"
+                    className="quest-btn quest-btn-quiet px-3 py-1.5 text-sm"
                   >
                     {UI.common.cancel}
                   </button>
@@ -198,7 +198,7 @@ export function QuickaddInput({
                 type="button"
                 data-testid={`quickadd-affordance-${index + 1}`}
                 onClick={() => openAffordance(index)}
-                className="mt-1 rounded border border-slate-600 px-2 py-1 text-2xs text-amber-200"
+                className="quest-btn quest-btn-quiet mt-1.5 px-2 py-1 text-2xs text-amber-accent-600"
               >
                 {UI.trance.quickaddAffordance}
               </button>

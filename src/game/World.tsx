@@ -5,21 +5,36 @@
 // DOM surface (trance/panel) owns the player's attention (§2 F1, §8).
 // This module makes ZERO network calls; fetch lives only in src/transport.
 
-import { Suspense, useRef } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Suspense, useRef, useState } from 'react'
+import { Canvas, type RootState } from '@react-three/fiber'
+import { Environment } from '@react-three/drei'
 import { CuboidCollider, CylinderCollider, Physics, RigidBody } from '@react-three/rapier'
+import { ACESFilmicToneMapping, type Mesh, NoToneMapping } from 'three'
 import { useUiStore } from '../state/ui'
 import { WORLD_COPY } from '../strings'
+import { asset } from './assets'
+import { AssetBoundary } from './AssetBoundary'
 import { CameraRig } from './CameraRig'
 import type { WorldEvents } from './contracts'
 import { useWorldControls } from './controls'
 import { defaultWorldEvents } from './events'
+import { Clouds } from './Clouds'
+import { Grass } from './Grass'
 import { Interactables } from './Interactables'
-import { Nebula } from './Nebula'
+import { PALETTE } from './materials'
+import { Nebula, SunDisc } from './Nebula'
+import { Trees } from './Trees'
+import { FULL_POWER, IS_AUTOMATION, LOW_POWER, WORLD_DPR } from './perf'
 import { Player, PLAYER_SPAWN } from './Player'
+import { PostFx } from './PostFx'
+import { GroundField } from './props'
 import { ShadowTwin } from './ShadowTwin'
+import { WorldColliders } from './WorldColliders'
 import { FpsSampler } from './useFps'
 import { useReducedMotion } from './useReducedMotion'
+import { useSafeFrame } from './useSafeFrame'
+import { CelebrationFx } from './CelebrationFx'
+import { useWorldSky } from './useWorldSky'
 
 const PLATEAU_RADIUS = 24
 /** rim wall radius — just inside the disk so the capsule can never step off it */
@@ -61,29 +76,39 @@ function Ground(): JSX.Element {
           rotation={[0, wall.yaw, 0]}
         />
       ))}
-      <mesh position={[0, -0.5, 0]}>
-        <cylinderGeometry args={[PLATEAU_RADIUS, PLATEAU_RADIUS + 2, 1, 48]} />
-        <meshStandardMaterial color="#221c38" />
+      {/* the plateau's drum — a warm-dark PBR cliff below the dressed top disk
+          (warmed off pure black so its edge reads as rock, not a void panel) */}
+      <mesh position={[0, -0.9, 0]} receiveShadow>
+        <cylinderGeometry args={[PLATEAU_RADIUS, PLATEAU_RADIUS + 2, 1.8, 48]} />
+        <meshStandardMaterial color="#3a2b40" roughness={0.92} metalness={0.05} />
       </mesh>
       {/* the ground's edge dissolves into the nebula — a faint rim glow */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-        <ringGeometry args={[PLATEAU_RADIUS - 1.5, PLATEAU_RADIUS, 48]} />
-        <meshBasicMaterial color="#6f5cf0" transparent opacity={0.25} depthWrite={false} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
+        <ringGeometry args={[PLATEAU_RADIUS - 1.5, PLATEAU_RADIUS + 0.5, 48]} />
+        <meshBasicMaterial color={PALETTE.violet} transparent opacity={0.22} depthWrite={false} />
       </mesh>
     </RigidBody>
   )
 }
 
 /**
- * Fires `onFirstFrame` once, on the scene's first rendered frame. Mounted
- * INSIDE the world's Suspense boundary, so the callback proves the whole
- * scene (rapier WASM included) resolved and a frame actually drew — the same
- * readiness signal the dev FPS sampler uses (ruled fix 7).
+ * Fires `onFirstFrame` once, after the scene's first few rendered frames.
+ * Mounted INSIDE the world's Suspense boundary, so the callback proves the
+ * whole scene (rapier WASM included) resolved and frames actually drew — the
+ * same readiness signal the dev FPS sampler uses (ruled fix 7). We wait for a
+ * handful of painted frames rather than exactly one: it makes the readiness
+ * signal unambiguous and gives the DOM loading line a stable, observable
+ * lifetime (it never blinks out sub-frame on a fast warm boot).
  */
+const READY_FRAMES = 3
+
 function FirstFrameNotifier({ onFirstFrame }: { onFirstFrame: () => void }): null {
   const fired = useRef(false)
-  useFrame(() => {
+  const frames = useRef(0)
+  useSafeFrame(() => {
     if (fired.current) return
+    frames.current += 1
+    if (frames.current < READY_FRAMES) return
     fired.current = true
     onFirstFrame()
   })
@@ -99,23 +124,85 @@ export interface WorldProps {
 /** Scene contents — everything inside the Canvas. */
 export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
   const paused = useUiStore((s) => s.mode !== 'roam')
+  // the sun mesh, lifted so <PostFx/> can key its God Rays off the same disc
+  // the sky draws (full tier only; null keeps God Rays out of the chain)
+  const [sun, setSun] = useState<Mesh | null>(null)
+  // each world's own air: background + fog colour track the current world (cycle 4)
+  const sky = useWorldSky() // world identity + the founder's weather in the air (E-0)
   return (
     <>
-      <color attach="background" args={['#0b0817']} />
-      <fog attach="fog" args={['#191233', 20, 95]} />
-      {/* §8 light budget: one directional + one hemisphere, no shadow maps */}
-      <hemisphereLight args={['#7d6ff0', '#151022', 0.7]} />
-      <directionalLight position={[10, 16, 8]} intensity={1.0} />
+      <color attach="background" args={[sky.background]} />
+      {/* distance fog banked in — depth + the OoT "air", per world (cycle 4).
+          Pushed back a little so the redressed islands read before it swallows
+          them; the star dome and sun ignore fog (they are the far sky). */}
+      <fog attach="fog" args={[sky.fog, 34, 104]} />
+      {/* image-based lighting: a real CC0 HDR (Poly Haven "venice_sunset") drives
+          reflections + ambient on the PBR surfaces (character, ground, monuments)
+          — the single biggest realism lever per the premium-UI research. Lighting
+          only, no background: our nebula sky stays. Skipped on the software-GL
+          automation tier (its PMREM prefilter is the one step SwiftShader chokes
+          on under parallel CI load); brighter direct lights stand in there. */}
+      {!IS_AUTOMATION ? (
+        // the HDR (1.4 MB) drives IBL; if it aborts on a slow link the direct
+        // lights still light the scene, so a failure degrades, never crashes.
+        <AssetBoundary fallback={null} label="hdr">
+          <Suspense fallback={null}>
+            <Environment files={asset('hdr/venice_sunset_1k.hdr')} />
+          </Suspense>
+        </AssetBoundary>
+      ) : null}
+      {/* a warm golden-hour KEY that also casts the world's real shadows (full
+          tier), a soft warm back-RIM, a cool-violet hemisphere with a warm ground
+          bounce, and an ambient lift (stronger when there is no IBL to fill). */}
+      <hemisphereLight args={[PALETTE.fillCool, PALETTE.groundBounce, IS_AUTOMATION ? 0.8 : 0.35]} />
+      <ambientLight color={PALETTE.keyWarm} intensity={IS_AUTOMATION ? 0.5 : 0.1} />
+      <directionalLight
+        color={PALETTE.keyWarm}
+        position={[-18, 22, -14]}
+        intensity={2.0}
+        castShadow={FULL_POWER}
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-near={1}
+        shadow-camera-far={90}
+        shadow-camera-left={-32}
+        shadow-camera-right={32}
+        shadow-camera-top={32}
+        shadow-camera-bottom={-32}
+        shadow-bias={-0.0004}
+      />
+      <directionalLight color={PALETTE.rimWarm} position={[14, 5, 12]} intensity={0.4} />
+      <SunDisc onReady={setSun} />
+      {/* soft cloud banks around the floating islands (off the CI tier) */}
+      {IS_AUTOMATION ? null : <Clouds reduced={reduced} />}
       <Nebula reduced={reduced} />
+      <GroundField />
+      <Grass reduced={reduced} />
+      {/* real trees off the CI tier (keeps the ~4 MB of bark textures out of
+          the software-GL automation path). Boundary-wrapped: a failed/aborted
+          tree download drops the trees, never the world. */}
+      {IS_AUTOMATION ? null : (
+        <AssetBoundary fallback={null} label="trees">
+          <Suspense fallback={null}>
+            <Trees />
+          </Suspense>
+        </AssetBoundary>
+      )}
       <Interactables reduced={reduced} />
       <ShadowTwin reduced={reduced} />
       <CameraRig reduced={reduced} />
+      <CelebrationFx reduced={reduced} />
       <Physics paused={paused} timeStep={1 / 60}>
         <Ground />
-        <Player />
+        {/* solid boundaries for the props/trees/monuments — the founder walks
+            around them. Mirrors the visuals' automation gating (they, and these,
+            are off the software-GL CI tier), so the movement journey is unchanged
+            and collision is a full/constrained-tier feature, verified live. */}
+        {IS_AUTOMATION ? null : <WorldColliders />}
+        <Player reduced={reduced} />
       </Physics>
       {onFirstFrame !== undefined ? <FirstFrameNotifier onFirstFrame={onFirstFrame} /> : null}
       {import.meta.env.DEV ? <FpsSampler /> : null}
+      <PostFx reduced={reduced} lowPower={LOW_POWER} sun={sun} />
     </>
   )
 }
@@ -127,6 +214,17 @@ export interface GameRootProps {
   onFirstFrame?: () => void
 }
 
+/** Recover from WebGL context loss instead of dying to the app error boundary.
+ * `preventDefault()` on 'webglcontextlost' asks the browser to restore the
+ * context; on 'webglcontextrestored' we invalidate so R3F repaints the scene.
+ * Mobile GPUs drop contexts under memory/thermal pressure routinely — this
+ * turns "the world failed to hold together" into a recoverable blip. */
+function handleCreated(state: RootState): void {
+  const canvas = state.gl.domElement
+  canvas.addEventListener('webglcontextlost', (e) => e.preventDefault(), false)
+  canvas.addEventListener('webglcontextrestored', () => state.invalidate(), false)
+}
+
 /** The world mount: keyboard bindings + the R3F canvas. */
 export function GameRoot({ events = defaultWorldEvents, onFirstFrame }: GameRootProps): JSX.Element {
   useWorldControls(events)
@@ -134,14 +232,28 @@ export function GameRoot({ events = defaultWorldEvents, onFirstFrame }: GameRoot
   return (
     <div className="absolute inset-0" role="application" aria-label={WORLD_COPY.worldName}>
       <Canvas
-        dpr={[1, 1.5]}
+        dpr={WORLD_DPR}
+        shadows={FULL_POWER}
         camera={{
           fov: 50,
           near: 0.1,
-          far: 160,
+          far: 400,
           position: [PLAYER_SPAWN[0], PLAYER_SPAWN[1] + 2.2, PLAYER_SPAWN[2] + 6],
         }}
-        gl={{ antialias: true, powerPreference: 'high-performance' }}
+        // Full path: NoToneMapping on the renderer so the PostFx ToneMapping
+        // effect owns the final curve (never double-mapped). Low power: no
+        // composer, so the renderer tone-maps in-shader (cheap, one pass).
+        // 'high-performance' only on the full tier — on a phone it can force a
+        // hotter GPU path for no benefit (constrained ships no effect stack).
+        gl={{
+          antialias: FULL_POWER,
+          powerPreference: FULL_POWER ? 'high-performance' : 'default',
+          toneMapping: LOW_POWER ? ACESFilmicToneMapping : NoToneMapping,
+          // let a lost context be recovered rather than abandoned as a dead frame
+          preserveDrawingBuffer: false,
+          failIfMajorPerformanceCaveat: false,
+        }}
+        onCreated={handleCreated}
       >
         <Suspense fallback={null}>
           <World reduced={reduced} onFirstFrame={onFirstFrame} />

@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { truth } from '../src/core/metrics'
+import { truth, xp } from '../src/core/metrics'
 import {
   LEGACY_V2_KEY,
   STORAGE_KEY,
@@ -329,6 +329,280 @@ describe('inscribeAnswer writes exact 02 fields', () => {
     expect(store.getState().data.answers).toEqual({
       s1: { 's1-th': { text: 'a' }, 's1-l1': { text: 'b' } },
       s2: { 's2-th': { text: 'c' } },
+    })
+  })
+})
+
+describe('sealThread stamps text + sealedAt in one write (Ariadne, s4-th)', () => {
+  it('writes { text, sealedAt } with the timestamp from the injected clock', () => {
+    const { spy, deps } = makeDeps()
+    const store = createQuestStore(deps)
+    const before = spy.sets.length
+    store.getState().sealThread('s4', 's4-th', 'stop if <2 sign-ups')
+    expect(store.getState().data.answers['s4']?.['s4-th']).toEqual({
+      text: 'stop if <2 sign-ups',
+      sealedAt: FIXED_NOW,
+    })
+    // persists through core save in the same call (state of record = founders-quest:v3)
+    expect(spy.sets.length).toBe(before + 1)
+  })
+
+  it('merges onto an existing answer without dropping earlier fields', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().inscribeAnswer('s4', 's4-th', { verdict: 'no' })
+    store.getState().sealThread('s4', 's4-th', 'the thread')
+    expect(store.getState().data.answers['s4']?.['s4-th']).toEqual({
+      verdict: 'no',
+      text: 'the thread',
+      sealedAt: FIXED_NOW,
+    })
+  })
+})
+
+describe('invalidateAssumption holds the funeral (s5-l5)', () => {
+  it('flips status to invalidated and stamps resolvedAt from the clock', () => {
+    const { spy, deps } = makeDeps()
+    spy.map.set(STORAGE_KEY, JSON.stringify(dataWith({ assumptions: [guardian('g-1', 'dies')] })))
+    const store = createQuestStore(deps)
+    store.getState().invalidateAssumption('g-1')
+    const a = store.getState().data.assumptions[0]
+    expect(a?.status).toBe('invalidated')
+    expect(a?.resolvedAt).toBe(FIXED_NOW)
+  })
+
+  it('is idempotent — an already-buried belief keeps its original resolvedAt', () => {
+    const { spy, deps } = makeDeps()
+    spy.map.set(
+      STORAGE_KEY,
+      JSON.stringify(
+        dataWith({
+          assumptions: [
+            { ...guardian('g-1', 'dies', 'invalidated'), resolvedAt: '2020-01-01T00:00:00.000Z' },
+          ],
+        }),
+      ),
+    )
+    const store = createQuestStore(deps)
+    store.getState().invalidateAssumption('g-1')
+    expect(store.getState().data.assumptions[0]?.resolvedAt).toBe('2020-01-01T00:00:00.000Z')
+  })
+
+  it('does not mutate the prior array and leaves other guardians untouched', () => {
+    const { spy, deps } = makeDeps()
+    spy.map.set(
+      STORAGE_KEY,
+      JSON.stringify(dataWith({ assumptions: [guardian('g-1'), guardian('g-2')] })),
+    )
+    const store = createQuestStore(deps)
+    const prior = store.getState().data.assumptions
+    store.getState().invalidateAssumption('g-1')
+    const next = store.getState().data.assumptions
+    expect(next).not.toBe(prior) // a new array — immutable update
+    expect(prior[0]?.status).toBe('untested') // the prior snapshot is untouched
+    expect(next[0]?.status).toBe('invalidated')
+    expect(next[1]?.status).toBe('untested')
+  })
+
+  it('an unknown id is a no-op', () => {
+    const { spy, deps } = makeDeps()
+    spy.map.set(STORAGE_KEY, JSON.stringify(dataWith({ assumptions: [guardian('g-1')] })))
+    const store = createQuestStore(deps)
+    store.getState().invalidateAssumption('nope')
+    expect(store.getState().data.assumptions[0]?.status).toBe('untested')
+  })
+
+  it('a proven funeral (linked E2) pays 1.5x XP (15) and moves Truth', () => {
+    const { spy, deps } = makeDeps()
+    spy.map.set(
+      STORAGE_KEY,
+      JSON.stringify(
+        dataWith({ assumptions: [guardian('g-1', 'dies')], evidence: [e2Linked('e-1', 'g-1')] }),
+      ),
+    )
+    const store = createQuestStore(deps)
+    store.getState().invalidateAssumption('g-1')
+    expect(xp(store.getState().data)).toBe(15) // invalidation pays 1.5x (15 vs 10)
+    expect(truth(store.getState().data)).toBe(1) // the lone assumption, resolved with tier≥2
+  })
+
+  it('an unproven funeral (no E2 evidence) earns no XP and does not move Truth', () => {
+    const { spy, deps } = makeDeps()
+    spy.map.set(STORAGE_KEY, JSON.stringify(dataWith({ assumptions: [guardian('g-1', 'dies')] })))
+    const store = createQuestStore(deps)
+    store.getState().invalidateAssumption('g-1')
+    expect(xp(store.getState().data)).toBe(0) // tier<2 resolution earns nothing
+    expect(truth(store.getState().data)).toBe(0) // resolved, but tier<2 → numerator 0
+  })
+})
+
+describe('sequence-lock actions (unlockVault / passGate / overrideGate / recordLoop)', () => {
+  it('unlockVault flips the one-way flag; idempotent', () => {
+    const { spy, deps } = makeDeps()
+    const store = createQuestStore(deps)
+    expect(store.getState().data.vaultUnlocked).toBe(false)
+    store.getState().unlockVault()
+    expect(store.getState().data.vaultUnlocked).toBe(true)
+    const setsAfter = spy.sets.length
+    store.getState().unlockVault() // no-op the second time
+    expect(spy.sets.length).toBe(setsAfter) // idempotent — no redundant write
+  })
+
+  it('passGate records gates[id]=passed + a gate-pass trail entry', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().passGate('act1', '⛩ Act I Gate — The First Threshold')
+    const { data } = store.getState()
+    expect(data.gates.act1).toEqual({ status: 'passed', date: FIXED_NOW })
+    expect(data.trail).toEqual([
+      { type: 'gate-pass', name: '⛩ Act I Gate — The First Threshold', date: FIXED_NOW },
+    ])
+  })
+
+  it('overrideGate records the written reason to gates[id] AND the trail (logged, exported)', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().overrideGate('act2', "⛩ Act II Gate — The Mirror's Verdict", 'shipping the demo; will backfill citations')
+    const { data } = store.getState()
+    expect(data.gates.act2).toEqual({
+      status: 'overridden',
+      reason: 'shipping the demo; will backfill citations',
+      date: FIXED_NOW,
+    })
+    expect(data.trail[0]).toEqual({
+      type: 'gate-override',
+      name: "⛩ Act II Gate — The Mirror's Verdict",
+      reason: 'shipping the demo; will backfill citations',
+      date: FIXED_NOW,
+    })
+  })
+
+  it('recordLoop appends a loop trail entry with the learning line and sets lastLoop', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().recordLoop('The Reality Check', 5, 1, 'my sample was all friends — the yeses were politeness')
+    const { data } = store.getState()
+    expect(data.lastLoop).toBe('The Reality Check')
+    expect(data.trail).toEqual([
+      {
+        type: 'loop',
+        name: 'The Reality Check',
+        fromId: 's5',
+        toId: 's1',
+        learning: 'my sample was all friends — the yeses were politeness',
+        date: FIXED_NOW,
+      },
+    ])
+  })
+
+  it('First Light actions: begin/skip/complete, the D-I guardian, the real first kill', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().markInvitationSeen()
+    expect(store.getState().data.invitationSeen).toBe(true)
+    store.getState().setOpeningBeat(3)
+    expect(store.getState().data.openingBeatProgress).toEqual({ beat: 3, ts: FIXED_NOW })
+
+    // the D-I distinct elicitation registers a REAL, firstLight-tagged guardian
+    const g = store.getState().registerFirstLightGuardian(
+      'small cafés will pay to cut spoilage',
+      'ask 5 owners; 4 shrug',
+    )
+    expect(g).toMatchObject({ firstLight: true, importance: 'dies', originStageId: 's1', status: 'untested' })
+    expect(store.getState().data.firstLightArtifactIds).toContain(g.id)
+
+    // the first kill: the founder's own admission — fixed XP, Truth untouched (null: no live assumptions)
+    store.getState().resolveFirstLight(g.id, 'invalidated')
+    expect(store.getState().data.assumptions[0]?.status).toBe('invalidated')
+    expect(xp(store.getState().data)).toBe(15)
+    expect(truth(store.getState().data)).toBeNull()
+    // idempotent — a resolved firstLight assumption never flips again
+    store.getState().resolveFirstLight(g.id, 'validated')
+    expect(store.getState().data.assumptions[0]?.status).toBe('invalidated')
+
+    store.getState().completeOpening()
+    const { data } = store.getState()
+    expect(data.openingCompletedAt).toBe(FIXED_NOW)
+    expect(data.chartUnlocked).toBe(true)
+    expect(data.openingBeatProgress).toBeNull()
+  })
+
+  it('the courtesy skip unlocks the Chart and is NEVER an override (no gates/trail writes)', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().skipOpening()
+    const { data } = store.getState()
+    expect(data.openingSkippedAt).toBe(FIXED_NOW)
+    expect(data.chartUnlocked).toBe(true)
+    expect(data.gates).toEqual({}) // exempt from override-logging (F15)
+    expect(data.trail).toEqual([])
+  })
+
+  it('resolveFirstLight refuses non-firstLight guardians (the carve-out cannot leak)', () => {
+    const { spy, deps } = makeDeps()
+    spy.map.set(STORAGE_KEY, JSON.stringify(dataWith({ assumptions: [guardian('g-1')] })))
+    const store = createQuestStore(deps)
+    store.getState().resolveFirstLight('g-1', 'invalidated')
+    expect(store.getState().data.assumptions[0]?.status).toBe('untested')
+  })
+
+  it('gate/loop writes persist through core save and never touch the key store', () => {
+    const { spy, deps } = makeDeps()
+    const store = createQuestStore(deps)
+    store.getState().passGate('act3', '⛩ Act III Gate — The Far Bank')
+    expect(spy.sets.some((s) => s.key === STORAGE_KEY)).toBe(true)
+    expect(spy.sets.some((s) => s.key === KEY_STORAGE_KEY)).toBe(false)
+  })
+})
+
+describe('campfire furniture actions (weather / field notes / side quests / dinner card)', () => {
+  it('logWeather APPENDS every tap — two same-day taps are BOTH kept (R-W)', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().logWeather(2)
+    store.getState().logWeather(4) // same day (FIXED_NOW) — appended, NOT replaced
+    expect(store.getState().data.weather).toEqual([
+      { id: 'weather-1', date: FIXED_NOW, value: 2 },
+      { id: 'weather-2', date: FIXED_NOW, value: 4 },
+    ])
+  })
+
+  it('saveFieldNote sets the note for a stage, leaving other stages untouched', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().saveFieldNote('s2', 'went outside; three cafés said no')
+    store.getState().saveFieldNote('s5', 'the mirror stung')
+    expect(store.getState().data.fieldNotes).toEqual({
+      s2: 'went outside; three cafés said no',
+      s5: 'the mirror stung',
+    })
+    store.getState().saveFieldNote('s2', 'overwritten') // same key updates in place
+    expect(store.getState().data.fieldNotes['s2']).toBe('overwritten')
+  })
+
+  it('startSideQuest records startedAt once and never resets it; completeSideQuest stamps completedAt', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().startSideQuest('the-404', 'The 404')
+    expect(store.getState().data.sideQuests['the-404']).toEqual({
+      text: 'The 404',
+      startedAt: FIXED_NOW,
+    })
+    // re-accepting is a no-op (keeps the original startedAt, never re-stamps)
+    store.getState().startSideQuest('the-404', 'The 404 (again)')
+    expect(store.getState().data.sideQuests['the-404']).toEqual({
+      text: 'The 404',
+      startedAt: FIXED_NOW,
+    })
+    store.getState().completeSideQuest('the-404')
+    expect(store.getState().data.sideQuests['the-404']?.completedAt).toBe(FIXED_NOW)
+    // +5 XP is DERIVED by metrics once complete
+    expect(xp(store.getState().data)).toBe(5)
+  })
+
+  it('completeSideQuest on an unknown or already-complete quest is a no-op', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().completeSideQuest('nope') // unknown — nothing added
+    expect(store.getState().data.sideQuests).toEqual({})
+  })
+
+  it('setDinnerCard writes { text, updatedAt }', () => {
+    const store = createQuestStore(makeDeps().deps)
+    store.getState().setDinnerCard('what is going wrong: my pipeline is all warm intros')
+    expect(store.getState().data.dinnerCard).toEqual({
+      text: 'what is going wrong: my pipeline is all warm intros',
+      updatedAt: FIXED_NOW,
     })
   })
 })

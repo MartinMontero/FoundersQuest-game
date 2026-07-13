@@ -24,23 +24,23 @@ export function NumberInput({ value, unit, context, onChange }: NumberInputProps
   return (
     <div className="flex flex-col gap-2" data-testid="input-number">
       <div className="flex gap-2">
-        <label className="flex w-40 flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
+        <label className="quest-label flex w-40 flex-col gap-1 text-2xs">
           <span>{UI.trance.numberValueLabel}</span>
           <input
             inputMode="decimal"
             data-testid="input-number-value"
             value={value}
             onChange={(event) => onChange({ value: event.target.value, unit, context })}
-            className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm normal-case tracking-normal text-slate-100"
+            className="quest-input px-2 py-1.5 text-sm normal-case tracking-normal"
           />
         </label>
-        <label className="flex flex-1 flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
+        <label className="quest-label flex flex-1 flex-col gap-1 text-2xs">
           <span>{UI.trance.numberUnitLabel}</span>
           <input
             data-testid="input-number-unit"
             value={unit}
             onChange={(event) => onChange({ value, unit: event.target.value, context })}
-            className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm normal-case tracking-normal text-slate-100"
+            className="quest-input px-2 py-1.5 text-sm normal-case tracking-normal"
           />
         </label>
       </div>
@@ -48,18 +48,18 @@ export function NumberInput({ value, unit, context, onChange }: NumberInputProps
         <p
           role="status"
           data-testid="input-number-caution"
-          className="text-2xs italic text-amber-300"
+          className="text-2xs italic text-amber-accent-600"
         >
           {UI.trance.numberCaution}
         </p>
       ) : null}
-      <label className="flex flex-col gap-1 text-2xs uppercase tracking-wide text-slate-400">
+      <label className="quest-label flex flex-col gap-1 text-2xs">
         <span>{UI.trance.numberContextLabel}</span>
         <input
           data-testid="input-number-context"
           value={context}
           onChange={(event) => onChange({ value, unit, context: event.target.value })}
-          className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm normal-case tracking-normal text-slate-100"
+          className="quest-input px-2 py-1.5 text-sm normal-case tracking-normal"
         />
       </label>
     </div>

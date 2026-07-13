@@ -6,6 +6,7 @@
 // render plumbing, never state of record. Zero network, zero DOM focus tricks.
 
 import { useEffect, useRef } from 'react'
+import { questStore } from '../state/store'
 import { useUiStore } from '../state/ui'
 import type { WorldEvents } from './contracts'
 import { SPEC_BY_ID, activeTargetId, useInteractionStore } from './interaction'
@@ -75,6 +76,22 @@ function activate(events: WorldEvents): void {
       break
     case 'flagpole':
       if (spec.milestoneId !== undefined) events.onFlagpole(spec.milestoneId)
+      break
+    case 'portal':
+      if (spec.portalDir === 'loop' && spec.loopName !== undefined && spec.targetStage !== undefined) {
+        events.onLoop(spec.loopName, spec.targetStage)
+      } else if (spec.targetStage !== undefined) {
+        events.onPortal(spec.targetStage)
+      }
+      break
+    case 'campfire':
+      events.onCampfire()
+      break
+    case 'arena':
+      events.onArenaEnter()
+      break
+    case 'ego':
+      events.onEgoApproach()
       break
   }
 }
@@ -155,6 +172,26 @@ export function useWorldControls(events: WorldEvents): void {
       }
       if (e.code === 'Escape') {
         useInteractionStore.getState().clearFocus()
+        return
+      }
+      // the Cartographer's Chart (M = map, L = legend) — once handed over
+      // (completed OR skipped opening both unlock it; nothing is gated)
+      if (e.code === 'KeyC' && !e.repeat) {
+        // the Council temple (C-1) — key, consent, and the by-hand reading
+        e.preventDefault()
+        useUiStore.getState().openPanel('panel:council')
+        return
+      }
+      if (e.code === 'KeyF' && !e.repeat) {
+        // Field Mode (A-101) — always available; it is the founder's journal side
+        e.preventDefault()
+        useUiStore.getState().openPanel('panel:field')
+        return
+      }
+      if ((e.code === 'KeyM' || e.code === 'KeyL') && !e.repeat) {
+        if (questStore.getState().data.chartUnlocked) {
+          useUiStore.getState().openPanel(e.code === 'KeyM' ? 'panel:chart' : 'panel:legend')
+        }
         return
       }
       const isArrow = e.code.startsWith('Arrow')

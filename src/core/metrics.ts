@@ -30,6 +30,11 @@ export function importanceWeight(importance: Importance): number {
 export const XP_INVALIDATED = 15
 export const XP_VALIDATED = 10
 export const XP_SIDE_QUEST = 5
+/** The D-G carve-out (02, 2026-07-11): a resolved firstLight-tagged assumption
+ *  pays this FIXED award outside the tier≥2 formula — the tutorial artifact is
+ *  real, the live metric stays uncorrupted. Matches the invalidation award so
+ *  the first kill's celebration is honest. */
+export const XP_FIRST_LIGHT = 15
 
 /**
  * tierOf(a) = max tier of evidence linked to assumption `a`, else 0 (02).
@@ -50,10 +55,14 @@ export function tierOf(a: Assumption, evidence: readonly EvidenceEntry[]): Evide
  * Milestones, side quests, and the field journal never touch this number.
  */
 export function truth(data: QuestData): number | null {
-  if (data.assumptions.length === 0) return null
+  // D-G carve-out (02, 2026-07-11): firstLight-tagged assumptions are excluded
+  // from the denominator entirely — the tutorial can never lower (or raise)
+  // the founder's live Truth ceiling.
+  const counted = data.assumptions.filter((a) => a.firstLight !== true)
+  if (counted.length === 0) return null
   let numerator = 0
   let denominator = 0
-  for (const a of data.assumptions) {
+  for (const a of counted) {
     const w = importanceWeight(a.importance)
     denominator += w
     const resolved = a.status === 'validated' || a.status === 'invalidated'
@@ -69,6 +78,12 @@ export function truth(data: QuestData): number | null {
 export function xp(data: QuestData): number {
   let total = 0
   for (const a of data.assumptions) {
+    // D-G carve-out: a RESOLVED firstLight assumption pays the fixed award
+    // outside the tier≥2 formula (tier is irrelevant to it, both directions)
+    if (a.firstLight === true) {
+      if (a.status === 'invalidated' || a.status === 'validated') total += XP_FIRST_LIGHT
+      continue
+    }
     if (tierOf(a, data.evidence) < 2) continue
     if (a.status === 'invalidated') total += XP_INVALIDATED
     else if (a.status === 'validated') total += XP_VALIDATED
@@ -80,17 +95,35 @@ export function xp(data: QuestData): number {
 }
 
 /**
+ * True when guardian `a` was SEEDED from an Earned-provenance hunch: a tier-0
+ * (Whisper) entry tagged 'earned' links it. Linking a hunch never raises tierOf
+ * (0 is the floor), so seeding is priority-visible but weight/Truth-invisible.
+ */
+export function seededFromEarnedHunch(a: Assumption, evidence: readonly EvidenceEntry[]): boolean {
+  return evidence.some(
+    (e) => e.tier === 0 && e.provenance === 'earned' && e.linkedAssumptionIds.includes(a.id),
+  )
+}
+
+/**
  * Riskiest guardian = the untested|testing assumption maximizing
  * weight × (4 − tierOf) (02). Null when none. Deterministic tie-break:
  * earlier createdAt wins, then smaller id — independent of array order.
- * (Earned-hunch priority bump is queued canon work, not implemented here.)
+ *
+ * `earnedBump` (02 computed-metrics, 2026-07-11): a guardian seeded from an
+ * Earned-provenance hunch adds this constant to its ORDERING score only. The
+ * value lives in src/state/tunables.ts (code constant, never canon); core
+ * takes it as a parameter so this module stays framework- and state-free.
+ * Weight, Truth, and XP are untouched by the bump (invariant-tested).
  */
-export function riskiest(data: QuestData): Assumption | null {
+export function riskiest(data: QuestData, earnedBump = 0): Assumption | null {
   let best: Assumption | null = null
   let bestScore = 0
   for (const a of data.assumptions) {
     if (a.status !== 'untested' && a.status !== 'testing') continue
-    const score = importanceWeight(a.importance) * (4 - tierOf(a, data.evidence))
+    const score =
+      importanceWeight(a.importance) * (4 - tierOf(a, data.evidence)) +
+      (earnedBump !== 0 && seededFromEarnedHunch(a, data.evidence) ? earnedBump : 0)
     if (
       best === null ||
       score > bestScore ||
@@ -171,4 +204,51 @@ export function actionFraction(data: QuestData, milestoneIds: readonly string[])
     if (data.milestones[id] === true) raised += 1
   }
   return raised / milestoneIds.length
+}
+
+// ---- Sequence locks (03; gates WARN, never block — canon 01) ----
+
+/** The verdict recorded at the Mirror (s5-th) — the key to the W5 sequence lock. */
+export function verdictRecorded(data: QuestData): boolean {
+  const v = data.answers['s5']?.['s5-th']?.verdict
+  return v === 'yes' || v === 'no'
+}
+
+/** The pivot/persevere decision cast with ≥1 citation (s5-dec) — part of Act II. */
+function decisionCited(data: QuestData): boolean {
+  const a = data.answers['s5']?.['s5-dec']
+  const decided = a?.decision === 'pivot' || a?.decision === 'persevere'
+  return decided && (a?.citedEvidenceIds?.length ?? 0) >= 1
+}
+
+export type ActGateId = 'act1' | 'act2' | 'act3'
+
+/**
+ * Whether an Act Gate's canon bar (03) is met — ALL derived, never stored.
+ * This only REPORTS met/unmet; the crossing is always allowed (gates warn, never
+ * block — canon 01). Unmet just means the override path (a written reason) is used.
+ * - act1 (after W2): s1 threshold answered · ≥5 E2+ · ≥1 E3+ · a written kill criterion.
+ * - act2 (after W5): verdict recorded · pivot/persevere decided with ≥1 citation.
+ * - act3 (after W7): unit walk-through (s7-th) answered · SPOF (s7-l2) answered.
+ */
+export function gateMet(data: QuestData, gateId: ActGateId): boolean {
+  switch (gateId) {
+    case 'act1': {
+      const thresholdAnswered = data.answers['s1']?.['s1-th'] !== undefined
+      let e2 = 0
+      let e3 = 0
+      for (const e of data.evidence) {
+        if (e.tier >= 2) e2 += 1
+        if (e.tier >= 3) e3 += 1
+      }
+      const hasKillCriterion = data.assumptions.some((a) => a.killCriterion.trim() !== '')
+      return thresholdAnswered && e2 >= 5 && e3 >= 1 && hasKillCriterion
+    }
+    case 'act2':
+      return verdictRecorded(data) && decisionCited(data)
+    case 'act3':
+      return (
+        data.answers['s7']?.['s7-th'] !== undefined && data.answers['s7']?.['s7-l2'] !== undefined
+      )
+  }
 }

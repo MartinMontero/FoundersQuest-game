@@ -10,15 +10,33 @@
 // action: the deep-link that opens the riskiest guardian in the Registry.
 
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react'
+import { AudioDirector } from '../audio/AudioDirector'
 import { riskiest, trough } from '../core/metrics'
+import { useFounderStore } from '../state/founder'
 import type { QuestData } from '../core/schema'
-import { useQuestData } from '../state/store'
-import { shouldSummonShadow } from '../state/tunables'
+import { useJourneyStore } from '../state/journey'
+import { questStore, useQuestData } from '../state/store'
+import { EARNED_HUNCH_BUMP, shouldSummonShadow } from '../state/tunables'
 import { useUiStore } from '../state/ui'
 import { STAGES, UI } from '../strings'
+import { CalibrationPanel } from './CalibrationPanel'
+import { CampfirePanel } from './CampfirePanel'
+import { ChartPanel } from './ChartPanel'
+import { CouncilPanel } from './CouncilPanel'
+import { CreditsPanel } from './CreditsPanel'
+import { ConfrontationOverlay } from './ConfrontationOverlay'
 import { DegradedBanner } from './DegradedBanner'
+import { EgoOverlay } from './EgoOverlay'
+import { FieldPanel } from './FieldPanel'
+import { FounderNaming } from './FounderNaming'
+import { FuneralRiteOverlay } from './FuneralRiteOverlay'
+import { GatePanel } from './GatePanel'
 import { Hud } from './Hud'
+import { LegendPanel } from './LegendPanel'
+import { LoopPanel } from './LoopPanel'
 import { OnboardingHint } from './OnboardingHint'
+import { OpeningOverlay } from './OpeningOverlay'
+import { ReentryPrompt } from './ReentryPrompt'
 import { RegistryPanel } from './RegistryPanel'
 import { ShadowOverlay } from './ShadowOverlay'
 import { TrancePanel } from './TrancePanel'
@@ -31,7 +49,8 @@ import { VaultPanel } from './VaultPanel'
  * statement. Pure and local; nothing invented, nothing sent anywhere.
  */
 export function chooseShadowQuote(data: QuestData): string {
-  const guardian = riskiest(data)
+  // same bump as useRiskiest — "riskiest" is one identity everywhere (A2)
+  const guardian = riskiest(data, EARNED_HUNCH_BUMP)
   if (guardian === null) return ''
   const stage = STAGES.find((s) => `s${s.stage}` === guardian.originStageId)
   const stageAnswers = data.answers[guardian.originStageId]
@@ -52,6 +71,8 @@ export function chooseShadowQuote(data: QuestData): string {
 }
 
 export function UiRoot(): ReactElement {
+  // '' = the first-run naming card is up (skips adopt the default name)
+  const founderNamed = useFounderStore((s) => s.name !== '')
   const mode = useUiStore((s) => s.mode)
   const activeQid = useUiStore((s) => s.activeQid)
   const shadowVisible = useUiStore((s) => s.shadow.visible)
@@ -64,6 +85,17 @@ export function UiRoot(): ReactElement {
 
   const summonNow = shouldSummonShadow(data)
   const inTrough = trough(data)
+
+  // The Vault unseals at Stage 3 (canon 01) — a one-way flag. Fires on first
+  // reach AND on a reload that resumes at World 3+ (currentStage is device-local,
+  // never inside founders-quest:v3), so the seal state always matches the world.
+  const currentStage = useJourneyStore((s) => s.currentStage)
+  useEffect(() => {
+    const VAULT_UNSEAL_STAGE = 3
+    if (currentStage >= VAULT_UNSEAL_STAGE && !data.vaultUnlocked) {
+      questStore.getState().unlockVault()
+    }
+  }, [currentStage, data.vaultUnlocked])
 
   useEffect(() => {
     const ui = useUiStore.getState()
@@ -101,16 +133,34 @@ export function UiRoot(): ReactElement {
   return (
     <>
       <Hud />
+      <FounderNaming />
       <OnboardingHint />
+      {/* First Light mounts once the founder is named (the naming card leads;
+          '' = unnamed and the card is up) — invitation, beats, or nothing */}
+      {founderNamed ? <OpeningOverlay /> : null}
       {mode === 'trance' && activeQid !== null ? (
         // key: each shrine gets its own draft state (drafts are per-question)
         <TrancePanel key={activeQid} qid={activeQid} />
       ) : null}
       {mode === 'panel:vault' ? <VaultPanel /> : null}
       {mode === 'panel:registry' ? <RegistryPanel focusRiskiest={focusRiskiest} /> : null}
+      {mode === 'panel:campfire' ? <CampfirePanel /> : null}
+      {mode === 'panel:calibration' ? <CalibrationPanel /> : null}
+      {mode === 'panel:chart' ? <ChartPanel /> : null}
+      {mode === 'panel:legend' ? <LegendPanel /> : null}
+      {mode === 'panel:field' ? <FieldPanel /> : null}
+      {mode === 'panel:council' ? <CouncilPanel /> : null}
+      {mode === 'panel:credits' ? <CreditsPanel /> : null}
+      {mode === 'reentry' ? <ReentryPrompt /> : null}
+      {mode === 'gate' ? <GatePanel /> : null}
+      {mode === 'loop' ? <LoopPanel /> : null}
+      <ConfrontationOverlay />
+      <FuneralRiteOverlay />
+      <EgoOverlay />
       {shadowVisible ? (
         <ShadowOverlay onAction={handleShadowAction} onDismiss={handleShadowDismiss} />
       ) : null}
+      <AudioDirector />
       <DegradedBanner />
     </>
   )

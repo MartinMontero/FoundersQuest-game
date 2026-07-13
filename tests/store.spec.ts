@@ -308,6 +308,69 @@ describe('withDefaults shape-hardening (ruled fix 6): corrupted records hydrate 
     expect(loaded.momentum).toEqual({ value: 0, lastAttemptDate: null, lastTickDate: null })
   })
 
+  it('Mind & Myth keys default in and hydrate through per-field guards (canon 2026-07-11)', () => {
+    // absent keys default in
+    const fresh = withDefaults({})
+    expect(fresh.openingCompletedAt).toBeNull()
+    expect(fresh.openingSkippedAt).toBeNull()
+    expect(fresh.invitationSeen).toBe(false)
+    expect(fresh.chartUnlocked).toBe(false)
+    expect(fresh.firstLightArtifactIds).toEqual([])
+    expect(fresh.openingBeatProgress).toBeNull()
+    expect(fresh.calibration).toEqual([])
+    expect(fresh.confrontations).toEqual([])
+    expect(fresh.funerals).toEqual([])
+    expect(fresh.wisdomCodex).toEqual([])
+
+    // corrupted values hydrate to safe shapes, enums dropped not coerced
+    const mangled = withDefaults(
+      JSON.parse(
+        JSON.stringify({
+          openingCompletedAt: 42, // not a string → null
+          invitationSeen: 'yes', // not a boolean → false
+          firstLightArtifactIds: ['a-1', 7, null, 'a-2'], // non-strings dropped
+          openingBeatProgress: { beat: 'three', ts: '2026-07-11' }, // bad beat → null
+          calibration: [
+            { hunchEvidenceId: 'e-1', taggedAt: '2026-07-11', outcome: 'MAYBE' }, // outcome dropped
+            'not an object', // dropped
+          ],
+          confrontations: [
+            { guardianId: 'g-1', startedAt: '2026-07-11', outcome: 'WON', citations: 'e-1' },
+          ], // outcome dropped; citations not an array → []
+        }),
+      ) as Partial<QuestData>,
+    )
+    expect(mangled.openingCompletedAt).toBeNull()
+    expect(mangled.invitationSeen).toBe(false)
+    expect(mangled.firstLightArtifactIds).toEqual(['a-1', 'a-2'])
+    expect(mangled.openingBeatProgress).toBeNull()
+    expect(mangled.calibration).toEqual([{ hunchEvidenceId: 'e-1', taggedAt: '2026-07-11' }])
+    expect(mangled.confrontations).toEqual([
+      { guardianId: 'g-1', startedAt: '2026-07-11', citations: [] },
+    ])
+  })
+
+  it('provenance survives ONLY on tier-0 evidence; unknown rungs and firstLight fakes drop', () => {
+    const loaded = withDefaults(
+      JSON.parse(
+        JSON.stringify({
+          evidence: [
+            { id: 'e-0', tier: 0, text: 'a hunch', source: 'gut', linkedAssumptionIds: [], stageId: 's1', date: 'd', provenance: 'earned' },
+            { id: 'e-2', tier: 2, text: 'a quote', source: 'call', linkedAssumptionIds: [], stageId: 's1', date: 'd', provenance: 'earned' }, // tier>0 → dropped
+            { id: 'e-1', tier: 0, text: 'x', source: 's', linkedAssumptionIds: [], stageId: 's1', date: 'd', provenance: 'CERTAIN' }, // unknown rung → dropped
+          ],
+          assumptions: [
+            { id: 'g-1', statement: 's', originStageId: 's1', importance: 'dies', status: 'untested', killCriterion: '', createdAt: 'd', firstLight: 'yes' }, // truthy string ≠ true → dropped
+          ],
+        }),
+      ) as Partial<QuestData>,
+    )
+    expect(loaded.evidence[0]?.provenance).toBe('earned')
+    expect(loaded.evidence[1] !== undefined && 'provenance' in loaded.evidence[1]).toBe(false)
+    expect(loaded.evidence[2] !== undefined && 'provenance' in loaded.evidence[2]).toBe(false)
+    expect(loaded.assumptions[0] !== undefined && 'firstLight' in loaded.assumptions[0]).toBe(false)
+  })
+
   it('a healthy record passes through unchanged', () => {
     const store = makeStore(null)
     const data: QuestData = {
