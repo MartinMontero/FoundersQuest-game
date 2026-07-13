@@ -72,6 +72,34 @@ export const CREDITS = {
         license: 'CC0',
         role: 'The scattered trees, with their bark and leaf textures.',
       },
+      {
+        name: 'Rock set',
+        source: 'Low-poly nature packs',
+        author: 'Quaternius',
+        license: 'CC0',
+        role: 'The sculpted boulders across every world.',
+      },
+      {
+        name: 'Bonfire',
+        source: 'Survival Pack',
+        author: 'Quaternius',
+        license: 'CC0',
+        role: 'The campfire log pile and flame.',
+      },
+      {
+        name: 'Banners, torch, candles',
+        source: 'KayKit Dungeon Remastered',
+        author: 'Kay Lousberg',
+        license: 'CC0',
+        role: 'Cloth banners and small fire-light props.',
+      },
+      {
+        name: 'Pigeon (recolored)',
+        source: 'Ultimate Monsters',
+        author: 'Quaternius',
+        license: 'CC0',
+        role: 'The Cartographer’s raven — recolored crow-black; no CC0 corvid model exists, said plainly.',
+      },
     ],
 
     /** CREDITS.md "Environment / lighting" */

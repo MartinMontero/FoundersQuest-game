@@ -15,6 +15,23 @@ fetched at runtime — every asset ships in the static bundle, same-origin, so t
   textures) — from the **Quaternius "Ultimate Nature Pack"**. **CC0.** Scattered
   trees. External-file glTF (buffer + textures load same-origin — no `blob:`).
 
+- **`public/models/rocks/Rock_*.gltf`, `Rock_Moss_*.gltf`** — from the
+  **Quaternius low-poly nature packs** (Ultimate Nature family). **CC0.**
+  Sculpted boulders replacing the primitive rock blobs (art-elevation run,
+  2026-07-13). Self-contained glTF (embedded buffers). Mirror: the same
+  GitHub repo that carries our trees (flo-bit/tiny-planets).
+- **`public/models/campfire/Bonfire.glb`, `Bonfire_Fire.glb`** — from the
+  **Quaternius Survival Pack**. **CC0.** The campfire log pile + flame mesh.
+  Mirror: trebeljahr/quaternius-showcase.
+- **`public/models/props/banner_*.glb`, `torch_lit.glb`, `candle_triple.glb`**
+  — from **KayKit Dungeon Remastered** by Kay Lousberg. **CC0** (LICENSE.txt
+  in the official KayKit-Game-Assets repo — the same repo whose pillar is
+  byte-identical to our vendored `pillar.glb`, proving the shared origin).
+- **`public/models/bird/Pigeon.gltf`** — from **Quaternius "Ultimate
+  Monsters"**. **CC0.** Rigged, 8 baked animations; recolored crow-black in
+  code as the Cartographer's raven (no CC0 corvid model verifiably exists —
+  honest swap, recorded). Mirror: mika314/KitchenSink.
+
 ## Environment / lighting
 - **`public/hdr/venice_sunset_1k.hdr`** — HDRI from **Poly Haven**. **CC0.**
   Image-based lighting: real reflections + ambient on every PBR surface (the
