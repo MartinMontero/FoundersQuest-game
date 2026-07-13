@@ -22,6 +22,7 @@ import {
   SRGBColorSpace,
   type Texture,
 } from 'three'
+import { asset } from './assets'
 import { AssetBoundary } from './AssetBoundary'
 import {
   BACK_POSITION,
@@ -150,9 +151,9 @@ function GroundDiskTextured(): JSX.Element {
   const geometry = useGroundGeometry()
   const sky = useWorldSky() // each world's earth: multiply tint over the shared rock (E-1..E-8)
   const [map, normalMap, armMap] = useTexture([
-    '/textures/ground/grassrock_diff.jpg',
-    '/textures/ground/grassrock_nor.jpg',
-    '/textures/ground/grassrock_arm.jpg',
+    asset('textures/ground/grassrock_diff.jpg'),
+    asset('textures/ground/grassrock_nor.jpg'),
+    asset('textures/ground/grassrock_arm.jpg'),
   ]) as [Texture, Texture, Texture]
   useMemo(() => {
     for (const t of [map, normalMap, armMap]) {

@@ -9,9 +9,10 @@ import { Suspense, useEffect } from 'react'
 import { Clone, useGLTF } from '@react-three/drei'
 import type { Group, Object3D } from 'three'
 import { AssetBoundary } from './AssetBoundary'
+import { asset } from './assets'
 import { PALETTE } from './materials'
 
-const PILLAR_URL = '/models/pillar.glb'
+const PILLAR_URL = asset('models/pillar.glb')
 useGLTF.preload(PILLAR_URL)
 
 /** flip on shadow casting/receiving for every mesh under a loaded scene (once) */

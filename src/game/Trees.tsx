@@ -16,10 +16,11 @@ import {
   ONWARD_POSITION,
   STAGE1_LAYOUT,
 } from './contracts'
+import { asset } from './assets'
 import { RENDER_TIER } from './perf'
 
-const TREE_A = '/models/trees/CommonTree_1.gltf'
-const TREE_B = '/models/trees/CommonTree_5.gltf'
+const TREE_A = asset('models/trees/CommonTree_1.gltf')
+const TREE_B = asset('models/trees/CommonTree_5.gltf')
 useGLTF.preload(TREE_A)
 useGLTF.preload(TREE_B)
 

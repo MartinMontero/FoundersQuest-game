@@ -11,10 +11,11 @@
 import { useEffect, useRef, type MutableRefObject } from 'react'
 import { useAnimations, useGLTF } from '@react-three/drei'
 import { type Group, type Object3D, Vector3 } from 'three'
+import { asset } from './assets'
 import { PALETTE } from './materials'
 import { useSafeFrame } from './useSafeFrame'
 
-const MODEL_URL = '/models/rogue.glb'
+const MODEL_URL = asset('models/rogue.glb')
 useGLTF.preload(MODEL_URL)
 
 /** KayKit weapon nodes to hide — the crossbows, the throwable, and the

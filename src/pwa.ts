@@ -31,7 +31,10 @@ export function initPwa(): void {
   if (!import.meta.env.PROD) return
   if (!('serviceWorker' in navigator)) return
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(() => {
+    // BASE_URL-relative so a path-mounted deploy (foundersquest.ca/play)
+    // registers /play/sw.js with scope /play/ — the SW derives its own base
+    const swUrl = `${import.meta.env.BASE_URL}sw.js`
+    void navigator.serviceWorker.register(swUrl, { updateViaCache: 'none' }).catch(() => {
       // an unregistered SW is a slower reload, not a broken game — stay quiet
     })
   })

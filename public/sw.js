@@ -20,6 +20,9 @@
 const VERSION = 'fq-v1'
 const SHELL = `shell-${VERSION}`
 const RUNTIME = `runtime-${VERSION}`
+// the mount point, derived from the registration scope: '/' at the root
+// deploy, '/play/' under foundersquest.ca/play — never hardcoded
+const BASE = new URL(self.registration.scope).pathname
 
 self.addEventListener('install', () => {
   self.skipWaiting()
@@ -39,10 +42,10 @@ async function networkFirstShell(request) {
   const cache = await caches.open(SHELL)
   try {
     const fresh = await fetch(request)
-    if (fresh.ok) await cache.put('/', fresh.clone())
+    if (fresh.ok) await cache.put(BASE, fresh.clone())
     return fresh
   } catch {
-    const held = await cache.match('/')
+    const held = await cache.match(BASE)
     return held ?? Response.error()
   }
 }
@@ -76,7 +79,7 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstShell(request))
-  } else if (url.pathname.startsWith('/assets/')) {
+  } else if (url.pathname.startsWith(`${BASE}assets/`)) {
     event.respondWith(cacheFirst(request))
   } else {
     event.respondWith(networkFirst(request))

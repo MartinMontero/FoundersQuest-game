@@ -12,6 +12,7 @@ import { CuboidCollider, CylinderCollider, Physics, RigidBody } from '@react-thr
 import { ACESFilmicToneMapping, type Mesh, NoToneMapping } from 'three'
 import { useUiStore } from '../state/ui'
 import { WORLD_COPY } from '../strings'
+import { asset } from './assets'
 import { AssetBoundary } from './AssetBoundary'
 import { CameraRig } from './CameraRig'
 import type { WorldEvents } from './contracts'
@@ -146,7 +147,7 @@ export function World({ reduced, onFirstFrame }: WorldProps): JSX.Element {
         // lights still light the scene, so a failure degrades, never crashes.
         <AssetBoundary fallback={null} label="hdr">
           <Suspense fallback={null}>
-            <Environment files="/hdr/venice_sunset_1k.hdr" />
+            <Environment files={asset('hdr/venice_sunset_1k.hdr')} />
           </Suspense>
         </AssetBoundary>
       ) : null}
