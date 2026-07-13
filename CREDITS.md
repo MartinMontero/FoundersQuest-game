@@ -23,7 +23,8 @@ fetched at runtime — every asset ships in the static bundle, same-origin, so t
 - **`public/models/campfire/Bonfire.glb`, `Bonfire_Fire.glb`** — from the
   **Quaternius Survival Pack**. **CC0.** The campfire log pile + flame mesh.
   Mirror: trebeljahr/quaternius-showcase.
-- **`public/models/props/banner_*.glb`, `torch_lit.glb`, `candle_triple.glb`**
+- **`public/models/props/banner_*.glb`, `torch_lit.glb`, `candle_triple.glb`,
+  `chest.glb`, `chest_gold.glb`**
   — from **KayKit Dungeon Remastered** by Kay Lousberg. **CC0** (LICENSE.txt
   in the official KayKit-Game-Assets repo — the same repo whose pillar is
   byte-identical to our vendored `pillar.glb`, proving the shared origin).

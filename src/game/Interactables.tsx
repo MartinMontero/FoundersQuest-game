@@ -19,7 +19,7 @@
 
 import { useRef } from 'react'
 import { Clone, Float, Html, useGLTF } from '@react-three/drei'
-import { DoubleSide, Mesh, Vector3 } from 'three'
+import { DoubleSide, Mesh, MeshStandardMaterial, Vector3 } from 'three'
 import type { Camera, Group, Object3D, PointLight } from 'three'
 import { useMemo } from 'react'
 import { asset } from './assets'
@@ -227,21 +227,41 @@ function Flagpole({ spec, reduced }: ShrineProps): JSX.Element {
           roughness={0.72} metalness={0.05}
         />
       </mesh>
-      {/* the banner — a bent cloth plane, hoisted or furled by the milestone */}
+      {/* the banner — real sculpted cloth (KayKit), tinted by milestone state;
+          the flat purple slab of the operator's exhibit 7 is gone */}
       <group ref={banner} position={[0.04, flagY, 0]}>
-        <mesh position={[0.46, 0, 0]} rotation={[0, 0, -0.06]}>
-          <planeGeometry args={[0.9, 0.55, 4, 1]} />
-          <meshStandardMaterial
-            color={raised ? PALETTE.amber : '#4b4670'}
-            emissive={raised ? PALETTE.amber : '#000000'}
-            emissiveIntensity={raised ? 0.45 : 0}
-            roughness={0.72} metalness={0.05}
-            side={DoubleSide}
-          />
-        </mesh>
+        <BannerCloth raised={raised} />
       </group>
+      <ContactShadow position={[0, 0.02, 0]} radius={0.5} opacity={0.7} />
     </group>
   )
+}
+
+/** the vendored KayKit banner mesh, re-tinted: hoisted = warm amber-lit,
+ *  furled = quiet indigo cloth (CC0 — CREDITS.md) */
+function BannerCloth({ raised }: { raised: boolean }): JSX.Element {
+  const { scene } = useGLTF(asset('models/props/banner_blue.glb'))
+  const cloth = useMemo(() => {
+    const clone = scene.clone(true)
+    const material = new MeshStandardMaterial({
+      color: raised ? PALETTE.amber : '#4b4670',
+      emissive: raised ? PALETTE.amber : '#000000',
+      emissiveIntensity: raised ? 0.35 : 0,
+      roughness: 0.8,
+      metalness: 0.03,
+      side: DoubleSide,
+    })
+    clone.traverse((node) => {
+      if (node instanceof Mesh) {
+        node.material = material
+        node.castShadow = true
+      }
+    })
+    return clone
+  }, [scene, raised])
+  // KayKit banner hangs down from its anchor; native ~1.5x3.2 — scale to the
+  // pole's proportions and offset so the cloth flies beside the pole
+  return <Clone object={cloth} position={[0.3, 0.32, 0]} scale={0.34} rotation={[0, Math.PI / 2, 0]} />
 }
 
 // ---- the Vault: an ornate sealed sanctum ----
@@ -249,6 +269,24 @@ function Flagpole({ spec, reduced }: ShrineProps): JSX.Element {
 interface VaultProps {
   spec: InteractableSpec
   reduced: boolean
+}
+
+/** the vendored KayKit chest — wooden and chained shut while sealed, gold
+ *  once the founder unseals it in World 3 (CC0 — CREDITS.md) */
+function VaultChest({ locked }: { locked: boolean }): JSX.Element {
+  const { scene } = useGLTF(
+    asset(locked ? 'models/props/chest.glb' : 'models/props/chest_gold.glb'),
+  )
+  const chest = useMemo(() => {
+    const clone = scene.clone(true)
+    clone.traverse((node) => {
+      if (node instanceof Mesh) {
+        node.castShadow = true
+      }
+    })
+    return clone
+  }, [scene])
+  return <Clone object={chest} position={[0, -0.45, 0]} scale={1.05} />
 }
 
 /** four corner posts of an ornate reliquary */
@@ -265,16 +303,9 @@ function VaultMonument({ spec, reduced }: VaultProps): JSX.Element {
 
   const sanctum = (
     <group>
-      {/* the reliquary core */}
-      <mesh>
-        <boxGeometry args={[1.3, 0.9, 0.85]} />
-        <meshStandardMaterial
-          color={PALETTE.violetDeep}
-          emissive={PALETTE.violet}
-          emissiveIntensity={0.28}
-          roughness={0.72} metalness={0.05}
-        />
-      </mesh>
+      {/* the reliquary core — a REAL chest (KayKit, CC0); gold once unsealed.
+          The floating purple box of the operator's exhibit 4 is gone. */}
+      <VaultChest locked={locked} />
       {/* ornate corner posts */}
       {VAULT_POSTS.map(([px, pz], i) => (
         <mesh key={i} position={[px, 0, pz]}>

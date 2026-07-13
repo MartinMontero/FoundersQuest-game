@@ -87,11 +87,11 @@ export const CREDITS = {
         role: 'The campfire log pile and flame.',
       },
       {
-        name: 'Banners, torch, candles',
+        name: 'Banners, torch, candles, chests',
         source: 'KayKit Dungeon Remastered',
         author: 'Kay Lousberg',
         license: 'CC0',
-        role: 'Cloth banners and small fire-light props.',
+        role: 'Cloth banners, small fire-light props, and the Vault\u2019s sealed chest.',
       },
       {
         name: 'Pigeon (recolored)',
