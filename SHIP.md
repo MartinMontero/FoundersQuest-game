@@ -169,10 +169,19 @@ browser SpeechRecognition ships audio to vendor servers (unsanctioned service, o
 the consent architecture). Typed capture stays primary.
 
 ## Deploy
-Live alias (stated per the stale-alias lesson, Z-12; the deploy output is the
-authority — hash-verified: alias serves assets/index-BKrVXuwQ.js, byte-matching
-the local dist, with the canon CSP live; sw.js/manifest/icons all 200):
-**https://claude-dev-environment-setup.founders-quest-game.pages.dev**
+Canonical play URL (2026-07-13): **https://play.foundersquest.ca** — custom
+domain on the founders-quest-game Pages project's PRODUCTION deployment
+(operator-approved; domain active, Google-CA certificate issued, CNAME added by
+the operator — the environment's API token has no zone-level rights, verified
+and documented). Production origin hash-verified: founders-quest-game.pages.dev
+serves assets/index-DbQCWvgT.js with the canon CSP; sw/manifest/icons 200.
+End-to-end fetch of the subdomain itself is UNTESTED from this container (the
+egress allowlist 403s the new hostname) — every layer beneath it is verified;
+the operator's first click is the final check. Branch-preview alias (the QA
+link) remains: https://claude-dev-environment-setup.founders-quest-game.pages.dev
+— hash-verified at deploy time (assets/index-BKrVXuwQ.js). Also staged, dormant:
+the foundersquest.ca/play PATH mount (worker fq-play-proxy uploaded, /play-based
+build on the `play` branch) — one Worker-route click activates it if ever wanted.
 The unsuffixed founders-quest-game.pages.dev alias still serves an A3-era build — no
 deletion attempted (Rule 9; operator console action). Hash-verify recorded below the
 deploy in VERIFICATION/SITREP.

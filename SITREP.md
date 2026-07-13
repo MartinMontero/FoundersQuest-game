@@ -1,8 +1,9 @@
 # SITREP — Backlog Build-Out + Design Elevation (2026-07-13)
 
-**Play it here:** https://claude-dev-environment-setup.founders-quest-game.pages.dev
-(hash-verified against this exact build; the OLD unsuffixed founders-quest-game.pages.dev
-link still serves an ancient build — don't use it, and I can't delete it from here.)
+**Play it here: https://play.foundersquest.ca** — the game's own subdomain on your
+domain (production deployment, domain active, certificate issued, DNS live; the
+branch-preview alias claude-dev-environment-setup.founders-quest-game.pages.dev also
+still works). founders-quest-game.pages.dev now serves the same production build.
 
 ## The short version
 
