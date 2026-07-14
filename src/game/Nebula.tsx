@@ -6,13 +6,28 @@
 // Reduced motion: the star swirl is STATIC and the aurora stops drifting.
 // During a trance the world holds its breath — the swirl slows (§2 F1).
 
-import { useCallback, useMemo, useRef } from 'react'
+import { Suspense, useCallback, useMemo, useRef } from 'react'
+import { Clone, useGLTF } from '@react-three/drei'
 import { useSafeFrame } from './useSafeFrame'
-import { AdditiveBlending, BackSide, Color, type Mesh, type Points, Vector3 } from 'three'
+import {
+  AdditiveBlending,
+  BackSide,
+  Color,
+  MeshStandardMaterial,
+  type BufferGeometry,
+  type Group,
+  type Mesh,
+  type Points,
+  Vector3,
+} from 'three'
 import { useJourneyStore } from '../state/journey'
 import { useUiStore } from '../state/ui'
+import { asset } from './assets'
+import { AssetBoundary } from './AssetBoundary'
+import { GlowSprite } from './fx'
 import { makeSoftSprite, PALETTE } from './materials'
-import { LOW_POWER } from './perf'
+import { IS_AUTOMATION, LOW_POWER } from './perf'
+import { sculptedGeometry } from './props'
 import type { WorldSky } from './worldPalette'
 import { useWorldSky } from './useWorldSky'
 
@@ -244,36 +259,187 @@ const ISLANDS: readonly Island[] = [
   { position: [40, 8, 34], radius: 4.4, depth: 5, yaw: -1.2, tilt: -0.12 },
 ]
 
-function RockIsland({ island }: { island: Island }): JSX.Element {
+/** the automation/streaming fallback — cheap primitives, no GLB dependency */
+function SimpleIsland({ island }: { island: Island }): JSX.Element {
   const { radius, depth } = island
   return (
     <group position={island.position} rotation={[island.tilt, island.yaw, 0]}>
-      {/* the grassy top cap — a low mossy disc, warm at its lit rim */}
       <mesh position={[0, 0.1, 0]}>
         <cylinderGeometry args={[radius, radius * 0.92, 0.5, 12]} />
         <meshStandardMaterial color={PALETTE.moss} roughness={0.85} metalness={0.05} />
       </mesh>
-      {/* a soft grassy dome so the cap isn't a flat lid */}
-      <mesh position={[0, 0.36, 0]} scale={[1, 0.42, 1]}>
-        <sphereGeometry args={[radius * 0.86, 16, 12]} />
-        <meshStandardMaterial color={PALETTE.mossWarm} roughness={0.85} metalness={0.05} />
-      </mesh>
-      {/* the torn rocky keel — a faceted taper falling into the void */}
       <mesh position={[0, -depth * 0.42, 0]} rotation={[Math.PI, island.yaw * 0.5, 0]}>
         <coneGeometry args={[radius * 0.82, depth, 7, 2]} />
         <meshStandardMaterial color={PALETTE.stone} roughness={0.85} metalness={0.05} />
       </mesh>
-      {/* a broken lower shard for silhouette irregularity */}
-      <mesh position={[radius * 0.28, -depth * 0.82, radius * 0.1]} rotation={[Math.PI, 0.6, 0.2]}>
-        <coneGeometry args={[radius * 0.36, depth * 0.55, 5, 1]} />
-        <meshStandardMaterial color={PALETTE.stoneCool} roughness={0.85} metalness={0.05} />
-      </mesh>
-      {/* a faint violet underglow — the magic keeping it aloft */}
-      <mesh position={[0, -depth * 0.5, 0]}>
-        <sphereGeometry args={[radius * 0.5, 12, 12]} />
-        <meshBasicMaterial color={PALETTE.violet} transparent opacity={0.14} depthWrite={false} />
-      </mesh>
     </group>
+  )
+}
+
+interface IslandKit {
+  geoms: readonly [BufferGeometry, BufferGeometry]
+  mats: {
+    moss: MeshStandardMaterial
+    soil: MeshStandardMaterial
+    stone: MeshStandardMaterial
+    cool: MeshStandardMaterial
+  }
+  trees: readonly [Group, Group]
+}
+
+/** The REAL island (QA 2026-07-14 — "a legit update, not a turd polish"):
+ *  built from the SAME sculpted-rock vocabulary as the ground boulders. A
+ *  squashed mossy sculpt caps a soil lip; a keel of three descending rock
+ *  chunks tears away below with a couple of adrift fragments under it; a
+ *  Quaternius tree and scattered stones dress the top; a soft violet
+ *  GlowSprite replaces the old see-through magic ball. Deterministic per
+ *  index — identical every boot, screenshot-stable. */
+function SculptedIsland({
+  island,
+  index,
+  kit,
+}: {
+  island: Island
+  index: number
+  kit: IslandKit
+}): JSX.Element {
+  const { radius: r, depth } = island
+  const parts = useMemo(() => {
+    const rng = makeRng(0x51ab + index * 977)
+    const keel = [
+      { s: r * 0.85, y: -depth * 0.34 },
+      { s: r * 0.52, y: -depth * 0.72 },
+      { s: r * 0.3, y: -depth * 1.02 },
+    ].map((k, j) => ({
+      ...k,
+      x: (rng() - 0.5) * r * 0.3,
+      z: (rng() - 0.5) * r * 0.3,
+      ry: rng() * Math.PI * 2,
+      geom: (index + j) % 2,
+      cool: j % 2 === 1,
+    }))
+    const frags = [0, 1].map(() => ({
+      s: r * (0.1 + rng() * 0.08),
+      x: (rng() - 0.5) * r * 1.5,
+      y: -depth * (1.2 + rng() * 0.45),
+      z: (rng() - 0.5) * r * 1.5,
+      ry: rng() * Math.PI * 2,
+    }))
+    const stones = [0, 1].map(() => ({
+      s: r * (0.09 + rng() * 0.06),
+      x: (rng() - 0.5) * r * 0.9,
+      z: (rng() - 0.5) * r * 0.9,
+      ry: rng() * Math.PI * 2,
+    }))
+    const tree = {
+      x: (rng() - 0.5) * r * 0.5,
+      z: (rng() - 0.5) * r * 0.5,
+      s: r * 0.17,
+      ry: rng() * Math.PI * 2,
+    }
+    return { keel, frags, stones, tree }
+  }, [index, r, depth])
+
+  return (
+    <group position={island.position} rotation={[island.tilt, island.yaw, 0]}>
+      {/* the mossy cap — a squashed sculpt, torn silhouette for free */}
+      <mesh
+        geometry={kit.geoms[index % 2]}
+        material={kit.mats.moss}
+        position={[0, r * 0.1, 0]}
+        scale={[r * 1.12, r * 0.42, r * 1.12]}
+      />
+      {/* the soil lip under the grass line */}
+      <mesh
+        geometry={kit.geoms[(index + 1) % 2]}
+        material={kit.mats.soil}
+        position={[0, -r * 0.18, 0]}
+        rotation={[0, 1.7, 0]}
+        scale={[r * 1.02, r * 0.34, r * 1.02]}
+      />
+      {/* the torn keel — descending sculpted chunks, not a cone */}
+      {parts.keel.map((k, j) => (
+        <mesh
+          key={`k${j}`}
+          geometry={kit.geoms[k.geom]}
+          material={k.cool ? kit.mats.cool : kit.mats.stone}
+          position={[k.x, k.y, k.z]}
+          rotation={[0, k.ry, 0]}
+          scale={[k.s, k.s * 1.15, k.s]}
+        />
+      ))}
+      {/* fragments adrift beneath — the break-up the sky register calls for */}
+      {parts.frags.map((f, j) => (
+        <mesh
+          key={`f${j}`}
+          geometry={kit.geoms[(index + j) % 2]}
+          material={kit.mats.cool}
+          position={[f.x, f.y, f.z]}
+          rotation={[0, f.ry, 0]}
+          scale={[f.s, f.s, f.s]}
+        />
+      ))}
+      {/* top dressing: one tree + a couple of stones */}
+      <Clone
+        object={index % 2 === 0 ? kit.trees[0] : kit.trees[1]}
+        position={[parts.tree.x, r * 0.28, parts.tree.z]}
+        rotation={[0, parts.tree.ry, 0]}
+        scale={parts.tree.s}
+      />
+      {parts.stones.map((s, j) => (
+        <mesh
+          key={`s${j}`}
+          geometry={kit.geoms[(index + j + 1) % 2]}
+          material={kit.mats.stone}
+          position={[s.x, r * 0.3, s.z]}
+          rotation={[0, s.ry, 0]}
+          scale={[s.s, s.s, s.s]}
+        />
+      ))}
+      {/* a faint violet underglow — soft additive halo, no see-through ball */}
+      <GlowSprite
+        position={[0, -depth * 0.55, 0]}
+        color={PALETTE.violet}
+        scale={r * 1.5}
+        opacity={0.4}
+      />
+    </group>
+  )
+}
+
+/** the sculpted set: shared geometry + materials + trees, built once */
+function SculptedIslands(): JSX.Element {
+  const rockA = useGLTF(asset('models/rocks/Rock_2.glb'))
+  const rockB = useGLTF(asset('models/rocks/Rock_5.glb'))
+  const treeA = useGLTF(asset('models/trees/CommonTree_1.gltf'))
+  const treeB = useGLTF(asset('models/trees/CommonTree_5.gltf'))
+  const kit = useMemo<IslandKit>(
+    () => ({
+      geoms: [sculptedGeometry(rockA.scene), sculptedGeometry(rockB.scene)],
+      mats: {
+        moss: new MeshStandardMaterial({ color: PALETTE.moss, roughness: 0.9, metalness: 0.04 }),
+        soil: new MeshStandardMaterial({
+          color: PALETTE.stoneWarm,
+          roughness: 0.95,
+          metalness: 0.03,
+        }),
+        stone: new MeshStandardMaterial({ color: PALETTE.stone, roughness: 0.88, metalness: 0.04 }),
+        cool: new MeshStandardMaterial({
+          color: PALETTE.stoneCool,
+          roughness: 0.88,
+          metalness: 0.04,
+        }),
+      },
+      trees: [treeA.scene, treeB.scene],
+    }),
+    [rockA.scene, rockB.scene, treeA.scene, treeB.scene],
+  )
+  return (
+    <>
+      {ISLANDS.map((island, index) => (
+        <SculptedIsland key={index} island={island} index={index} kit={kit} />
+      ))}
+    </>
   )
 }
 
@@ -327,9 +493,26 @@ export function Nebula({ reduced }: NebulaProps): JSX.Element {
           fog={false}
         />
       </points>
-      {ISLANDS.map((island, index) => (
-        <RockIsland key={index} island={island} />
-      ))}
+      {IS_AUTOMATION ? (
+        ISLANDS.map((island, index) => <SimpleIsland key={index} island={island} />)
+      ) : (
+        // sculpted islands once the (already-streamed) rocks + trees arrive;
+        // the primitive silhouettes stand in and stay if anything fails
+        <AssetBoundary
+          fallback={ISLANDS.map((island, index) => (
+            <SimpleIsland key={index} island={island} />
+          ))}
+          label="sky-islands"
+        >
+          <Suspense
+            fallback={ISLANDS.map((island, index) => (
+              <SimpleIsland key={index} island={island} />
+            ))}
+          >
+            <SculptedIslands />
+          </Suspense>
+        </AssetBoundary>
+      )}
     </group>
   )
 }

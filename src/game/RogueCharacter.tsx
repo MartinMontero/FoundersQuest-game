@@ -18,6 +18,25 @@ import { useSafeFrame } from './useSafeFrame'
 const MODEL_URL = asset('models/rogue.glb')
 useGLTF.preload(MODEL_URL)
 
+declare global {
+  interface Window {
+    /** dev/tuning only — live override for the staff-grip arm pose (9 Eulers) */
+    __fq_pose?: number[] | null
+    /** dev/tuning only — the clip's animated arm pose this frame, pre-override */
+    __fq_pose_now?: number[]
+  }
+}
+
+/** the pinned walking-staff grip: [upper.xyz, lower.xyz, hand.xyz] local Euler
+ *  angles for the RIGHT arm, applied after the mixer each frame. Tuned against
+ *  captures (QA 2026-07-14 — the clips leave the arm hanging, fist beside the
+ *  shaft). */
+const STAFF_GRIP_POSE: readonly number[] = [
+  -1.234, -0.737, 1.248, // upperarm.r — the idle clip's hang, kept
+  0, 0, 1.95, //            lowerarm.r — elbow curled so the fist rises to mid-torso
+  -0.599, 0.765, -0.278, // hand.r — the clip's fist orientation, knuckles out
+]
+
 /** KayKit weapon nodes to hide — the crossbows, the throwable, and the
  * right-hand knife (the staff occupies that hand). The left-hand `Knife_Offhand`
  * stays: the founder's one sword. */
@@ -75,16 +94,44 @@ export function RogueCharacter({ gait, reduced }: RogueCharacterProps): JSX.Elem
   // staff — its foot on the earth, its shaft rising past the hand to the crown —
   // instead of a short baton floating at hand height.
   const handBone = useRef<Object3D | null>(null)
+  const armBones = useRef<{ upper: Object3D; lower: Object3D; hand: Object3D } | null>(null)
   useEffect(() => {
     // GLTFLoader strips the '.' from bone names, so `handslot.r` → `handslotr`.
     handBone.current =
       scene.getObjectByName('handslotr') ?? scene.getObjectByName('handr') ?? null
+    const upper = scene.getObjectByName('upperarmr')
+    const lower = scene.getObjectByName('lowerarmr')
+    const hand = scene.getObjectByName('handr')
+    armBones.current =
+      upper !== undefined && lower !== undefined && hand !== undefined
+        ? { upper, lower, hand }
+        : null
   }, [scene])
   useSafeFrame(() => {
     const s = staff.current
     const hand = handBone.current
     const g = group.current
     if (s === null || hand === null || g === null) return
+    // POSE the gripping arm (QA: the clips leave the arm hanging at the hip, so
+    // the staff read as floating beside a limp fist). After the mixer writes the
+    // clip pose, pin the right arm into a walking-staff grip: forearm raised
+    // across the body, fist closed around the shaft line. The torso above still
+    // animates, so the arm rides the body's sway without ever letting go.
+    const bones = armBones.current
+    if (bones !== null) {
+      if (import.meta.env.DEV) {
+        // mirror the ANIMATED baseline (pre-override) for tuning sessions
+        window.__fq_pose_now = [
+          bones.upper.rotation.x, bones.upper.rotation.y, bones.upper.rotation.z,
+          bones.lower.rotation.x, bones.lower.rotation.y, bones.lower.rotation.z,
+          bones.hand.rotation.x, bones.hand.rotation.y, bones.hand.rotation.z,
+        ]
+      }
+      const pose = import.meta.env.DEV ? (window.__fq_pose ?? STAFF_GRIP_POSE) : STAFF_GRIP_POSE
+      bones.upper.rotation.set(pose[0] ?? 0, pose[1] ?? 0, pose[2] ?? 0)
+      bones.lower.rotation.set(pose[3] ?? 0, pose[4] ?? 0, pose[5] ?? 0)
+      bones.hand.rotation.set(pose[6] ?? 0, pose[7] ?? 0, pose[8] ?? 0)
+    }
     hand.getWorldPosition(HAND_WORLD)
     g.worldToLocal(HAND_WORLD)
     const hx = HAND_WORLD.x
