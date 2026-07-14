@@ -2,15 +2,16 @@
 
 Per Addendum §10, these halt the program at Gate 0. No inference fills a gap.
 
-## B-4 · Council provenance-reading block: no verbatim source (OPEN — severable)
+## B-4 · Council provenance-reading block: no verbatim source (RESOLVED 2026-07-13 — see log)
 The A0-2 diff's 04/council.ts change has two halves. The REPLACE sentence was fully specified
 and is APPLIED (A1 canon commit, parity green). The APPEND block ("the provenance-reading
-block") has no verbatim text anywhere on hand: `wikj-v3-content-package.md` grounds the content
-(§3.3 blocks 1, 5, 6) but contains no Council-prompt text, and `cc-prompt-earned-hunch.md` is
+block") had no verbatim text anywhere on hand: `wikj-v3-content-package.md` grounds the content
+(§3.3 blocks 1, 5, 6) but contains no Council-prompt text, and `cc-prompt-earned-hunch.md` was
 not in the repo. Authoring Council canon from a summary = inference filling a gap — declined.
-**Severable:** nothing in A2 depends on it (the Council convenes in Phase 4; BYOK program adds
-no API surface). **Needed:** operator uploads `cc-prompt-earned-hunch.md` (or the block text),
-or approves a draft I post on request. Until then 04's queued-addenda entry records the split.
+**Severable:** nothing in A2 depended on it (the Council convenes in Phase 4; BYOK program adds
+no API surface). **RESOLVED:** the operator delivered `cc-prompt-earned-hunch.md`; its §D block
+was applied verbatim to `docs/canon/04-council.md` and `src/strings/council.ts` (parity green),
+and the live rite opened in the same change — full detail in the Resolution log below.
 
 ## B-1 · Six required research inputs MISSING (STOP condition, Addendum §1)
 None of the required files exist in `docs/research/` (verified byte-level 2026-07-11; uploads
@@ -56,8 +57,15 @@ QA playthrough per SITREP.md serves as the re-judgment).
   once, at the end, via the consolidated SITREP + QA report.
 - **2026-07-11 · D-blocks.** All defaults ratified, no exceptions (operator, verbatim: "all
   defaults ratified").
-
----
+- **2026-07-13 · B-4 RESOLVED.** The verbatim source arrived: the operator delivered
+  `cc-prompt-earned-hunch.md` (vendored at `docs/build/cc-prompt-earned-hunch.md`); its §D holds
+  the provenance-reading block. Both halves of the A0-2 diff's Council change are now applied —
+  the REPLACE sentence (already in from A1) and the APPEND block, added byte-for-byte to
+  `docs/canon/04-council.md` and `src/strings/council.ts` in one commit (the old sting line
+  "An argument built on hunches is a hunch with better posture." was removed at A1; parity suite
+  re-derives, green). The live Council rite opened in the same change. Backlog park **K-2** (the
+  same block, tracked in the parks) closes with this. Simon/Kahneman attributions preserved
+  verbatim from the source. 04's "Queued addenda" entry now records the block as applied.
 
 # Backlog run parks (2026-07-11) — operator-facing decisions, zero silent drops
 
@@ -65,8 +73,9 @@ QA playthrough per SITREP.md serves as the re-judgment).
   does NOT exist in 03 (only the header parenthetical, 03:95). Wiring = authoring
   canon by inference → STOP honored. NEEDS: verbatim prompts from the operator,
   or approval of a drafted 03 diff.
-- **K-2 · B-4 Council provenance block** — standing; needs cc-prompt-earned-hunch.md
-  or approval of a posted draft.
+- **K-2 · B-4 Council provenance block** — CLOSED 2026-07-13. Operator delivered
+  `cc-prompt-earned-hunch.md`; §D block applied verbatim to 04 + council.ts (see
+  Resolution log · B-4 RESOLVED).
 - **K-3 · i18n 40 locales** (05:13) — D-scope STOP per CLAUDE.md; prereq repo
   unreachable.
 - **K-4 · 05:17 "next after" features** (Mentor/Shadow AI · Interview Debrief ·
