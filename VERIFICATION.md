@@ -2,6 +2,41 @@
 
 Every entry is a real tool result from the session that wrote it. UNTESTED marked plainly.
 
+## Round 19 — Council live rite + QA round 3 + Map v3 swap + B-4 ledger (2026-07-13/14)
+
+All merged to `main` via PR #4 (`caae40d`) and PR #3 (Council). Commits (all pushed):
+- **Council live rite** — `0a13c99` (open the rite, prompt addendum applied verbatim) +
+  `95738e5` (adversarial-review hardening: 9 findings fixed). §D block byte-compared to the
+  source; parity re-derived green.
+- **QA round 3** — `971fd2c` (staff grip posed, set-piece moved [-16,-12]→[-8,-14] and proven
+  reachable, sky islands rebuilt from the sculpted-rock vocabulary).
+- **Map v3 swap** — `9dd9873` (pre-swap hash gate `27b4da07…` honored; post-swap `5da35695…`
+  verified; net in-repo delta only: 3× §5.C retargets, §3.2→§4.4, Cajete + CARE §4.4 additions,
+  provenance header + Appendix B).
+- **B-4 ledger reconciliation** — `28a4336` (BLOCKERS B-4 OPEN→RESOLVED + dated log; K-2 closed
+  in BLOCKERS.md and BACKLOG.md; canon-diff "APPEND half queued"→APPLIED; Map concordance line).
+
+**Verification (the shipped runtime — Map + ledger are docs-only, zero bundle effect):**
+| gate | result |
+| --- | --- |
+| clean build / eslint / tsc | 0 / 0 / 0 |
+| vitest | **455/455** (adds council-live 10, thin-ink/addLiveReading/commitment) |
+| e2e (serial, full) | **36 passed**, 6 skipped, 0 retries — twice independently (QA3 run + full gauntlet run A) |
+| gitleaks tree + history | clean / clean |
+| osv-scanner (offline) | no issues (only the documented Vite-5-pin dev-only filters) |
+| pwa:smoke | **PASS** — registered, controlled, manifest 200, offline shell OK (the script's post-pass teardown hung in the long-lived sandbox; the PASS assertion fired — a harness-exit flake, not a test failure) |
+| parity (canon↔strings) | **64/64** — Map swap disturbs no test (Map is imported by nothing) |
+
+**Production deploy (2026-07-14):** `npx wrangler pages deploy dist --project-name
+founders-quest-game --branch main` → `93379d19.founders-quest-game.pages.dev`; hash-verified
+`sha256(dist/index.html)` == live at play.foundersquest.ca (`f6b5aef6…`); the rebuilt-island
+code (`SculptedIsland`/`sky-islands`) confirmed present in the shipped bundle.
+
+**Map v3 also landed in the sibling app repo** `MartinMontero/FoundersQuest` on both `main`
+(`79eaa6d`) and the (then-default) token-setup branch (`3723a70`), sha256 `5da35695…` verified
+on each — satisfies the Earned Hunch prereq gate. Default branch since re-pointed to `main` by
+the operator.
+
 ## Round 16 — Backlog Build-Out + Design Elevation: the closing loop (2026-07-13)
 
 **Exit rule:** two consecutive fully-clean full runs. **Met** — runs A and B below are
