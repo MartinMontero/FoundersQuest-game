@@ -37,6 +37,12 @@ export type UiMode =
 /** the dramatic beats the world reacts to (E-0 celebration staging) */
 export type CelebrationKind = 'shatter' | 'pillar' | 'funeral' | 'integration'
 
+/** a transient HUD toast (milestone feedback etc.) — id bumps so repeats re-fire */
+export interface ToastState {
+  id: number
+  text: string
+}
+
 export interface ShadowState {
   visible: boolean
   /** the founder's own words, quoted back — drawn locally, zero network */
@@ -106,6 +112,10 @@ export interface UiState {
   clearCelebration(): void
   summonShadow(quote: string, action: string): void
   dismissShadow(): void
+  /** the transient HUD toast, if one is showing — the component owns expiry */
+  toast: ToastState | null
+  showToast(text: string): void
+  clearToast(): void
 }
 
 const SHADOW_HIDDEN: ShadowState = { visible: false, quote: '', action: '' }
@@ -207,5 +217,15 @@ export const useUiStore = create<UiState>()((set) => ({
 
   dismissShadow(): void {
     set({ shadow: SHADOW_HIDDEN })
+  },
+
+  toast: null,
+
+  showToast(text: string): void {
+    set((s) => ({ toast: { text, id: (s.toast?.id ?? 0) + 1 } }))
+  },
+
+  clearToast(): void {
+    set({ toast: null })
   },
 }))

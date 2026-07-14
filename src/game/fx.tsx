@@ -78,6 +78,24 @@ function ringTexture(): CanvasTexture {
   return ringTex
 }
 
+let veilTex: CanvasTexture | null = null
+/** the portal veil's energy-field falloff — full centre, feathered rim, so the
+ *  gate reads as a standing field of light instead of a painted rectangle */
+export function veilTexture(): CanvasTexture {
+  if (veilTex === null) {
+    veilTex = radialCanvas((ctx, s) => {
+      const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2)
+      g.addColorStop(0, 'rgba(255,255,255,0.92)')
+      g.addColorStop(0.45, 'rgba(255,255,255,0.6)')
+      g.addColorStop(0.8, 'rgba(255,255,255,0.16)')
+      g.addColorStop(1, 'rgba(255,255,255,0)')
+      ctx.fillStyle = g
+      ctx.fillRect(0, 0, s, s)
+    })
+  }
+  return veilTex
+}
+
 let shadowTex: CanvasTexture | null = null
 /** the contact-shadow blob — dark centre, feathered edge */
 function shadowTexture(): CanvasTexture {

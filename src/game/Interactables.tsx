@@ -17,13 +17,14 @@
 // constant (lights dim to zero, never unmount) so no shader recompiles as the
 // player roams.
 
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Clone, Float, Html, useGLTF } from '@react-three/drei'
-import { DoubleSide, Mesh, MeshStandardMaterial, Vector3 } from 'three'
+import { AdditiveBlending, DoubleSide, Mesh, MeshStandardMaterial, Vector3 } from 'three'
+import type { MeshBasicMaterial } from 'three'
 import type { Camera, Group, Object3D, PointLight } from 'three'
 import { useMemo } from 'react'
 import { asset } from './assets'
-import { ContactShadow, GlowRing, GlowSprite, useFlame } from './fx'
+import { ContactShadow, GlowRing, GlowSprite, useFlame, veilTexture } from './fx'
 import { Rock } from './rocks'
 import { arenaChallenger } from '../core/confrontation'
 import { IMPORTANCE_WEIGHT, riskiest, tierOf } from '../core/metrics'
@@ -201,7 +202,18 @@ function Flagpole({ spec, reduced }: ShrineProps): JSX.Element {
   const raised = useQuestStore((s) => s.data.milestones[milestoneId] === true)
   const banner = useRef<Group>(null)
   const [x, y, z] = spec.position
-  const flagY = raised ? 2.7 : 1.0
+  // raised hoist keeps the crossarm (+0.52 in the banner group) below the
+  // pole top (3.2) and finial (3.25) — 2.45 + 0.52 = 2.97
+  const flagY = raised ? 2.45 : 1.0
+
+  // a raise is a BEAT: one expanding amber ground-ring at the pole the moment
+  // the flag goes up (never on load — only on a false→true flip while mounted)
+  const prevRaised = useRef(raised)
+  const [pulseSeq, setPulseSeq] = useState(0)
+  useEffect(() => {
+    if (raised && !prevRaised.current) setPulseSeq((n) => n + 1)
+    prevRaised.current = raised
+  }, [raised])
 
   // the banner sways like cloth catching a slow wind; still under reduced motion
   useSafeFrame(({ clock }) => {
@@ -227,18 +239,66 @@ function Flagpole({ spec, reduced }: ShrineProps): JSX.Element {
           roughness={0.72} metalness={0.05}
         />
       </mesh>
-      {/* the banner — real sculpted cloth (KayKit), tinted by milestone state;
-          the flat purple slab of the operator's exhibit 7 is gone */}
-      <group ref={banner} position={[0.04, flagY, 0]}>
+      {/* the hoist: a wooden crossarm on the pole, the cloth hanging FROM it
+          (Photoreal Pass II: the cloth floated beside the pole — "toilet
+          paper". Now it is rigged like a real standard.) */}
+      <group ref={banner} position={[0, flagY, 0]}>
+        {/* crossarm, socketed through the pole */}
+        <mesh position={[0.26, 0.52, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <cylinderGeometry args={[0.035, 0.035, 0.66, 8]} />
+          <meshStandardMaterial color="#7c6a58" roughness={0.85} metalness={0.03} />
+        </mesh>
+        {/* a rope knot where arm meets pole */}
+        <mesh position={[0.02, 0.52, 0]}>
+          <torusGeometry args={[0.085, 0.028, 8, 14]} />
+          <meshStandardMaterial color="#9a8a6a" roughness={0.9} metalness={0.02} />
+        </mesh>
         <BannerCloth raised={raised} />
       </group>
+      {pulseSeq > 0 && !reduced ? <RaisePulse key={pulseSeq} /> : null}
       <ContactShadow position={[0, 0.02, 0]} radius={0.5} opacity={0.7} />
     </group>
   )
 }
 
-/** the vendored KayKit banner mesh, re-tinted: hoisted = warm amber-lit,
- *  furled = quiet indigo cloth (CC0 — CREDITS.md) */
+/** the raise beat: an amber ring blooming outward from the pole base, ~0.9s,
+ *  then gone. Additive, no light, no shadow — pure celebration, zero cost
+ *  after it ends (the keyed mount unmounts the previous pulse). */
+function RaisePulse(): JSX.Element | null {
+  const ring = useRef<Mesh>(null)
+  const start = useRef<number | null>(null)
+  const [done, setDone] = useState(false)
+  useSafeFrame(({ clock }) => {
+    if (done) return
+    if (start.current === null) start.current = clock.elapsedTime
+    const t = (clock.elapsedTime - start.current) / 0.9
+    if (t >= 1) {
+      setDone(true)
+      return
+    }
+    const m = ring.current
+    if (m === null) return
+    const s = 0.6 + t * 2.2
+    m.scale.set(s, s, s)
+    ;(m.material as MeshBasicMaterial).opacity = 0.85 * (1 - t)
+  })
+  if (done) return null
+  return (
+    <mesh ref={ring} position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[0.82, 1.0, 32]} />
+      <meshBasicMaterial
+        color={PALETTE.amber}
+        transparent
+        opacity={0.85}
+        depthWrite={false}
+        blending={AdditiveBlending}
+      />
+    </mesh>
+  )
+}
+
+/** the vendored KayKit banner cloth, re-tinted and hung from the crossarm:
+ *  hoisted = warm amber-lit, furled = quiet indigo (CC0 — CREDITS.md) */
 function BannerCloth({ raised }: { raised: boolean }): JSX.Element {
   const { scene } = useGLTF(asset('models/props/banner_blue.glb'))
   const cloth = useMemo(() => {
@@ -259,9 +319,20 @@ function BannerCloth({ raised }: { raised: boolean }): JSX.Element {
     })
     return clone
   }, [scene, raised])
-  // KayKit banner hangs down from its anchor; native ~1.5x3.2 — scale to the
-  // pole's proportions and offset so the cloth flies beside the pole
-  return <Clone object={cloth} position={[0.3, 0.32, 0]} scale={0.34} rotation={[0, Math.PI / 2, 0]} />
+  // MEASURED hang (glTF POSITION bounds): the cloth's local box is X ±0.75,
+  // Y 0.53..3.73 (it grows UP from its origin), Z 0.38..0.69 (authored beside
+  // its own pole). Scale 0.46/0.30/0.40 → top bar at +1.118, width 0.69 ≈ the
+  // 0.66 crossarm. position.y = 0.52 − 1.118 hangs the top bar exactly AT the
+  // arm; position.z recenters the drape under it; native orientation already
+  // runs the top bar along the arm's X axis (no yaw — the old 90° yaw hung it
+  // crosswise, reading as a floating strip beside the pole).
+  return (
+    <Clone
+      object={cloth}
+      position={[0.3, -0.6, -0.21]}
+      scale={[0.46, 0.3, 0.4]}
+    />
+  )
 }
 
 // ---- the Vault: an ornate sealed sanctum ----
@@ -690,14 +761,29 @@ function PortalArch({ spec, reduced }: ShrineProps): JSX.Element {
         <meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.5} roughness={0.15} />
       </mesh>
 
-      {/* layered shimmering veil */}
+      {/* layered shimmering veil — radial alpha falloff so the field feathers
+          into the frame instead of reading as a painted rectangle */}
       <mesh ref={shimmer} position={[0, 1.9, 0]}>
-        <planeGeometry args={[1.9, 3.2]} />
-        <meshBasicMaterial color={glow} transparent opacity={0.4} depthWrite={false} side={DoubleSide} />
+        <planeGeometry args={[2.2, 3.6]} />
+        <meshBasicMaterial
+          color={glow}
+          transparent
+          opacity={0.4}
+          depthWrite={false}
+          side={DoubleSide}
+          alphaMap={veilTexture()}
+        />
       </mesh>
       <mesh position={[0, 1.9, 0.02]}>
-        <planeGeometry args={[1.5, 2.9]} />
-        <meshBasicMaterial color="#eaf6ff" transparent opacity={0.08} depthWrite={false} side={DoubleSide} />
+        <planeGeometry args={[1.6, 3.0]} />
+        <meshBasicMaterial
+          color="#eaf6ff"
+          transparent
+          opacity={0.14}
+          depthWrite={false}
+          side={DoubleSide}
+          alphaMap={veilTexture()}
+        />
       </mesh>
 
       {/* runes drifting within the arch */}

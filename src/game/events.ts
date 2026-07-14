@@ -11,9 +11,9 @@ import { useJourneyStore } from '../state/journey'
 import { questStore } from '../state/store'
 import { EARNED_HUNCH_BUMP } from '../state/tunables'
 import { useUiStore } from '../state/ui'
-import { ACT_GATES } from '../strings'
+import { ACT_GATES, UI } from '../strings'
 import { useInteractionStore } from './interaction'
-import type { WorldEvents } from './contracts'
+import { milestoneLabelById, type WorldEvents } from './contracts'
 
 export const defaultWorldEvents: WorldEvents = {
   onShrineEnter(qid: string): void {
@@ -39,6 +39,13 @@ export const defaultWorldEvents: WorldEvents = {
   onFlagpole(id: string): void {
     // self-report: milestones[id] flips — Action only, never Truth (02/04 map)
     questStore.getState().toggleMilestone(id)
+    // Photoreal Pass II: the raise SAYS what it did (the operator's QA found
+    // a silent flag) — label from contracts, copy from strings, never stored
+    const raised = questStore.getState().data.milestones[id] === true
+    const label = milestoneLabelById(id)
+    if (label !== undefined) {
+      useUiStore.getState().showToast(raised ? UI.milestone.raised(label) : UI.milestone.lowered(label))
+    }
   },
   onPortal(targetStage: number): void {
     const journey = useJourneyStore.getState()

@@ -256,7 +256,7 @@ export interface QuestState {
    * touched by an import; skipped/conflicted ids are never written.
    */
   applyFieldImport(plan: ImportPlan, beamId: string, via: ImportVia): FieldImportRecord
-  // ---- The Council temple (C-1; live calls stay DARK until B-4 resolves) ----
+  // ---- The Council temple (C-1; live rite open since B-4 resolved 2026-07-13) ----
   /** One-time stored consent (04) — the cost sentence precedes any send affordance. */
   setCouncilConsent(consent: boolean): void
   /**
@@ -265,6 +265,19 @@ export interface QuestState {
    * the journal EXACTLY as it would have been sent; model labeled 'pasted'.
    */
   addPastedReading(reading: string): void
+  /**
+   * The live-rite path (04; source:'live'): the reading the transport returned,
+   * the model that ACTUALLY produced it (fallback names the sage who spoke), and
+   * the journal EXACTLY as sent — the caller passes the string it put on the
+   * wire, never a recomputation (02: snapshot = the compact journal as sent).
+   */
+  addLiveReading(input: { reading: string; model: string; journal: string }): void
+  /**
+   * The commitment gate (04, one-way feedback, PIE): name one thing you'll
+   * change. Writes once — an existing commitment is never overwritten
+   * (change first; rebuttal after) — and ignores empty text / unknown ids.
+   */
+  setReadingCommitment(id: string, commitment: string): void
   /**
    * Momentum decay tick (A-101 §6): after ONE grace day, -1 per elapsed day —
    * FROZEN in the trough (cadence law: low weather never bleeds courage).
@@ -971,6 +984,39 @@ export function createQuestStore(deps: QuestStoreDeps = {}): StoreApi<QuestState
               source: 'pasted',
             },
           ],
+        })
+      },
+
+      addLiveReading(input: { reading: string; model: string; journal: string }): void {
+        const { data } = get()
+        const text = input.reading.trim()
+        if (text === '') return
+        commit({
+          ...data,
+          council: [
+            ...data.council,
+            {
+              id: makeId('reading'),
+              date: now(),
+              reading: text,
+              followups: [],
+              journal: input.journal,
+              model: input.model,
+              source: 'live',
+            },
+          ],
+        })
+      },
+
+      setReadingCommitment(id: string, commitment: string): void {
+        const { data } = get()
+        const text = commitment.trim()
+        if (text === '') return
+        const target = data.council.find((r) => r.id === id)
+        if (target === undefined || target.commitment !== undefined) return
+        commit({
+          ...data,
+          council: data.council.map((r) => (r.id === id ? { ...r, commitment: text } : r)),
         })
       },
 

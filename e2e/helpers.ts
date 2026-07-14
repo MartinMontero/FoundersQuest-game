@@ -76,7 +76,12 @@ export interface RunLog {
 export function recordRun(page: Page): RunLog {
   const log: RunLog = { consoleErrors: [], pageErrors: [], anthropicRequests: [] }
   page.on('console', (msg) => {
-    if (msg.type() === 'error') log.consoleErrors.push(msg.text())
+    if (msg.type() === 'error') {
+      // carry the source URL so specs can scope filters (e.g. a deliberately
+      // aborted Anthropic stub) without masking unrelated resource failures
+      const url = msg.location().url
+      log.consoleErrors.push(url === '' ? msg.text() : `${msg.text()} [${url}]`)
+    }
   })
   page.on('pageerror', (error) => {
     log.pageErrors.push(String(error))

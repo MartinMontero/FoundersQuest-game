@@ -13,7 +13,7 @@
 // surfaces). Cluster fills are near-opaque so the HUD reads on the constrained
 // tier, where backdrop-filter is dropped.
 
-import type { ReactElement } from 'react'
+import { useEffect, useRef, useState, type ReactElement } from 'react'
 import { pendingFunerals, restlessGhosts } from '../core/confrontation'
 import { egoIntegrated } from '../core/ego'
 import type { EvidenceTier } from '../core/schema'
@@ -45,6 +45,16 @@ export function Hud(): ReactElement | null {
   const ghostRiteId = useQuestStore((s) => restlessGhosts(s.data)[0]?.guardianId ?? null)
   const enterRite = useUiStore((s) => s.enterRite)
   const hasDistance = useQuestStore((s) => egoIntegrated(s.data))
+  // the Action bar flashes when it MOVES upward (a milestone raise) — pure
+  // presentation: a keyed remount re-fires the one-shot teal pulse each time
+  const actionPctNow = Math.round(actionValue * 100)
+  const prevActionPct = useRef(actionPctNow)
+  const [actionPulse, setActionPulse] = useState(0)
+  useEffect(() => {
+    if (actionPctNow > prevActionPct.current) setActionPulse((n) => n + 1)
+    prevActionPct.current = actionPctNow
+  }, [actionPctNow])
+
   const stage = STAGES.find((s) => s.stage === currentStage)
   if (stage === undefined) return null
 
@@ -190,6 +200,7 @@ export function Hud(): ReactElement | null {
             </span>
           </div>
           <div
+            key={actionPulse}
             role="meter"
             aria-label={UI.hud.actionLabel}
             aria-valuemin={0}
@@ -197,7 +208,9 @@ export function Hud(): ReactElement | null {
             aria-valuenow={actionPct}
             aria-valuetext={actionText}
             data-testid="hud-action"
-            className="quest-track mt-1.5 h-2 w-full rounded-full"
+            className={`quest-track mt-1.5 h-2 w-full rounded-full ${
+              actionPulse > 0 ? 'motion-safe:animate-quest-action-pulse' : ''
+            }`}
           >
             <div
               className="quest-fill-action h-full rounded-full"

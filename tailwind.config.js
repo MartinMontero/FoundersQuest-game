@@ -128,6 +128,21 @@ export default {
           '0%': { clipPath: 'inset(0 0 96% 0)', opacity: '0.5' },
           '100%': { clipPath: 'inset(0 0 0% 0)', opacity: '1' },
         },
+        // toast enter: TRANSFORM ONLY — never opacity. Under heavy load the
+        // browser can hold a pending animation at its 0% frame for whole
+        // seconds; a chip born at opacity 0 would be invisible exactly when
+        // the feedback matters. Includes the -50% centering (animations
+        // override the translate utility while they run).
+        'quest-toast': {
+          '0%': { transform: 'translate(-50%, 10px) scale(0.99)' },
+          '100%': { transform: 'translate(-50%, 0) scale(1)' },
+        },
+        // the Action bar's one-shot teal flash when a milestone raises it
+        'quest-action-pulse': {
+          '0%': { boxShadow: '0 0 0 0 rgba(63,217,200,0)' },
+          '35%': { boxShadow: '0 0 0 2px rgba(63,217,200,0.7), 0 0 18px 4px rgba(63,217,200,0.5)' },
+          '100%': { boxShadow: '0 0 0 0 rgba(63,217,200,0)' },
+        },
       },
       animation: {
         // paired with motion-safe: — never runs under prefers-reduced-motion
@@ -138,6 +153,10 @@ export default {
         'quest-truth-glow': 'quest-truth-glow 2.8s ease-in-out infinite',
         // paired with motion-safe: — the Chart's parchment unroll (E-10)
         'quest-unfurl': 'quest-unfurl 650ms cubic-bezier(0.25,0.8,0.3,1)',
+        // paired with motion-safe: on the HUD toast (transform-only, see above)
+        'quest-toast': 'quest-toast 220ms cubic-bezier(0.2,0.7,0.2,1)',
+        // paired with motion-safe: on the Action track (one-shot, keyed remount)
+        'quest-action-pulse': 'quest-action-pulse 900ms ease-out',
       },
       zIndex: {
         // QuestStyles z-layer ladder — components use these names, never ad-hoc numbers.

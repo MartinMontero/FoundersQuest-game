@@ -9,6 +9,10 @@ export interface StubbedCall {
   model: string
   hasDirectBrowserHeader: boolean
   maxTokens: number
+  /** the system prompt EXACTLY as it crossed the wire */
+  system: string
+  /** messages[0].content — the journal exactly as sent */
+  userContent: string
 }
 
 export type StubMode =
@@ -23,11 +27,18 @@ export async function stubAnthropic(page: Page, mode: StubMode): Promise<Stubbed
   const calls: StubbedCall[] = []
   await page.route(ANTHROPIC, async (route: Route) => {
     const req = route.request()
-    const body = req.postDataJSON() as { model: string; max_tokens: number } | null
+    const body = req.postDataJSON() as {
+      model: string
+      max_tokens: number
+      system?: string
+      messages?: { content?: string }[]
+    } | null
     calls.push({
       model: body?.model ?? '(none)',
       hasDirectBrowserHeader: req.headers()['anthropic-dangerous-direct-browser-access'] === 'true',
       maxTokens: body?.max_tokens ?? -1,
+      system: body?.system ?? '',
+      userContent: body?.messages?.[0]?.content ?? '',
     })
     switch (mode.kind) {
       case 'ok':

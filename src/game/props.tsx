@@ -13,6 +13,7 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  CylinderGeometry,
   DodecahedronGeometry,
   type Material,
   Mesh,
@@ -24,6 +25,7 @@ import {
   type Texture,
   Vector3,
 } from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { asset } from './assets'
 import { AssetBoundary } from './AssetBoundary'
 import {
@@ -396,6 +398,113 @@ function PrimitiveRockScatter(): JSX.Element {
   )
 }
 
+/** A crystal CLUSTER: 4-6 faceted hexagonal shards of varied height and lean
+ *  growing from a shared heart, merged into ONE geometry so the whole cluster
+ *  instances as cheaply as the old lone cone did. Photoreal Pass II — the
+ *  operator's verdict on the singles was "horrible triangles": a real gem
+ *  node is a FAMILY of columns, not a spike. Deterministic per seed. */
+function makeCrystalCluster(seed: number): BufferGeometry {
+  const rng = makeRng(seed)
+  const shards: BufferGeometry[] = []
+  // survey verdict (Photoreal Pass II): the first cut still read as a lone
+  // cone from across the field — the heart shard towered over near-invisible
+  // satellites and the needle crown made a spike. Now: 5-7 shards, satellites
+  // thick and tall enough to read at distance, crowns cut to a flat-ish table
+  // (r*0.22) so every column reads as a PRISM even in silhouette.
+  const count = 5 + Math.floor(rng() * 3)
+  for (let i = 0; i < count; i += 1) {
+    const big = i === 0 // the first shard is the tall heart of the node
+    const r = big ? 0.17 + rng() * 0.05 : 0.09 + rng() * 0.06
+    const h = big ? 0.72 + rng() * 0.3 : 0.34 + rng() * 0.4
+    const body = new CylinderGeometry(r * 0.62, r, h, 6, 1)
+    const crown = new CylinderGeometry(r * 0.22, r * 0.62, h * 0.28, 6, 1)
+    crown.translate(0, h * 0.64, 0)
+    const shard = mergeGeometries([body, crown])
+    if (shard === null) continue
+    const angle = rng() * Math.PI * 2
+    const spread = big ? 0 : 0.2 + rng() * 0.22
+    shard.rotateZ((rng() - 0.5) * (big ? 0.14 : 0.7))
+    shard.rotateY(angle)
+    shard.translate(Math.cos(angle) * spread, h * 0.32, Math.sin(angle) * spread)
+    shards.push(shard)
+  }
+  const cluster = mergeGeometries(shards) ?? new OctahedronGeometry(0.5, 0)
+  // flat facets: unshared vertices so every face catches its own light
+  const flat = cluster.toNonIndexed()
+  flat.computeVertexNormals()
+  return flat
+}
+
+// Crystal placements are shared by the shard fields AND their rock sockets, so
+// they live at module scope — same seeds as ever, deterministic per world load.
+const CRYSTAL_TEAL_PLACEMENTS: readonly Placement[] = scatter(0x0c53, 5, {
+  minR: 8,
+  maxR: 20,
+  pad: 1.4,
+  yBase: 0.02,
+  scaleMin: 0.75,
+  scaleMax: 1.15,
+  scaleY: [0.9, 1.25],
+  tilt: 0.06,
+})
+const CRYSTAL_VIOLET_PLACEMENTS: readonly Placement[] = scatter(0x0c9f, 3, {
+  minR: 9,
+  maxR: 19,
+  pad: 1.4,
+  yBase: 0.02,
+  scaleMin: 0.7,
+  scaleMax: 1.05,
+  scaleY: [0.85, 1.2],
+  tilt: 0.06,
+})
+
+/** every crystal node grows from a low stone mound — the "rock socket" that
+ *  grounds the cluster in the terrain instead of leaving shards stuck in dirt */
+const CRYSTAL_SOCKET_PLACEMENTS: readonly Placement[] = [
+  ...CRYSTAL_TEAL_PLACEMENTS,
+  ...CRYSTAL_VIOLET_PLACEMENTS,
+].map((p) => ({
+  // low and snug: the mound hugs the shard footprint (cluster spread ≈ 0.42r)
+  // and stays ankle-height so the satellites CLEAR it — gate 1 buried them
+  position: [p.position[0], 0, p.position[2]],
+  rotation: [0, p.rotation[1] * 2.3, 0],
+  scale: [p.scale[0] * 0.85, p.scale[1] * 0.2, p.scale[2] * 0.85],
+}))
+
+/** the sockets on a REAL sculpt (Rock_5 is already streamed for the boulder
+ *  scatter — zero extra network); flattened wide so each reads as a mound */
+function SculptedCrystalSockets(): JSX.Element {
+  const { scene } = useGLTF(asset('models/rocks/Rock_5.glb'))
+  const geometry = useMemo(() => sculptedGeometry(scene), [scene])
+  const material = useMemo(
+    () => new MeshStandardMaterial({ color: PALETTE.stone, roughness: 0.92, metalness: 0.03 }),
+    [],
+  )
+  return (
+    <ScatterField
+      placements={CRYSTAL_SOCKET_PLACEMENTS}
+      geometry={geometry}
+      material={material}
+    />
+  )
+}
+
+/** primitive socket mounds — automation tier + suspense/failure fallback */
+function PrimitiveCrystalSockets(): JSX.Element {
+  const geometry = useMemo(() => new DodecahedronGeometry(1, 0), [])
+  const material = useMemo(
+    () => new MeshStandardMaterial({ color: PALETTE.stone, roughness: 0.85, metalness: 0.04 }),
+    [],
+  )
+  return (
+    <ScatterField
+      placements={CRYSTAL_SOCKET_PLACEMENTS}
+      geometry={geometry}
+      material={material}
+    />
+  )
+}
+
 /** Fresnel injection for the instanced crystal materials: edges run hotter
  *  than faces, so a gem reads as lit glass instead of a painted cone. Patches
  *  the standard shader (instancing keeps working); cheap — one dot product. */
@@ -421,17 +530,10 @@ export function GroundField(): JSX.Element {
   // lit gems, not flat plastic cones. Slender and tall, a little sparkle field.
   const crystalsTeal = useMemo(
     () => ({
-      placements: scatter(0x0c53, 14, {
-        minR: 7,
-        maxR: 21,
-        pad: 1.1,
-        yBase: 0.2,
-        scaleMin: 0.3,
-        scaleMax: 0.6,
-        scaleY: [1.1, 1.8],
-        tilt: 0.16,
-      }),
-      geometry: new OctahedronGeometry(0.5, 0),
+      // Photoreal Pass II: a THIRD of the old count, each now a full cluster
+      // on a rock socket — fewer, bigger, intentional; the cone litter is gone
+      placements: CRYSTAL_TEAL_PLACEMENTS,
+      geometry: makeCrystalCluster(0x9e31),
       material: gemBoost(
         new MeshStandardMaterial({
           color: '#0f5f5b',
@@ -446,17 +548,8 @@ export function GroundField(): JSX.Element {
   )
   const crystalsViolet = useMemo(
     () => ({
-      placements: scatter(0x0c9f, 9, {
-        minR: 7.5,
-        maxR: 20,
-        pad: 1.1,
-        yBase: 0.2,
-        scaleMin: 0.28,
-        scaleMax: 0.52,
-        scaleY: [1.0, 1.6],
-        tilt: 0.16,
-      }),
-      geometry: new OctahedronGeometry(0.5, 0),
+      placements: CRYSTAL_VIOLET_PLACEMENTS,
+      geometry: makeCrystalCluster(0x51c7),
       material: gemBoost(
         new MeshStandardMaterial({
           color: PALETTE.violetDeep,
@@ -516,6 +609,17 @@ export function GroundField(): JSX.Element {
         <AssetBoundary fallback={<PrimitiveRockScatter />} label="rock-sculpts">
           <Suspense fallback={<PrimitiveRockScatter />}>
             <SculptedRockScatter />
+          </Suspense>
+        </AssetBoundary>
+      )}
+      {IS_AUTOMATION ? (
+        <PrimitiveCrystalSockets />
+      ) : (
+        // each crystal node's stone mound — sculpted when the rock streams in,
+        // primitive if it can't (the cluster never floats on bare dirt)
+        <AssetBoundary fallback={<PrimitiveCrystalSockets />} label="crystal-sockets">
+          <Suspense fallback={<PrimitiveCrystalSockets />}>
+            <SculptedCrystalSockets />
           </Suspense>
         </AssetBoundary>
       )}
