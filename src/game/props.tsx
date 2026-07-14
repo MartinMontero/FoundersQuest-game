@@ -217,7 +217,7 @@ const KEEPOUT: readonly [number, number, number][] = [
   [LOOP_POSITION[0], 1.7, LOOP_POSITION[2]],
   [CAMPFIRE_POSITION[0], 1.7, CAMPFIRE_POSITION[2]],
   // the per-world set-piece stage (E-2..E-8) — a generous clear footprint
-  [-16, 6.0, -12],
+  [-8, 6.0, -14],
 ]
 
 function clearOf(x: number, z: number, pad: number): boolean {
@@ -321,8 +321,10 @@ function ScatterField({
 
 /** Pull the sculpted-rock geometry out of a vendored glTF, baking the pack's
  *  x100 node transform in, centered so it drops into the same placements the
- *  primitive dodecahedron used (art-elevation: real boulders, same scatter). */
-function sculptedGeometry(scene: import('three').Group): BufferGeometry {
+ *  primitive dodecahedron used (art-elevation: real boulders, same scatter).
+ *  Exported: the floating islands (Nebula) build their keels from the same
+ *  sculpts — one shared normalized-rock vocabulary across the whole sky. */
+export function sculptedGeometry(scene: import('three').Group): BufferGeometry {
   scene.updateMatrixWorld(true)
   let found: BufferGeometry | null = null
   let scale = 1

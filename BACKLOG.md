@@ -388,8 +388,9 @@ verified — recorded honestly as UNTESTED in-container, VERIFICATION Rounds 6-1
   parenthetical at 03:95). Wiring them means authoring canon copy → canon
   diff → STOP. Needs: operator supplies the verbatim prompts (or approves a
   drafted 03 diff).
-- **K-2 · B-4 Council provenance block** (standing since A1) — needs
-  cc-prompt-earned-hunch.md upload or approval of a posted draft.
+- **K-2 · B-4 Council provenance block** — CLOSED 2026-07-13. Operator delivered
+  `cc-prompt-earned-hunch.md`; its §D block applied verbatim to `docs/canon/04-council.md`
+  and `src/strings/council.ts`, live rite opened (see BLOCKERS.md Resolution log · B-4).
 - **K-3 · i18n 40 locales** (05:13) — D-scope STOP item by CLAUDE.md; also
   prereq (wcjbt repo) unreachable.
 - **K-4 · Mentor & Shadow in-app AI · Interview Debrief · Story Forge ·

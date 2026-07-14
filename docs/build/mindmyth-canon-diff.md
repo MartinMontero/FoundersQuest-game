@@ -1,10 +1,11 @@
 # Program Addendum A "Mind & Myth" — Consolidated Canon Diff (A0-2)
 
 **Status: RATIFIED (all defaults, operator 2026-07-11) · APPLIED in the A1 canon commit, with
-two recorded exceptions:** (1) the Council provenance-reading block's verbatim text never
-arrived — the REPLACE sentence is applied, the APPEND half stays queued (BLOCKERS B-4, severable)
-*(resolved 2026-07-13: the block arrived in operator-delivered `cc-prompt-earned-hunch.md` §D and
-was APPLIED verbatim to 04 + `COUNCIL_SYSTEM_PROMPT` in the same change; parity re-derived)*;
+two recorded exceptions (exception 1 since resolved):** (1) at A1 the Council provenance-reading
+block's verbatim text had not arrived — the REPLACE sentence was applied, the APPEND half stayed
+queued (BLOCKERS B-4, severable). **RESOLVED 2026-07-13:** the block arrived in operator-delivered
+`cc-prompt-earned-hunch.md` §D and was APPLIED verbatim to `docs/canon/04-council.md` +
+`COUNCIL_SYSTEM_PROMPT` in one commit; parity re-derived; the live Council rite opened alongside;
 (2) the HUD M/L help strings ship with the Chart/Legend surfaces at A3, not before (02 documents
 the reservation now; no dead keys documented in-game). Original ratified text below.
 `openingCompletedAt?`/`openingSkippedAt?` implemented as `string | null` (the repo's established
@@ -73,9 +74,10 @@ after:
 
 **APPEND** the provenance-reading block (per 04's queued entry: Earned hunches = compressed
 pattern recognition awaiting a test — Simon; wicked-domain illusion-of-validity flag;
-calibration-record weighting). **Exact block text: PENDING-UPLOAD** (`wikj-v3-content-package.md`
-/ `cc-prompt-earned-hunch.md`). The 04 "Queued addenda" entry is then marked applied.
-`tests/parity.spec.ts` re-derives; the prompt hash test updates in the same commit.
+calibration-record weighting). **APPLIED 2026-07-13** — the exact block text arrived verbatim in
+operator-delivered `docs/build/cc-prompt-earned-hunch.md` §D and was appended to 04 +
+`COUNCIL_SYSTEM_PROMPT` byte-for-byte; the 04 "Queued addenda" entry is marked applied;
+`tests/parity.spec.ts` re-derived (green) in the same commit.
 
 ---
 
@@ -85,6 +87,8 @@ calibration-record weighting). **Exact block text: PENDING-UPLOAD** (`wikj-v3-co
 - Log every Gate 0 ruling (D-A…D-M + blockers resolution) as dated decision entries.
 - Update the Earned Hunch prereq line to point at
   `docs/epistemology/wisdom-intuition-knowledge-judgment-v3.md` (lands in A1).
+- Map concordance: content-package §3.3 = Map §9 (blocks 1–8). (Map swapped to the reconciled
+  superset `5da35695…` on 2026-07-13; §9 blocks 1–8 anchor-stable across the swap.)
 
 ## 4 · Ratify the 5-rider queue (held in `docs/build/phase0-canon-diff.md`, same commit)
 1. i18n-queue coherence rider (05). 2. Settings-storage wording (02). 3. Trail `reason?` field

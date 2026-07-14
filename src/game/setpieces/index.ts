@@ -13,8 +13,11 @@ import { SetPieceW6 } from './W6'
 import { SetPieceW7 } from './W7'
 import { SetPieceW8 } from './W8'
 
-/** where every world's landmark stands (kept clear by the scatter KEEPOUT) */
-export const SETPIECE_ANCHOR: readonly [number, number, number] = [-16, 0, -12]
+/** where every world's landmark stands (kept clear by the scatter KEEPOUT).
+ *  QA 2026-07-14: was [-16,-12] (r=20) — pressed against the rim, reading as
+ *  off-world and unreachable. Now r=16, the clearest in-field spot vs the
+ *  generated spiral (min 7.5u from every W2-8 interactable). */
+export const SETPIECE_ANCHOR: readonly [number, number, number] = [-8, 0, -14]
 
 export type SetPieceComponent = (props: { reduced: boolean }) => JSX.Element
 
