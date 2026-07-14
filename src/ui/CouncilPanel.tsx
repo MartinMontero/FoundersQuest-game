@@ -11,7 +11,7 @@
 // this panel reads it from the key manager at press time, as a bare string,
 // and hands it to the transport — it is never held in component state.
 
-import { useId, useMemo, useState, type ReactElement } from 'react'
+import { useId, useMemo, useState, useSyncExternalStore, type ReactElement } from 'react'
 import { thinInk } from '../core/metrics'
 import { buildJournalMd } from '../core/serializer'
 import { makeStore } from '../core/store'
@@ -19,7 +19,7 @@ import { createKeyManager, KEY_STORAGE_KEY, type KeyManager } from '../key/keyMa
 import { createSettings } from '../settings'
 import { questStore, useQuestStore } from '../state/store'
 import { useUiStore } from '../state/ui'
-import { convene } from '../transport/council'
+import { convene, FALLBACK_MODEL } from '../transport/council'
 import {
   COMMITMENT_GATE_COPY,
   CONSENT_COPY,
@@ -49,6 +49,26 @@ void KEY_STORAGE_KEY // the key's own storage key — documented import, no othe
 /** device-local settings ladder — holds the fallback-sage acceptance (05) */
 const settings = createSettings(makeStore())
 
+// The convene in-flight flag lives at MODULE level, not component state: the
+// panel unmounts on Esc while a request may run for up to 60s, and a remounted
+// panel must still know the rite is underway — one press, one send, one charge
+// against the player's key. useSyncExternalStore keeps the button honest.
+let conveneActive = false
+const conveneListeners = new Set<() => void>()
+function setConveneActive(value: boolean): void {
+  conveneActive = value
+  for (const listener of conveneListeners) listener()
+}
+function subscribeConvene(listener: () => void): () => void {
+  conveneListeners.add(listener)
+  return (): void => {
+    conveneListeners.delete(listener)
+  }
+}
+function readConveneActive(): boolean {
+  return conveneActive
+}
+
 export function CouncilPanel(): ReactElement {
   const data = useQuestStore((s) => s.data)
   const setCouncilConsent = useQuestStore((s) => s.setCouncilConsent)
@@ -62,10 +82,16 @@ export function CouncilPanel(): ReactElement {
   const [hasKey, setHasKey] = useState(() => keyManager().getKey() !== null)
   const [journalCopied, setJournalCopied] = useState(false)
   const [readingDraft, setReadingDraft] = useState('')
-  const [busy, setBusy] = useState(false)
+  const busy = useSyncExternalStore(subscribeConvene, readConveneActive)
   const [liveError, setLiveError] = useState<string | null>(null)
   const [offerFallback, setOfferFallback] = useState(false)
-  const [commitmentDraft, setCommitmentDraft] = useState('')
+  // the commitment draft is KEYED to the reading it was typed for — if a new
+  // reading lands mid-draft, the text must not silently re-attach to it (the
+  // gate is write-once; a mis-sealed commitment could never be corrected)
+  const [commitmentDraft, setCommitmentDraft] = useState<{ id: string; text: string }>({
+    id: '',
+    text: '',
+  })
 
   const consented = data.councilConsent
   const thin = thinInk(data)
@@ -75,27 +101,38 @@ export function CouncilPanel(): ReactElement {
    * The live rite: read the key at press time (never held in state), build the
    * journal ONCE, send, and land the result. The exact string sent is the exact
    * string snapshotted on the reading (02). Failures map to canon 04 copy; a
-   * model-access failure becomes the fallback-sage OFFER, never an auto-switch.
+   * model-access failure becomes the fallback-sage OFFER, never an auto-switch
+   * — unless the SAGE itself was refused, which is terminal chrome copy (the
+   * offer must never promise a remedy that cannot occur).
    */
   const runConvene = async (fallbackAccepted: boolean): Promise<void> => {
     const key = keyManager().getKey()
-    if (key === null || !consented || busy) return
-    setBusy(true)
+    if (key === null || !consented || conveneActive) return
+    setConveneActive(true)
     setLiveError(null)
     setOfferFallback(false)
     const journal = buildJournalMd(questStore.getState().data, 'compact')
-    const result = await convene({
-      apiKey: key,
-      system: COUNCIL_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: journal }],
-      fallbackAccepted,
-    })
-    setBusy(false)
+    let result
+    try {
+      result = await convene({
+        apiKey: key,
+        system: COUNCIL_SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: journal }],
+        fallbackAccepted,
+      })
+    } finally {
+      setConveneActive(false)
+    }
     if (result.ok) {
       addLiveReading({ reading: result.text, model: result.model, journal })
       return
     }
     if (result.failure === 'model-access') {
+      if (result.model === FALLBACK_MODEL) {
+        // the fallback sage was refused too — offering it again would loop
+        setLiveError(TEMPLE.live.fallbackUnavailable)
+        return
+      }
       setOfferFallback(true)
       return
     }
@@ -111,8 +148,17 @@ export function CouncilPanel(): ReactElement {
     void runConvene(settings.getFallbackAccepted())
   }
 
-  /** accepting the offer persists (05) — every later reading names the sage */
+  /**
+   * Accepting the offer persists (05) — every later reading names the sage.
+   * Persist ONLY when the convene can actually run: if the key was removed or
+   * consent withdrawn while the offer stood, a silent no-op must not flip the
+   * stored acceptance for every future reading.
+   */
   const onAcceptFallback = (): void => {
+    if (keyManager().getKey() === null || !consented) {
+      setOfferFallback(false)
+      return
+    }
     settings.acceptFallback()
     void runConvene(true)
   }
@@ -128,6 +174,8 @@ export function CouncilPanel(): ReactElement {
   const onRemoveKey = (): void => {
     keyManager().removeKey()
     setHasKey(false)
+    // a standing offer must not outlive the key it would spend
+    setOfferFallback(false)
   }
 
   const onCopyJournal = (): void => {
@@ -266,7 +314,7 @@ export function CouncilPanel(): ReactElement {
             <button
               type="button"
               data-testid="council-fallback-accept"
-              disabled={busy}
+              disabled={busy || !hasKey || !consented}
               onClick={onAcceptFallback}
               className="quest-btn quest-btn-gold mt-2 px-3 py-1.5 text-sm disabled:opacity-40"
             >
@@ -340,13 +388,17 @@ export function CouncilPanel(): ReactElement {
                   </p>
                 ) : index === data.council.length - 1 ? (
                   // the commitment gate (04, PIE): one thing you'll change — write
-                  // once; follow-ups stay locked behind it when they arrive
+                  // once; follow-ups stay locked behind it when they arrive. The
+                  // draft belongs to THIS reading: text typed for an earlier one
+                  // renders empty here and can never seal onto the wrong reading.
                   <div className="mt-2 border-t border-white/10 pt-2">
                     <p className="text-2xs italic text-ink-faint">{COMMITMENT_GATE_COPY}</p>
                     <div className="mt-1 flex flex-wrap gap-2">
                       <input
-                        value={commitmentDraft}
-                        onChange={(e) => setCommitmentDraft(e.target.value)}
+                        value={commitmentDraft.id === reading.id ? commitmentDraft.text : ''}
+                        onChange={(e) =>
+                          setCommitmentDraft({ id: reading.id, text: e.target.value })
+                        }
                         aria-label={TEMPLE.commitment.label}
                         data-testid="council-commitment-input"
                         className="quest-input min-w-0 flex-1 px-2 py-1 text-xs normal-case tracking-normal"
@@ -354,10 +406,12 @@ export function CouncilPanel(): ReactElement {
                       <button
                         type="button"
                         data-testid="council-commitment-save"
-                        disabled={commitmentDraft.trim() === ''}
+                        disabled={
+                          commitmentDraft.id !== reading.id || commitmentDraft.text.trim() === ''
+                        }
                         onClick={() => {
-                          setReadingCommitment(reading.id, commitmentDraft)
-                          setCommitmentDraft('')
+                          setReadingCommitment(reading.id, commitmentDraft.text)
+                          setCommitmentDraft({ id: '', text: '' })
                         }}
                         className="quest-btn quest-btn-quiet px-2 py-1 text-2xs disabled:opacity-40"
                       >

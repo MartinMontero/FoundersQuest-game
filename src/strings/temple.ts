@@ -34,6 +34,8 @@ export const TEMPLE = {
     tooHeavy:
       'The journal is too heavy for a single reading — trim your longest answers or field notes and convene again.',
     fallbackButton: 'Convene the fallback sage',
+    fallbackUnavailable:
+      "That key can't reach the fallback sage either. The reading by hand below works with no key at all.",
   },
 
   commitment: {
