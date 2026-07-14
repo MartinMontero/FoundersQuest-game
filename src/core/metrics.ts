@@ -252,3 +252,14 @@ export function gateMet(data: QuestData, gateId: ActGateId): boolean {
       )
   }
 }
+
+/**
+ * The Council's thin-ink guard (04 Input bullet): fewer than 3 answers AND an
+ * empty evidence ledger — the journal cannot carry a reading yet. Counts
+ * answers across every stage (answers is stageId → qid → Answer).
+ */
+export function thinInk(data: QuestData): boolean {
+  let answers = 0
+  for (const stage of Object.values(data.answers)) answers += Object.keys(stage).length
+  return answers < 3 && data.evidence.length === 0
+}

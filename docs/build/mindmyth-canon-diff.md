@@ -2,7 +2,9 @@
 
 **Status: RATIFIED (all defaults, operator 2026-07-11) · APPLIED in the A1 canon commit, with
 two recorded exceptions:** (1) the Council provenance-reading block's verbatim text never
-arrived — the REPLACE sentence is applied, the APPEND half stays queued (BLOCKERS B-4, severable);
+arrived — the REPLACE sentence is applied, the APPEND half stays queued (BLOCKERS B-4, severable)
+*(resolved 2026-07-13: the block arrived in operator-delivered `cc-prompt-earned-hunch.md` §D and
+was APPLIED verbatim to 04 + `COUNCIL_SYSTEM_PROMPT` in the same change; parity re-derived)*;
 (2) the HUD M/L help strings ship with the Chart/Legend surfaces at A3, not before (02 documents
 the reservation now; no dead keys documented in-game). Original ratified text below.
 `openingCompletedAt?`/`openingSkippedAt?` implemented as `string | null` (the repo's established

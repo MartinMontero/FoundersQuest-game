@@ -1,8 +1,8 @@
 // src/strings/temple.ts — the Council temple's CHROME copy (C-1). The canon
 // lines (key/consent/errors/caption — 04, byte-parity-tested) live in
 // council.ts and are imported by the panel directly; this module holds only
-// the surface's own labels. Live calls stay DARK until BLOCKERS B-4 resolves
-// — the panel says so honestly.
+// the surface's own labels. The live rite is OPEN (B-4 resolved 2026-07-13):
+// one press, one page, the reading names its model.
 
 export const TEMPLE = {
   title: 'The Council Temple',
@@ -26,8 +26,20 @@ export const TEMPLE = {
 
   live: {
     heading: 'Convene the Council',
-    dark: 'The live rite is not yet open — one canon passage still awaits its source (BLOCKERS B-4). Everything below works today, and your key will be ready.',
-    button: 'Convene (not yet open)',
+    gloss:
+      'One page: what the record shows, what it is silent on, and the road ahead. Your journal travels once, directly to Anthropic, with your own key.',
+    button: 'Convene the Council',
+    busy: 'The Council is reading…',
+    needsKey: 'Keep a key above and the Council can convene from here.',
+    tooHeavy:
+      'The journal is too heavy for a single reading — trim your longest answers or field notes and convene again.',
+    fallbackButton: 'Convene the fallback sage',
+  },
+
+  commitment: {
+    label: 'One thing I will change',
+    save: 'Seal it',
+    sealed: (text: string): string => `Committed: ${text}`,
   },
 
   pasted: {

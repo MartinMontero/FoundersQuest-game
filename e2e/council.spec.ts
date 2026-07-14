@@ -1,8 +1,11 @@
 // e2e/council.spec.ts — the Council temple surface (C-1). Consent precedes
 // every send affordance; the key lives under its OWN storage key with a
-// visible remove control and NEVER enters founders-quest:v3; the live rite is
-// honestly dark (B-4); the by-hand pasted-reading path works today and every
-// reading names its source. Zero Anthropic traffic asserted for the whole run.
+// visible remove control and NEVER enters founders-quest:v3; the by-hand
+// pasted-reading path works and every reading names its source. The live rite
+// is OPEN (B-4 resolved) but never fires here: a fresh journal is thin-inked
+// (<3 answers, empty ledger), so the Convene button stays disabled end to end
+// — zero Anthropic traffic asserted for the whole run. The live paths are
+// machine-verified in council-live.spec.ts over the stub harness.
 
 import { expect, test } from '@playwright/test'
 import { STORAGE_KEY, type QuestData } from '../src/core/schema'
@@ -30,8 +33,9 @@ test('temple: consent gates, key stays in its own store, pasted reading lands la
   await page.keyboard.press('KeyC')
   await expect(page.getByTestId('council-panel')).toBeVisible()
 
-  // before consent: key save and journal copy are disabled — consent precedes
-  await expect(page.getByTestId('council-live-dark')).toBeVisible()
+  // before consent: key save and journal copy are disabled — consent precedes;
+  // the fresh journal is also thin-inked, so the live rite offers no send
+  await expect(page.getByTestId('council-thin-ink')).toBeVisible()
   await expect(page.getByTestId('council-live-button')).toBeDisabled()
   await page.getByTestId('council-key-input').fill(FAKE_KEY)
   await expect(page.getByTestId('council-key-save')).toBeDisabled()
@@ -42,6 +46,8 @@ test('temple: consent gates, key stays in its own store, pasted reading lands la
   await expect(page.getByTestId('council-consented')).toBeVisible()
   await page.getByTestId('council-key-save').press('Enter')
   await expect(page.getByTestId('council-key-saved')).toBeVisible()
+  // consent + key are in, but the journal is thin — the rite still cannot fire
+  await expect(page.getByTestId('council-live-button')).toBeDisabled()
 
   // the key lives under its OWN storage key and NEVER inside founders-quest:v3
   const stores = await page.evaluate((keys) => ({
