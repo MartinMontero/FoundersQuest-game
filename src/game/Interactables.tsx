@@ -17,13 +17,14 @@
 // constant (lights dim to zero, never unmount) so no shader recompiles as the
 // player roams.
 
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { Clone, Float, Html, useGLTF } from '@react-three/drei'
 import { AdditiveBlending, DoubleSide, Mesh, MeshStandardMaterial, Vector3 } from 'three'
 import type { MeshBasicMaterial } from 'three'
 import type { Camera, Group, Object3D, PointLight } from 'three'
 import { useMemo } from 'react'
 import { asset } from './assets'
+import { FounderStatue } from './FounderStatue'
 import { ContactShadow, GlowRing, GlowSprite, useFlame, veilTexture } from './fx'
 import { Rock } from './rocks'
 import { arenaChallenger } from '../core/confrontation'
@@ -516,29 +517,37 @@ function GuardianFigure({
     g.position.y = crowned && !reduced ? Math.sin(clock.elapsedTime * 2) * 0.08 : 0
   })
 
+  // a petrified cast of the founder in the tier's metal (QA round 4 — no more
+  // capsule ghosts; a guardian is a belief wearing the founder's own shape)
+  const stone = useMemo(
+    () =>
+      new MeshStandardMaterial({
+        color: tint,
+        // a FAINT warm cast when crowned — full-body emissive at 0.35 turned
+        // the whole statue pink; the crown + ring carry the warning, not the skin
+        emissive: crowned ? PALETTE.emberDeep : '#000000',
+        emissiveIntensity: crowned ? 0.12 : 0,
+        roughness: 0.85,
+        metalness: 0.12,
+      }),
+    [tint, crowned],
+  )
+
   return (
     <group position={position}>
       <group ref={group} scale={scale} rotation={[0.05, facing, 0.03]}>
-        {/* the menhir body — a REAL sculpted standing stone, tier-tinted
-            (art-elevation: no more flat five-sided cone) */}
-        <group scale={[0.55, 1.5, 0.55]}>
-          <Rock index={(assumption.id.length % 7) + 1} position={[0, 0.52, 0]} tint={tint} />
-        </group>
-        {/* the carved hood cap */}
-        <mesh position={[0, 1.55, 0]}>
-          <sphereGeometry args={[0.24, 12, 12]} />
-          <meshStandardMaterial
-            color={tint}
-            emissive={crowned ? PALETTE.emberDeep : '#000000'}
-            emissiveIntensity={crowned ? 0.4 : 0}
-            roughness={0.72} metalness={0.05}
-          />
-        </mesh>
+        {/* the founder's own silhouette, cast in tier-tinted stone (rogue.glb
+            is already resident from the player; the boundary is insurance).
+            0.85 keeps a dies-weight guardian imposing (~1.45x the founder)
+            without tipping into giant */}
+        <Suspense fallback={null}>
+          <FounderStatue material={stone} scale={0.85} />
+        </Suspense>
         <ContactShadow position={[0, 0.025, 0]} radius={0.55} opacity={0.8} />
         {crowned ? (
           <>
-            {/* the warning crown */}
-            <mesh position={[0, 1.98, 0]}>
+            {/* the warning crown, above the statue's hood */}
+            <mesh position={[0, 2.02, 0]}>
               <coneGeometry args={[0.2, 0.32, 6, 1]} />
               <meshStandardMaterial
                 color={PALETTE.ember}
@@ -548,7 +557,7 @@ function GuardianFigure({
               />
             </mesh>
             {/* a floating warning ember */}
-            <mesh position={[0, 2.45, 0]}>
+            <mesh position={[0, 2.5, 0]}>
               <octahedronGeometry args={[0.12, 0]} />
               <meshStandardMaterial
                 color={PALETTE.ember}

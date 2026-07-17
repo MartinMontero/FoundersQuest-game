@@ -8,12 +8,14 @@
 // ink-dark timber/stone with paper-white accents; the stage-2 sky accent
 // (cold steel-blue) tints the inscribed ring and the arch gem. Pure scenery —
 // no store reads/writes, no interaction, deterministic (index-hash scatter).
-// Mounted at world [-16, 0, -12]; everything here is LOCAL-origin, footprint
-// radius <= 5.5, height <= 8. Reads from the spawn side (+z looking toward -z).
+// Mounted at the SETPIECE_ANCHOR ([-8, 0, -14] since QA 2026-07-14); everything
+// here is LOCAL-origin, footprint radius <= 5.5, height <= 8. Reads from the
+// spawn side (+z looking toward -z). Trees/grass keep clear via their KEEPOUTs.
 
 import { useRef } from 'react'
 import { DoubleSide } from 'three'
 import type { Group } from 'three'
+import { GlowSprite, useFlame } from '../fx'
 import { PALETTE } from '../materials'
 import { LOW_POWER } from '../perf'
 import { useSafeFrame } from '../useSafeFrame'
@@ -201,22 +203,15 @@ const COALS: readonly [number, number, number][] = [
 ]
 
 export function SetPieceW2({ reduced }: { reduced: boolean }): JSX.Element {
-  const flame = useRef<Group>(null)
   const banner = useRef<Group>(null)
+  // the LIVING flame (fx kit vertex-sway temperature-ramp shader — QA
+  // 2026-07-14: the painted emissive cones read as MS-paint); the shader
+  // animates itself via uTime and stands still under reduced motion
+  const flameOuter = useFlame()
+  const flameCore = useFlame({ base: PALETTE.amberBright })
 
-  // the fire breathes and the banner sways in a slow dusk wind — both dead
-  // still under reduced motion (no shake, ever)
+  // the banner sways in a slow dusk wind — dead still under reduced motion
   useSafeFrame(({ clock }) => {
-    const f = flame.current
-    if (f !== null) {
-      if (reduced) {
-        f.scale.set(1, 1, 1)
-      } else {
-        const t = clock.elapsedTime
-        f.scale.setY(1 + Math.sin(t * 5.6) * 0.12)
-        f.scale.setX(1 + Math.sin(t * 3.7 + 1.3) * 0.05)
-      }
-    }
     const b = banner.current
     if (b !== null) b.rotation.x = reduced ? 0 : Math.sin(clock.elapsedTime * 1.1) * 0.07
   })
@@ -275,26 +270,15 @@ export function SetPieceW2({ reduced }: { reduced: boolean }): JSX.Element {
             />
           </mesh>
         ))}
-        {/* the low flame — warm emissive cones that catch bloom */}
-        <group ref={flame} position={[0, 0.56, 0]}>
-          <mesh position={[0, 0.3, 0]}>
-            <coneGeometry args={[0.24, 0.64, 7]} />
-            <meshStandardMaterial
-              color={PALETTE.amberBright}
-              emissive={PALETTE.ember}
-              emissiveIntensity={1.5}
-              toneMapped={false}
-            />
+        {/* the low flame — the LIVING shader, its glow riding above the bowl */}
+        <group position={[0, 0.56, 0]}>
+          <mesh material={flameOuter} position={[0, 0.3, 0]}>
+            <coneGeometry args={[0.24, 0.66, 8, 4, true]} />
           </mesh>
-          <mesh position={[0, 0.22, 0]}>
-            <coneGeometry args={[0.12, 0.4, 6]} />
-            <meshStandardMaterial
-              color={PALETTE.sunCore}
-              emissive={PALETTE.amberBright}
-              emissiveIntensity={1.8}
-              toneMapped={false}
-            />
+          <mesh material={flameCore} position={[0, 0.24, 0]}>
+            <coneGeometry args={[0.12, 0.46, 7, 4, true]} />
           </mesh>
+          <GlowSprite position={[0, 0.42, 0]} color={PALETTE.amber} scale={1.2} opacity={0.5} pulse />
         </group>
       </group>
 

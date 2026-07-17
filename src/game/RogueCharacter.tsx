@@ -32,8 +32,10 @@ declare global {
  *  captures (QA 2026-07-14 — the clips leave the arm hanging, fist beside the
  *  shaft). */
 const STAFF_GRIP_POSE: readonly number[] = [
-  -1.234, -0.737, 1.248, // upperarm.r — the idle clip's hang, kept
-  0, 0, 1.95, //            lowerarm.r — elbow curled so the fist rises to mid-torso
+  -0.95, -0.737, 1.0, //    upperarm.r — swung out+forward so the fist sits BESIDE
+  //                        the body (QA round 4: the chest grip pulled the shaft
+  //                        through the torso; the shaft must clear the silhouette)
+  0, 0, 1.6, //             lowerarm.r — moderate curl, fist at hip-waist height
   -0.599, 0.765, -0.278, // hand.r — the clip's fist orientation, knuckles out
 ]
 

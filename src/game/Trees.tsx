@@ -18,6 +18,7 @@ import {
 } from './contracts'
 import { asset } from './assets'
 import { RENDER_TIER } from './perf'
+import { SETPIECE_ANCHOR } from './setpieces'
 
 const TREE_A = asset('models/trees/CommonTree_1.gltf')
 const TREE_B = asset('models/trees/CommonTree_5.gltf')
@@ -42,15 +43,19 @@ function makeRng(seed: number): () => number {
   }
 }
 
-const KEEPOUT: readonly [number, number][] = [
-  ...STAGE1_LAYOUT.map((s): [number, number] => [s.position[0], s.position[2]]),
-  [ONWARD_POSITION[0], ONWARD_POSITION[2]],
-  [BACK_POSITION[0], BACK_POSITION[2]],
-  [LOOP_POSITION[0], LOOP_POSITION[2]],
-  [CAMPFIRE_POSITION[0], CAMPFIRE_POSITION[2]],
+// [x, z, radius] — the set-piece stage gets a WIDE berth (QA 2026-07-14: a
+// scattered tree stood inside the W2 station's clearing; its footprint is
+// r<=5.5, so trees keep 7 clear — no trunk ever crowds a world's landmark)
+const KEEPOUT: readonly [number, number, number][] = [
+  ...STAGE1_LAYOUT.map((s): [number, number, number] => [s.position[0], s.position[2], 4]),
+  [ONWARD_POSITION[0], ONWARD_POSITION[2], 4],
+  [BACK_POSITION[0], BACK_POSITION[2], 4],
+  [LOOP_POSITION[0], LOOP_POSITION[2], 4],
+  [CAMPFIRE_POSITION[0], CAMPFIRE_POSITION[2], 4],
+  [SETPIECE_ANCHOR[0], SETPIECE_ANCHOR[2], 7],
 ]
 function clearOf(x: number, z: number): boolean {
-  for (const [kx, kz] of KEEPOUT) if (Math.hypot(x - kx, z - kz) < 4) return false
+  for (const [kx, kz, kr] of KEEPOUT) if (Math.hypot(x - kx, z - kz) < kr) return false
   return true
 }
 

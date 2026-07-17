@@ -19,7 +19,12 @@ import { useMemo } from 'react'
 import { BallCollider, CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier'
 import { REGISTRY_POSITION, VAULT_POSITION, layoutForStage } from './contracts'
 import { useJourneyStore } from '../state/journey'
-import { boulderPlacements, rockPlacements } from './props'
+import {
+  boulderPlacements,
+  CRYSTAL_TEAL_PLACEMENTS,
+  CRYSTAL_VIOLET_PLACEMENTS,
+  rockPlacements,
+} from './props'
 import { treePlacements } from './Trees'
 
 /** every rock is solid — the founder walks around them, not through them (operator
@@ -67,6 +72,15 @@ export function WorldColliders(): JSX.Element {
             position={[p.position[0], 0.2, p.position[2]]}
           />
         ))}
+      {/* crystal nodes — cluster + socket are one solid mass (QA 2026-07-14:
+          "the founder can not walk through them"); snug ball per placement */}
+      {[...CRYSTAL_TEAL_PLACEMENTS, ...CRYSTAL_VIOLET_PLACEMENTS].map((p, i) => (
+        <BallCollider
+          key={`crystal-${i}`}
+          args={[0.72 * p.scale[0]]}
+          position={[p.position[0], 0.3, p.position[2]]}
+        />
+      ))}
       {/* tree trunks — a tall thin cylinder; the founder walks around the trunk
           (brushing the canopy is fine, the trunk is the solid mass) */}
       {trees.map((p, i) => (

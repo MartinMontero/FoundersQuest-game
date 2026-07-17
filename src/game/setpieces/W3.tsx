@@ -13,7 +13,8 @@
 // Light count is CONSTANT (two point lights, full tier only) — no recompiles.
 
 import { useRef } from 'react'
-import type { Group, Mesh } from 'three'
+import type { Group } from 'three'
+import { GlowSprite, useFlame } from '../fx'
 import { PALETTE } from '../materials'
 import { LOW_POWER } from '../perf'
 import { useSafeFrame } from '../useSafeFrame'
@@ -278,23 +279,15 @@ function AnvilStump(): JSX.Element {
 // ---- the pyre: raised fire-bowl, charcoal logs, tall flame, rising sparks ----
 
 function Pyre({ reduced }: { reduced: boolean }): JSX.Element {
-  const flameOuter = useRef<Mesh>(null)
-  const flameMid = useRef<Mesh>(null)
-  const flameCore = useRef<Mesh>(null)
   const sparks = useRef<Group>(null)
+  // the LIVING flame (fx kit shader — QA 2026-07-14: the painted nested cones
+  // read as MS-paint); animates itself, stands still under reduced motion
+  const flameOuter = useFlame()
+  const flameCore = useFlame({ base: PALETTE.amberBright })
 
-  // the flame gutters and the sparks climb; all of it dead still under reduced
+  // the sparks climb; dead still under reduced
   useSafeFrame(({ clock }) => {
     const t = clock.elapsedTime
-    const o = flameOuter.current
-    if (o !== null) {
-      if (reduced) o.scale.set(1, 1, 1)
-      else o.scale.set(1 + Math.sin(t * 7.3) * 0.05, 1 + Math.sin(t * 6.1) * 0.11, 1 + Math.cos(t * 7.3) * 0.05)
-    }
-    const m = flameMid.current
-    if (m !== null) m.scale.setY(reduced ? 1 : 1 + Math.sin(t * 8.4 + 0.9) * 0.13)
-    const c = flameCore.current
-    if (c !== null) c.scale.setY(reduced ? 1 : 1 + Math.sin(t * 9.7 + 1.7) * 0.16)
     const g = sparks.current
     if (g === null) return
     g.children.forEach((child, i) => {
@@ -364,40 +357,14 @@ function Pyre({ reduced }: { reduced: boolean }): JSX.Element {
           metalness={0.02}
         />
       </mesh>
-      {/* the phoenix flame — three nested ember cones, tallest at the heart */}
-      <mesh ref={flameOuter} position={[0, 2.55, 0]}>
-        <coneGeometry args={[0.5, 1.9, 8]} />
-        <meshStandardMaterial
-          color={FLAME}
-          emissive={EMBER}
-          emissiveIntensity={1.4}
-          roughness={0.72}
-          metalness={0.02}
-          toneMapped={false}
-        />
+      {/* the phoenix flame — the LIVING shader, tall heart + bright core */}
+      <mesh material={flameOuter} position={[0, 2.55, 0]}>
+        <coneGeometry args={[0.5, 1.95, 8, 4, true]} />
       </mesh>
-      <mesh ref={flameMid} position={[0.06, 2.4, -0.03]}>
-        <coneGeometry args={[0.32, 1.45, 8]} />
-        <meshStandardMaterial
-          color={PALETTE.amber}
-          emissive={FLAME}
-          emissiveIntensity={1.6}
-          roughness={0.72}
-          metalness={0.02}
-          toneMapped={false}
-        />
+      <mesh material={flameCore} position={[0.02, 2.4, -0.02]}>
+        <coneGeometry args={[0.28, 1.4, 7, 4, true]} />
       </mesh>
-      <mesh ref={flameCore} position={[-0.03, 2.25, 0.02]}>
-        <coneGeometry args={[0.17, 1.0, 8]} />
-        <meshStandardMaterial
-          color={PALETTE.amberBright}
-          emissive={PALETTE.amberBright}
-          emissiveIntensity={1.8}
-          roughness={0.72}
-          metalness={0.02}
-          toneMapped={false}
-        />
-      </mesh>
+      <GlowSprite position={[0, 2.7, 0]} color={PALETTE.amber} scale={2.2} opacity={0.5} pulse />
       {/* spark motes drifting up out of the bowl */}
       <group ref={sparks} position={[0, 1.66, 0]}>
         {SPARKS.map((s, i) => (

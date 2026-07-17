@@ -19,6 +19,7 @@ import {
 } from 'three'
 import { STAGE1_LAYOUT } from './contracts'
 import { IS_AUTOMATION, RENDER_TIER } from './perf'
+import { SETPIECE_ANCHOR } from './setpieces'
 import { useSafeFrame } from './useSafeFrame'
 
 const PLATEAU_RADIUS = 24
@@ -65,9 +66,14 @@ function makeRng(seed: number): () => number {
   }
 }
 
-const KEEPOUT: readonly [number, number][] = STAGE1_LAYOUT.map((s) => [s.position[0], s.position[2]])
+// [x, z, radius] — the set-piece clearing stays bare (QA 2026-07-14): grass
+// through the station's trodden floor undercut the landmark's read
+const KEEPOUT: readonly [number, number, number][] = [
+  ...STAGE1_LAYOUT.map((s): [number, number, number] => [s.position[0], s.position[2], 2.2]),
+  [SETPIECE_ANCHOR[0], SETPIECE_ANCHOR[2], 5.4],
+]
 function clearOf(x: number, z: number): boolean {
-  for (const [kx, kz] of KEEPOUT) if (Math.hypot(x - kx, z - kz) < 2.2) return false
+  for (const [kx, kz, kr] of KEEPOUT) if (Math.hypot(x - kx, z - kz) < kr) return false
   return true
 }
 

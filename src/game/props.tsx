@@ -437,9 +437,11 @@ function makeCrystalCluster(seed: number): BufferGeometry {
   return flat
 }
 
-// Crystal placements are shared by the shard fields AND their rock sockets, so
-// they live at module scope — same seeds as ever, deterministic per world load.
-const CRYSTAL_TEAL_PLACEMENTS: readonly Placement[] = scatter(0x0c53, 5, {
+// Crystal placements are shared by the shard fields, their rock sockets, AND
+// the physics colliders (WorldColliders — QA 2026-07-14: crystals are solid,
+// the founder walks around a gem node, never through it). Module scope — same
+// seeds as ever, deterministic per world load.
+export const CRYSTAL_TEAL_PLACEMENTS: readonly Placement[] = scatter(0x0c53, 5, {
   minR: 8,
   maxR: 20,
   pad: 1.4,
@@ -449,7 +451,7 @@ const CRYSTAL_TEAL_PLACEMENTS: readonly Placement[] = scatter(0x0c53, 5, {
   scaleY: [0.9, 1.25],
   tilt: 0.06,
 })
-const CRYSTAL_VIOLET_PLACEMENTS: readonly Placement[] = scatter(0x0c9f, 3, {
+export const CRYSTAL_VIOLET_PLACEMENTS: readonly Placement[] = scatter(0x0c9f, 3, {
   minR: 9,
   maxR: 19,
   pad: 1.4,
