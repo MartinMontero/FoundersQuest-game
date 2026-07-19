@@ -31,6 +31,8 @@ export interface WorldEvents {
   onArenaEnter(): void
   /** player approaches the W8 Launch Threshold → the Ego (A5) */
   onEgoApproach(): void
+  /** player reads the world's landmark (the set-piece stage, W2-8) — a lore beat */
+  onLandmark(): void
 }
 
 export type InteractableKind =
@@ -42,6 +44,7 @@ export type InteractableKind =
   | 'campfire'
   | 'arena'
   | 'ego'
+  | 'landmark'
 
 export interface InteractableSpec {
   id: string
@@ -267,6 +270,9 @@ function generatedLayout(stage: number): InteractableSpec[] {
     ...shrines,
     ...poles,
     CAMPFIRE_SPEC,
+    // the world's landmark (its set-piece stage) is a REAL interactable —
+    // targetable, chip on approach, E reads it (QA round 5: "still inactive")
+    { id: 'landmark', kind: 'landmark', position: [-8, 0, -14] } as InteractableSpec,
     ...portalsForStage(stage),
     ...loopPortalsForStage(stage),
     // D-A: confrontations are PER-WORLD encounters — every world 2..7 gets its

@@ -95,12 +95,18 @@ export function RogueCharacter({ gait, reduced }: RogueCharacterProps): JSX.Elem
   // while it tracks the gripping hand in X/Z. That makes it a full-length walking
   // staff — its foot on the earth, its shaft rising past the hand to the crown —
   // instead of a short baton floating at hand height.
+  // QA round 5 — measured against the rig: `handslot.r` is the WEAPON MOUNT,
+  // sitting +0.096/-0.058 BEYOND `hand.r` (at the knuckles), so a staff pinned
+  // there grazes past the visible mitt. The fist's visual center is midway
+  // between the two bones — the shaft is pinned THERE, so it emerges above and
+  // below the closed fist and reads as gripped.
   const handBone = useRef<Object3D | null>(null)
+  const slotBone = useRef<Object3D | null>(null)
   const armBones = useRef<{ upper: Object3D; lower: Object3D; hand: Object3D } | null>(null)
   useEffect(() => {
     // GLTFLoader strips the '.' from bone names, so `handslot.r` → `handslotr`.
-    handBone.current =
-      scene.getObjectByName('handslotr') ?? scene.getObjectByName('handr') ?? null
+    handBone.current = scene.getObjectByName('handr') ?? null
+    slotBone.current = scene.getObjectByName('handslotr') ?? null
     const upper = scene.getObjectByName('upperarmr')
     const lower = scene.getObjectByName('lowerarmr')
     const hand = scene.getObjectByName('handr')
@@ -135,6 +141,12 @@ export function RogueCharacter({ gait, reduced }: RogueCharacterProps): JSX.Elem
       bones.hand.rotation.set(pose[6] ?? 0, pose[7] ?? 0, pose[8] ?? 0)
     }
     hand.getWorldPosition(HAND_WORLD)
+    const slot = slotBone.current
+    if (slot !== null) {
+      // midpoint of hand.r and handslot.r = the mitt's visual center
+      slot.getWorldPosition(SLOT_WORLD)
+      HAND_WORLD.lerp(SLOT_WORLD, 0.5)
+    }
     g.worldToLocal(HAND_WORLD)
     const hx = HAND_WORLD.x
     const hz = HAND_WORLD.z
@@ -220,5 +232,7 @@ const STAFF_LEAN = 0.2
 
 /** scratch for the per-frame hand→group-local staff placement (no allocation) */
 const HAND_WORLD = new Vector3()
+/** scratch for the weapon-mount bone (mixed with the hand for the mitt center) */
+const SLOT_WORLD = new Vector3()
 /** scratch axis for the outward lean (perpendicular to the hand's radial dir) */
 const LEAN_AXIS = new Vector3()

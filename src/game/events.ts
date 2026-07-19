@@ -11,7 +11,7 @@ import { useJourneyStore } from '../state/journey'
 import { questStore } from '../state/store'
 import { EARNED_HUNCH_BUMP } from '../state/tunables'
 import { useUiStore } from '../state/ui'
-import { ACT_GATES, UI } from '../strings'
+import { ACT_GATES, UI, WORLD_COPY } from '../strings'
 import { useInteractionStore } from './interaction'
 import { milestoneLabelById, type WorldEvents } from './contracts'
 
@@ -35,6 +35,15 @@ export const defaultWorldEvents: WorldEvents = {
   },
   onCampfire(): void {
     useUiStore.getState().openPanel('panel:campfire')
+  },
+  onLandmark(): void {
+    // the landmark speaks its world's one lore line (QA round 5: the station
+    // must DO something) — ephemeral toast, never stored
+    const stage = useJourneyStore.getState().currentStage
+    const landmark = WORLD_COPY.landmarks[stage]
+    if (landmark !== undefined) {
+      useUiStore.getState().showToast(`${landmark.name} — ${landmark.line}`)
+    }
   },
   onFlagpole(id: string): void {
     // self-report: milestones[id] flips — Action only, never Truth (02/04 map)

@@ -140,6 +140,22 @@ export function WorldColliders(): JSX.Element {
             position={[s.position[0], 0.6, s.position[2]]}
           />
         ))}
+      {/* the landmark (set-piece stage, W2-8) — its hero mass is SOLID (QA
+          round 5: "the founder can walk right through it"). The composition is
+          mounted rotated pi, so world = anchor − local. Center mass for every
+          world; W2 adds its banner-arch posts. Interact radius 2.75 still
+          clears every collider, so the chip lights before the stone stops you. */}
+      {stage >= 2 ? (
+        <>
+          <CylinderCollider args={[0.7, 1.15]} position={[-8, 0.7, -14]} />
+          {stage === 2 ? (
+            <>
+              <CylinderCollider args={[1.7, 0.16]} position={[-12.58, 1.7, -15.84]} />
+              <CylinderCollider args={[1.7, 0.16]} position={[-9.62, 1.7, -16.76]} />
+            </>
+          ) : null}
+        </>
+      ) : null}
       {/* the Vault — its floating sanctum is solid; the founder stops at its edge */}
       {hasVault ? <CuboidCollider args={[0.7, 0.5, 0.55]} position={VAULT_POSITION} /> : null}
       {/* the Registry's outer standing stones */}

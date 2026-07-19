@@ -87,6 +87,9 @@ function activate(events: WorldEvents): void {
     case 'campfire':
       events.onCampfire()
       break
+    case 'landmark':
+      events.onLandmark()
+      break
     case 'arena':
       events.onArenaEnter()
       break
